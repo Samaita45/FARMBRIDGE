@@ -1,17 +1,18 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { ImageBackground, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
 
-import { AuthImages } from '@/constants/images';
+import { AppLogo } from '@/components/ui/app-logo';
 import Colors from '@/constants/colors';
+import { AuthImages } from '@/constants/images';
 
 const FEATURES = [
-  { icon: 'leaf-outline', label: 'Crop Management' },
-  { icon: 'storefront-outline', label: 'Marketplace' },
-  { icon: 'bus-outline', label: 'Transport' },
-  { icon: 'wallet-outline', label: 'Financials' },
+  { icon: 'leaf-outline' as const, label: 'Crop Management' },
+  { icon: 'storefront-outline' as const, label: 'Marketplace' },
+  { icon: 'bus-outline' as const, label: 'Transport' },
+  { icon: 'wallet-outline' as const, label: 'Financials' },
 ];
 
 export default function OnboardingScreen() {
@@ -20,32 +21,26 @@ export default function OnboardingScreen() {
       <StatusBar barStyle="light-content" />
 
       <ImageBackground source={AuthImages.onboardingFarm} style={s.bg} resizeMode="cover">
-        {/* Gradient-like dark overlay */}
         <View style={s.overlay} />
 
         <SafeAreaView style={s.safe}>
-          {/* ── Brand header ── */}
           <Animated.View entering={FadeInUp.delay(100).duration(700)} style={s.brandRow}>
-            <View style={s.logoCircle}>
-              <Ionicons name="leaf" size={28} color="#fff" />
-            </View>
+            <AppLogo size={56} />
             <View>
               <Text style={s.brandName}>FarmBridge</Text>
               <Text style={s.brandSub}>Zimbabwe's Farming Platform</Text>
             </View>
           </Animated.View>
 
-          {/* ── Feature pills ── */}
           <Animated.View entering={FadeInUp.delay(250).duration(600)} style={s.featureRow}>
             {FEATURES.map((f) => (
               <View key={f.label} style={s.featurePill}>
-                <Ionicons name={f.icon as keyof typeof Ionicons.glyphMap} size={15} color="#fff" />
+                <Ionicons name={f.icon} size={15} color="#fff" />
                 <Text style={s.featureLabel}>{f.label}</Text>
               </View>
             ))}
           </Animated.View>
 
-          {/* ── CTA card ── */}
           <Animated.View entering={FadeInDown.delay(350).duration(700)} style={s.card}>
             <Text style={s.headline}>Empower Your{'\n'}Farming Journey!</Text>
             <Text style={s.sub}>
@@ -53,14 +48,12 @@ export default function OnboardingScreen() {
               with fellow farmers — all in one trusted platform.
             </Text>
 
-            {/* Get Started button */}
             <Link href="/(auth)/register" asChild>
               <Pressable style={({ pressed }) => [s.btnPrimary, pressed && s.pressed]}>
                 <Text style={s.btnPrimaryText}>Get Started  →</Text>
               </Pressable>
             </Link>
 
-            {/* Login link — styled as an outline button, NOT plain text */}
             <Link href="/(auth)/login" asChild>
               <Pressable style={({ pressed }) => [s.btnOutline, pressed && { opacity: 0.75 }]}>
                 <Text style={s.btnOutlineText}>Already have an account? Login</Text>
@@ -78,7 +71,7 @@ const s = StyleSheet.create({
   bg: { flex: 1 },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,18,38,0.60)',
+    backgroundColor: 'rgba(10,18,38,0.38)',
   },
   safe: {
     flex: 1,
@@ -86,30 +79,14 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingBottom: 8,
   },
-
-  // Brand
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     marginTop: 20,
   },
-  logoCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.primary,
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 8,
-  },
   brandName: { fontSize: 24, fontWeight: '800', color: '#fff', letterSpacing: 0.4 },
   brandSub: { fontSize: 12, color: 'rgba(255,255,255,0.70)', marginTop: 2 },
-
-  // Feature pills
   featureRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -128,8 +105,6 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.22)',
   },
   featureLabel: { fontSize: 12, fontWeight: '600', color: '#fff' },
-
-  // CTA card
   card: {
     backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: 28,
@@ -151,8 +126,6 @@ const s = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 24,
   },
-
-  // Primary button
   btnPrimary: {
     backgroundColor: Colors.primary,
     borderRadius: 14,
@@ -172,8 +145,6 @@ const s = StyleSheet.create({
     letterSpacing: 0.4,
   },
   pressed: { opacity: 0.85 },
-
-  // Outline button
   btnOutline: {
     borderRadius: 14,
     paddingVertical: 14,
