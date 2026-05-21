@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   Image,
@@ -13,10 +12,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DiagnosisResultCard } from '@/components/crop-health/diagnosis-result-card';
+import { ScanOverlay } from '@/components/crop-health/scan-overlay';
+import { ModuleHeader } from '@/components/design-system';
 import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { CROP_DISEASES, type CropDisease } from '@/constants/zimbabwe-data';
 import { useCropPlans } from '@/hooks/useCropPlans';
 import { getCropIcon } from '@/utils/crop-emoji';
+
+function healthPercent(disease: CropDisease, matchedSymptoms: boolean): number {
+  const base = disease.severity === 'high' ? 34 : disease.severity === 'medium' ? 52 : 71;
+  return Math.min(95, matchedSymptoms ? base + 14 : base);
+}
 
 export default function CropHealthScreen() {
   const { plans } = useCropPlans();
@@ -26,6 +34,7 @@ export default function CropHealthScreen() {
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [diagnosis, setDiagnosis] = useState<CropDisease | null>(null);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   const selectedPlan = plans.find((p) => p.id === selectedPlanId) ?? plans[0];
   const cropId = selectedPlan?.cropId;
@@ -42,15 +51,27 @@ export default function CropHealthScreen() {
     );
   }, [search]);
 
-  const capturePhoto = async () => {
+  const pickPhoto = async (source: 'camera' | 'library') => {
     const ImagePicker = await import('expo-image-picker').catch(() => null);
     if (!ImagePicker) return;
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') return;
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.6, allowsEditing: true });
+    const perm =
+      source === 'camera'
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (perm.status !== 'granted') return;
+    const result =
+      source === 'camera'
+        ? await ImagePicker.launchCameraAsync({ quality: 0.85, allowsEditing: true, aspect: [4, 3] })
+        : await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            quality: 0.85,
+            allowsEditing: true,
+            aspect: [4, 3],
+          });
     if (!result.canceled && result.assets?.[0]) {
       setPhotoUri(result.assets[0].uri);
       setDiagnosis(null);
+      setSelectedSymptoms([]);
     }
   };
 
@@ -58,8 +79,15 @@ export default function CropHealthScreen() {
     setSelectedSymptoms((prev) => prev.includes(symptom) ? prev.filter((s) => s !== symptom) : [...prev, symptom]);
 
   const runDiagnosis = () => {
-    const match = relevantDiseases.find((d) => d.symptoms.some((s) => selectedSymptoms.includes(s)));
-    setDiagnosis(match ?? relevantDiseases[0] ?? null);
+    setScanning(true);
+    setDiagnosis(null);
+    setTimeout(() => {
+      const match = relevantDiseases.find((d) =>
+        d.symptoms.some((sym) => selectedSymptoms.includes(sym)),
+      );
+      setDiagnosis(match ?? relevantDiseases[0] ?? null);
+      setScanning(false);
+    }, 2200);
   };
 
   const allSymptoms = [...new Set(relevantDiseases.flatMap((d) => d.symptoms))];
@@ -67,19 +95,11 @@ export default function CropHealthScreen() {
   return (
     <SafeAreaView style={s.root} edges={['top']}>
 
-      {/* Header */}
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={20} color="#fff" />
-        </Pressable>
-        <View>
-          <View style={s.headerTitleRow}>
-            <Ionicons name="medkit" size={22} color="#fff" />
-            <Text style={s.headerTitle}>Crop Health</Text>
-          </View>
-          <Text style={s.headerSub}>Diagnose diseases & pests</Text>
-        </View>
-      </View>
+      <ModuleHeader
+        title="Crop Health"
+        subtitle="AI-assisted disease scan & treatment"
+        icon="medkit"
+      />
 
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
 
@@ -119,19 +139,32 @@ export default function CropHealthScreen() {
 
         {/* Photo diagnosis */}
         <Text style={s.sectionTitle}>Diagnose Problem</Text>
-        <Pressable onPress={capturePhoto} style={s.photoPressable}>
-          {photoUri ? (
-            <Image source={{ uri: photoUri }} style={s.photoImage} resizeMode="cover" />
-          ) : (
-            <View style={s.photoPlaceholder}>
-              <View style={s.cameraIconWrap}>
-                <Ionicons name="camera" size={32} color={Colors.primary} />
+        <View style={s.photoPressable}>
+          <Pressable onPress={() => pickPhoto('camera')} style={s.photoTap}>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={s.photoImage} resizeMode="cover" />
+            ) : (
+              <View style={s.photoPlaceholder}>
+                <View style={s.cameraIconWrap}>
+                  <Ionicons name="scan" size={32} color={DS.colors.primary} />
+                </View>
+                <Text style={s.photoTitle}>Scan crop</Text>
+                <Text style={s.photoHint}>Camera or gallery — point at affected leaves</Text>
               </View>
-              <Text style={s.photoTitle}>Take a Photo</Text>
-              <Text style={s.photoHint}>Point camera at diseased leaves, stems, or roots</Text>
-            </View>
-          )}
-        </Pressable>
+            )}
+            <ScanOverlay active={scanning} />
+          </Pressable>
+          <View style={s.photoActions}>
+            <Pressable onPress={() => pickPhoto('camera')} style={s.photoActionBtn}>
+              <Ionicons name="camera" size={16} color={DS.colors.primary} />
+              <Text style={s.photoActionText}>Camera</Text>
+            </Pressable>
+            <Pressable onPress={() => pickPhoto('library')} style={s.photoActionBtn}>
+              <Ionicons name="images" size={16} color={DS.colors.primary} />
+              <Text style={s.photoActionText}>Gallery</Text>
+            </Pressable>
+          </View>
+        </View>
 
         {photoUri && (
           <View style={s.symptomsCard}>
@@ -158,25 +191,16 @@ export default function CropHealthScreen() {
         )}
 
         {/* Diagnosis result */}
-        {diagnosis && (
-          <View style={s.resultCard}>
-            <View style={s.resultHeader}>
-              <View style={s.resultIcon}><Ionicons name="warning" size={20} color={Colors.error} /></View>
-              <View style={s.resultHeaderText}>
-                <Text style={s.resultTitle}>{diagnosis.name}</Text>
-                <Text style={s.resultSeverity}>Severity: {diagnosis.severity}</Text>
-              </View>
-            </View>
-            <View style={s.resultSection}>
-              <Text style={s.resultSectionTitle}>Treatment</Text>
-              <Text style={s.resultSectionBody}>{diagnosis.treatment}</Text>
-            </View>
-            <View style={s.resultSection}>
-              <Text style={s.resultSectionTitle}>Prevention</Text>
-              <Text style={s.resultSectionBody}>{diagnosis.prevention}</Text>
-            </View>
-          </View>
-        )}
+        {diagnosis && !scanning ? (
+          <DiagnosisResultCard
+            disease={diagnosis}
+            healthPercent={healthPercent(
+              diagnosis,
+              diagnosis.symptoms.some((sym) => selectedSymptoms.includes(sym)),
+            )}
+            cropName={selectedPlan?.cropName}
+          />
+        ) : null}
 
         {/* Disease library button */}
         <Pressable onPress={() => setLibraryOpen(true)} style={s.libraryBtn}>
@@ -224,16 +248,7 @@ export default function CropHealthScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.primaryBg },
-
-  header: {
-    backgroundColor: Colors.primary, flexDirection: 'row', alignItems: 'center', gap: 14,
-    paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16,
-  },
-  backBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
-  headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+  root: { flex: 1, backgroundColor: DS.colors.background },
 
   body: { padding: 16, paddingBottom: 40, gap: 14 },
   sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
@@ -255,12 +270,31 @@ const s = StyleSheet.create({
   alertTitle: { fontSize: 13, fontWeight: '700', color: '#92400e' },
   alertSub: { fontSize: 12, color: '#a16207', marginTop: 2, lineHeight: 17 },
 
-  photoPressable: {
-    backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden',
-    borderWidth: 1.5, borderColor: Colors.primaryMid, borderStyle: 'dashed',
-    minHeight: 140,
+  photoPressable: { gap: 10 },
+  photoTap: {
+    backgroundColor: '#fff',
+    borderRadius: DS.radius.lg,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: DS.colors.primaryMid,
+    borderStyle: 'dashed',
+    minHeight: 160,
   },
-  photoImage: { width: '100%', height: 180, borderRadius: 14 },
+  photoActions: { flexDirection: 'row', gap: 10 },
+  photoActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#fff',
+    borderRadius: DS.radius.md,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
+  },
+  photoActionText: { fontSize: 13, fontWeight: '700', color: DS.colors.primary },
+  photoImage: { width: '100%', height: 200 },
   photoPlaceholder: { alignItems: 'center', justifyContent: 'center', paddingVertical: 32, gap: 8 },
   cameraIconWrap: { width: 64, height: 64, borderRadius: 20, backgroundColor: Colors.primaryBg, alignItems: 'center', justifyContent: 'center' },
   photoTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },

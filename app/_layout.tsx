@@ -18,10 +18,15 @@ import '../global.css';
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 import { Colors } from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { useDailyDigestScheduler } from '@/hooks/useDailyDigestScheduler';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { requestNotificationPermissions } from '@/services/notificationService';
+import {
+  registerNotificationListeners,
+  requestNotificationPermissions,
+} from '@/services/notificationService';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
+import { useNotificationStore } from '@/stores/notificationStore';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 SplashScreen.preventAutoHideAsync();
@@ -31,7 +36,7 @@ const ZimFarmLightTheme = {
   colors: {
     ...DefaultTheme.colors,
     primary: Colors.primary,
-    background: Colors.surface,
+    background: DS.colors.background,
     card: Colors.white,
     text: Colors.gray[900],
     border: Colors.gray[200],
@@ -48,9 +53,24 @@ const ZimFarmDarkTheme = {
 
 function AppBootstrap() {
   useDailyDigestScheduler();
+  const userId = useAuthStore((s: AuthState) => s.user?.id);
+  const addNotification = useNotificationStore((s) => s.add);
+
   useEffect(() => {
     void requestNotificationPermissions();
   }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    let remove: (() => void) | undefined;
+    void registerNotificationListeners((item) => {
+      void addNotification(userId, item);
+    }).then((fn) => {
+      remove = fn ?? undefined;
+    });
+    return () => remove?.();
+  }, [userId, addNotification]);
+
   return null;
 }
 
@@ -93,6 +113,10 @@ export default function RootLayout() {
               <Stack.Screen name="financials" />
               <Stack.Screen name="tutorials" />
               <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
+              <Stack.Screen
+                name="notifications"
+                options={{ headerShown: true, title: 'Notifications' }}
+              />
               <Stack.Screen
                 name="modal"
                 options={{ presentation: 'modal', headerShown: true, title: 'Modal' }}

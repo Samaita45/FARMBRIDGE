@@ -75,6 +75,26 @@ declare module 'expo-sqlite' {
 
 declare module 'expo-notifications' {
   export const SchedulableTriggerInputTypes: { readonly DATE: string };
+
+  export interface NotificationContent {
+    title?: string | null;
+    body?: string | null;
+    data?: Record<string, unknown>;
+  }
+
+  export interface NotificationRequest {
+    content: NotificationContent;
+  }
+
+  export interface Notification {
+    date: number;
+    request: NotificationRequest;
+  }
+
+  export interface Subscription {
+    remove(): void;
+  }
+
   export function setNotificationHandler(handler: unknown): void;
   export function getPermissionsAsync(): Promise<{ status: string }>;
   export function requestPermissionsAsync(): Promise<{ status: string }>;
@@ -83,6 +103,9 @@ declare module 'expo-notifications' {
     trigger: Record<string, unknown>;
   }): Promise<string>;
   export function cancelScheduledNotificationAsync(id: string): Promise<void>;
+  export function addNotificationReceivedListener(
+    listener: (notification: Notification) => void,
+  ): Subscription;
 }
 
 declare module 'expo-sms' {
@@ -141,6 +164,7 @@ declare module '@react-native-community/netinfo' {
 
 declare module 'expo-image-picker' {
   export function requestCameraPermissionsAsync(): Promise<{ status: string }>;
+  export function requestMediaLibraryPermissionsAsync(): Promise<{ status: string }>;
   export function launchCameraAsync(options?: Record<string, unknown>): Promise<{
     canceled: boolean;
     assets?: { uri: string }[];
@@ -149,6 +173,14 @@ declare module 'expo-image-picker' {
     canceled: boolean;
     assets?: { uri: string }[];
   }>;
+}
+
+declare module 'expo-file-system/legacy' {
+  export const documentDirectory: string | null;
+  export function makeDirectoryAsync(path: string, options?: { intermediates?: boolean }): Promise<void>;
+  export function getInfoAsync(path: string): Promise<{ exists: boolean }>;
+  export function deleteAsync(path: string, options?: { idempotent?: boolean }): Promise<void>;
+  export function copyAsync(options: { from: string; to: string }): Promise<void>;
 }
 
 declare module '@expo-google-fonts/fraunces' {
