@@ -1,8 +1,8 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Ionicons } from '@expo/vector-icons';
-import { Link, router } from 'expo-router';
-import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Ionicons } from "@expo/vector-icons";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Link, router } from "expo-router";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   ImageBackground,
@@ -15,19 +15,20 @@ import {
   Text,
   TextInput,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ProvincePicker } from '@/components/forms/province-picker';
-import { RoleSelector } from '@/components/forms/role-selector';
-import { useToast } from '@/components/ui/toast-provider';
-import { AuthImages } from '@/constants/images';
-import Colors from '@/constants/colors';
-import { registerSchema, type RegisterFormData } from '@/lib/validation';
-import { asHref } from '@/lib/href';
-import { registerUser } from '@/services/authService';
-import { useAuthStore, type AuthState } from '@/stores/authStore';
-import type { UserRole } from '@/types';
+import { ProvincePicker } from "@/components/forms/province-picker";
+import { RoleSelector } from "@/components/forms/role-selector";
+import { AppLogo } from "@/components/ui/app-logo";
+import { useToast } from "@/components/ui/toast-provider";
+import Colors from "@/constants/colors";
+import { AuthImages } from "@/constants/images";
+import { asHref } from "@/lib/href";
+import { registerSchema, type RegisterFormData } from "@/lib/validation";
+import { registerUser } from "@/services/authService";
+import { useAuthStore, type AuthState } from "@/stores/authStore";
+import type { UserRole } from "@/types";
 
 export default function RegisterScreen() {
   const { showToast } = useToast();
@@ -46,17 +47,17 @@ export default function RegisterScreen() {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      password: '',
-      confirmPassword: '',
-      role: 'farmer',
-      province: '',
+      name: "",
+      email: "",
+      phone: "",
+      password: "",
+      confirmPassword: "",
+      role: "farmer",
+      province: "",
     },
   });
 
-  const role = watch('role') as UserRole;
+  const role = watch("role") as UserRole;
 
   const onSubmit = async (data: RegisterFormData) => {
     setLoading(true);
@@ -70,10 +71,13 @@ export default function RegisterScreen() {
         province: data.province,
       });
       login(user);
-      showToast('Welcome to FarmBridge!', 'success');
-      router.replace(asHref('/(tabs)'));
+      showToast("Welcome to FarmBridge!", "success");
+      router.replace(asHref("/(tabs)"));
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Registration failed', 'error');
+      showToast(
+        e instanceof Error ? e.message : "Registration failed",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -83,25 +87,30 @@ export default function RegisterScreen() {
     <View style={s.root}>
       <StatusBar barStyle="light-content" />
 
-      <ImageBackground source={AuthImages.registerProduce} style={s.bg} resizeMode="cover">
+      <ImageBackground
+        source={AuthImages.registerProduce}
+        style={s.bg}
+        resizeMode="cover"
+      >
         <View style={s.overlay} />
 
         <SafeAreaView style={s.safe}>
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={s.kav}>
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={s.kav}
+          >
             <ScrollView
               contentContainerStyle={s.scroll}
               keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}>
-
+              showsVerticalScrollIndicator={false}
+            >
               {/* ── Header ── */}
               <View style={s.header}>
-                <View style={s.logoCircle}>
-                  <Text style={s.logoEmoji}>🌿</Text>
-                </View>
+                <AppLogo size={68} style={s.logo} />
                 <Text style={s.title}>Create Account</Text>
-                <Text style={s.subtitle}>Join Zimbabwe's farming community</Text>
+                <Text style={s.subtitle}>
+                  Join Zimbabwe's farming community
+                </Text>
               </View>
 
               {/* ── Form card ── */}
@@ -115,7 +124,12 @@ export default function RegisterScreen() {
                   name="name"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <View style={[s.inputRow, errors.name && s.inputError]}>
-                      <Ionicons name="person-outline" size={20} color={Colors.gray[400]} style={s.icon} />
+                      <Ionicons
+                        name="person-outline"
+                        size={20}
+                        color={Colors.gray[400]}
+                        style={s.icon}
+                      />
                       <TextInput
                         style={s.input}
                         placeholder="Your full name"
@@ -127,7 +141,9 @@ export default function RegisterScreen() {
                     </View>
                   )}
                 />
-                {errors.name ? <Text style={s.errorText}>{errors.name.message}</Text> : null}
+                {errors.name ? (
+                  <Text style={s.errorText}>{errors.name.message}</Text>
+                ) : null}
 
                 {/* Email */}
                 <Text style={[s.label, s.labelGap]}>Email Address</Text>
@@ -136,7 +152,12 @@ export default function RegisterScreen() {
                   name="email"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <View style={[s.inputRow, errors.email && s.inputError]}>
-                      <Ionicons name="mail-outline" size={20} color={Colors.gray[400]} style={s.icon} />
+                      <Ionicons
+                        name="mail-outline"
+                        size={20}
+                        color={Colors.gray[400]}
+                        style={s.icon}
+                      />
                       <TextInput
                         style={s.input}
                         placeholder="you@example.com"
@@ -150,7 +171,9 @@ export default function RegisterScreen() {
                     </View>
                   )}
                 />
-                {errors.email ? <Text style={s.errorText}>{errors.email.message}</Text> : null}
+                {errors.email ? (
+                  <Text style={s.errorText}>{errors.email.message}</Text>
+                ) : null}
 
                 {/* Phone */}
                 <Text style={[s.label, s.labelGap]}>Phone Number</Text>
@@ -175,7 +198,9 @@ export default function RegisterScreen() {
                     </View>
                   )}
                 />
-                {errors.phone ? <Text style={s.errorText}>{errors.phone.message}</Text> : null}
+                {errors.phone ? (
+                  <Text style={s.errorText}>{errors.phone.message}</Text>
+                ) : null}
 
                 {/* Password */}
                 <Text style={[s.label, s.labelGap]}>Password</Text>
@@ -184,7 +209,12 @@ export default function RegisterScreen() {
                   name="password"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <View style={[s.inputRow, errors.password && s.inputError]}>
-                      <Ionicons name="lock-closed-outline" size={20} color={Colors.gray[400]} style={s.icon} />
+                      <Ionicons
+                        name="lock-closed-outline"
+                        size={20}
+                        color={Colors.gray[400]}
+                        style={s.icon}
+                      />
                       <TextInput
                         style={s.input}
                         placeholder="Create a strong password"
@@ -194,13 +224,22 @@ export default function RegisterScreen() {
                         onChangeText={onChange}
                         onBlur={onBlur}
                       />
-                      <Pressable onPress={() => setShowPw(!showPw)} style={s.eyeBtn}>
-                        <Ionicons name={showPw ? 'eye-outline' : 'eye-off-outline'} size={20} color={Colors.gray[400]} />
+                      <Pressable
+                        onPress={() => setShowPw(!showPw)}
+                        style={s.eyeBtn}
+                      >
+                        <Ionicons
+                          name={showPw ? "eye-outline" : "eye-off-outline"}
+                          size={20}
+                          color={Colors.gray[400]}
+                        />
                       </Pressable>
                     </View>
                   )}
                 />
-                {errors.password ? <Text style={s.errorText}>{errors.password.message}</Text> : null}
+                {errors.password ? (
+                  <Text style={s.errorText}>{errors.password.message}</Text>
+                ) : null}
 
                 {/* Confirm password */}
                 <Text style={[s.label, s.labelGap]}>Confirm Password</Text>
@@ -208,8 +247,18 @@ export default function RegisterScreen() {
                   control={control}
                   name="confirmPassword"
                   render={({ field: { onChange, onBlur, value } }) => (
-                    <View style={[s.inputRow, errors.confirmPassword && s.inputError]}>
-                      <Ionicons name="lock-closed-outline" size={20} color={Colors.gray[400]} style={s.icon} />
+                    <View
+                      style={[
+                        s.inputRow,
+                        errors.confirmPassword && s.inputError,
+                      ]}
+                    >
+                      <Ionicons
+                        name="lock-closed-outline"
+                        size={20}
+                        color={Colors.gray[400]}
+                        style={s.icon}
+                      />
                       <TextInput
                         style={s.input}
                         placeholder="Repeat your password"
@@ -219,13 +268,26 @@ export default function RegisterScreen() {
                         onChangeText={onChange}
                         onBlur={onBlur}
                       />
-                      <Pressable onPress={() => setShowConfirmPw(!showConfirmPw)} style={s.eyeBtn}>
-                        <Ionicons name={showConfirmPw ? 'eye-outline' : 'eye-off-outline'} size={20} color={Colors.gray[400]} />
+                      <Pressable
+                        onPress={() => setShowConfirmPw(!showConfirmPw)}
+                        style={s.eyeBtn}
+                      >
+                        <Ionicons
+                          name={
+                            showConfirmPw ? "eye-outline" : "eye-off-outline"
+                          }
+                          size={20}
+                          color={Colors.gray[400]}
+                        />
                       </Pressable>
                     </View>
                   )}
                 />
-                {errors.confirmPassword ? <Text style={s.errorText}>{errors.confirmPassword.message}</Text> : null}
+                {errors.confirmPassword ? (
+                  <Text style={s.errorText}>
+                    {errors.confirmPassword.message}
+                  </Text>
+                ) : null}
 
                 {/* Divider */}
                 <View style={s.divider} />
@@ -234,7 +296,9 @@ export default function RegisterScreen() {
                 {/* Role selector */}
                 <RoleSelector
                   value={role}
-                  onChange={(r: UserRole) => setValue('role', r, { shouldValidate: true })}
+                  onChange={(r: UserRole) =>
+                    setValue("role", r, { shouldValidate: true })
+                  }
                   error={errors.role?.message}
                 />
 
@@ -255,18 +319,29 @@ export default function RegisterScreen() {
                 <Pressable
                   onPress={handleSubmit(onSubmit)}
                   disabled={isLoading}
-                  style={({ pressed }) => [s.btnPrimary, (pressed || isLoading) && { opacity: 0.82 }]}>
-                  {isLoading
-                    ? <ActivityIndicator color="#fff" />
-                    : <Text style={s.btnPrimaryText}>Create Account</Text>}
+                  style={({ pressed }) => [
+                    s.btnPrimary,
+                    (pressed || isLoading) && { opacity: 0.82 },
+                  ]}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={s.btnPrimaryText}>Create Account</Text>
+                  )}
                 </Pressable>
               </View>
 
               {/* Login link — proper styled button */}
-              <Link href={asHref('/(auth)/login')} asChild>
-                <Pressable style={({ pressed }) => [s.loginBtn, pressed && { opacity: 0.8 }]}>
+              <Link href={asHref("/(auth)/login")} asChild>
+                <Pressable
+                  style={({ pressed }) => [
+                    s.loginBtn,
+                    pressed && { opacity: 0.8 },
+                  ]}
+                >
                   <Text style={s.loginText}>
-                    Already have an account?{'  '}
+                    Already have an account?{"  "}
                     <Text style={s.loginLink}>Sign In</Text>
                   </Text>
                 </Pressable>
@@ -282,36 +357,26 @@ export default function RegisterScreen() {
 const s = StyleSheet.create({
   root: { flex: 1 },
   bg: { flex: 1 },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,18,38,0.52)' },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(10,18,38,0.38)",
+  },
   safe: { flex: 1 },
   kav: { flex: 1 },
   scroll: { flexGrow: 1, paddingHorizontal: 22, paddingVertical: 24 },
 
   // Header
-  header: { alignItems: 'center', marginBottom: 22 },
-  logoCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-    shadowColor: Colors.primary,
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  logoEmoji: { fontSize: 26 },
-  title: { fontSize: 26, fontWeight: '800', color: '#fff', marginBottom: 4 },
-  subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.75)' },
+  header: { alignItems: "center", marginBottom: 22 },
+  logo: { marginBottom: 12 },
+  title: { fontSize: 26, fontWeight: "800", color: "#fff", marginBottom: 4 },
+  subtitle: { fontSize: 13, color: "rgba(255,255,255,0.92)" },
 
   // Card
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: "#ffffff",
     borderRadius: 24,
     padding: 22,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.18,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 8 },
@@ -319,21 +384,26 @@ const s = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
     color: Colors.primary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.8,
     marginBottom: 14,
   },
 
   // Labels
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, marginBottom: 7 },
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 7,
+  },
   labelGap: { marginTop: 14 },
 
   // Inputs
   inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.inputBg,
     borderRadius: 12,
     borderWidth: 1.5,
@@ -349,8 +419,8 @@ const s = StyleSheet.create({
 
   // Phone prefix
   prefixPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.primaryMid,
     borderRadius: 8,
     paddingHorizontal: 10,
@@ -359,7 +429,7 @@ const s = StyleSheet.create({
     gap: 4,
   },
   prefixFlag: { fontSize: 14 },
-  prefixCode: { fontSize: 13, fontWeight: '700', color: Colors.primary },
+  prefixCode: { fontSize: 13, fontWeight: "700", color: Colors.primary },
 
   // Divider
   divider: { height: 1, backgroundColor: Colors.gray[200], marginVertical: 20 },
@@ -369,29 +439,34 @@ const s = StyleSheet.create({
     backgroundColor: Colors.primary,
     borderRadius: 14,
     paddingVertical: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     shadowColor: Colors.primary,
     shadowOpacity: 0.35,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 5 },
     elevation: 6,
   },
-  btnPrimaryText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
+  btnPrimaryText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
 
   // Login link — proper button
   loginBtn: {
     marginTop: 18,
     paddingVertical: 14,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.12)",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+    borderColor: "rgba(255,255,255,0.25)",
     marginBottom: 8,
   },
-  loginText: { fontSize: 14, color: '#fff' },
-  loginLink: { fontWeight: '700', color: Colors.accentLight },
+  loginText: { fontSize: 14, color: "#fff" },
+  loginLink: { fontWeight: "700", color: Colors.accentLight },
 });
