@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-import { getCropEmoji, getDemandBadge } from '@/utils/crop-emoji';
+import { getCropIcon, getCropImage, getDemandBadge } from '@/utils/crop-emoji';
 import Colors from '@/constants/colors';
 import { asHref } from '@/lib/href';
 import type { Crop } from '@/types';
@@ -23,7 +24,12 @@ export function CropTrendCard({ crop }: CropTrendCardProps) {
         <Text style={[s.ribbonText, { color: badge.color }]}>{badge.label}</Text>
       </View>
 
-      <Text style={s.emoji}>{getCropEmoji(crop.id, crop.category)}</Text>
+      <View style={s.imageWrap}>
+        <Image source={getCropImage(crop.id, crop.category)} style={s.cropImage} resizeMode="cover" />
+        <View style={s.imageIcon}>
+          <Ionicons name={getCropIcon(crop.category) as keyof typeof Ionicons.glyphMap} size={12} color={Colors.primary} />
+        </View>
+      </View>
       <Text style={s.name} numberOfLines={1}>{crop.name}</Text>
 
       <Text style={s.priceUSD}>${crop.currentPriceUSD.toFixed(2)}<Text style={s.perkg}>/kg</Text></Text>
@@ -61,7 +67,26 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   ribbonText: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 },
-  emoji: { fontSize: 26, marginBottom: 6 },
+  imageWrap: {
+    width: 54,
+    height: 54,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 8,
+    backgroundColor: Colors.primaryBg,
+  },
+  cropImage: { width: '100%', height: '100%' },
+  imageIcon: {
+    position: 'absolute',
+    right: 4,
+    bottom: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
   name: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
   priceUSD: { fontSize: 15, fontWeight: '800', color: Colors.primary },
   perkg: { fontSize: 11, fontWeight: '400', color: Colors.textSecondary },

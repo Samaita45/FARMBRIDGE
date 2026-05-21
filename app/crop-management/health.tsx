@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '@/constants/colors';
 import { CROP_DISEASES, type CropDisease } from '@/constants/zimbabwe-data';
 import { useCropPlans } from '@/hooks/useCropPlans';
-import { getCropEmoji } from '@/utils/crop-emoji';
+import { getCropIcon } from '@/utils/crop-emoji';
 
 export default function CropHealthScreen() {
   const { plans } = useCropPlans();
@@ -73,7 +73,10 @@ export default function CropHealthScreen() {
           <Ionicons name="arrow-back" size={20} color="#fff" />
         </Pressable>
         <View>
-          <Text style={s.headerTitle}>🔬 Crop Health</Text>
+          <View style={s.headerTitleRow}>
+            <Ionicons name="medkit" size={22} color="#fff" />
+            <Text style={s.headerTitle}>Crop Health</Text>
+          </View>
           <Text style={s.headerSub}>Diagnose diseases & pests</Text>
         </View>
       </View>
@@ -94,8 +97,9 @@ export default function CropHealthScreen() {
                 key={plan.id}
                 onPress={() => setSelectedPlanId(plan.id)}
                 style={[s.cropChip, active && s.cropChipActive]}>
+                <Ionicons name={getCropIcon() as keyof typeof Ionicons.glyphMap} size={13} color={active ? '#fff' : Colors.primary} />
                 <Text style={[s.cropChipText, active && s.cropChipTextActive]}>
-                  {getCropEmoji(plan.cropId)} {plan.cropName}
+                  {plan.cropName}
                 </Text>
               </Pressable>
             );
@@ -177,7 +181,7 @@ export default function CropHealthScreen() {
         {/* Disease library button */}
         <Pressable onPress={() => setLibraryOpen(true)} style={s.libraryBtn}>
           <Ionicons name="library-outline" size={18} color={Colors.primary} />
-          <Text style={s.libraryBtnText}>📚 Disease Library ({CROP_DISEASES.length} diseases)</Text>
+          <Text style={s.libraryBtnText}>Disease Library ({CROP_DISEASES.length} diseases)</Text>
           <Ionicons name="chevron-forward" size={16} color={Colors.primary} />
         </Pressable>
       </ScrollView>
@@ -227,6 +231,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16,
   },
   backBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
   headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
 
@@ -236,7 +241,7 @@ const s = StyleSheet.create({
   chipsRow: { gap: 8, paddingRight: 4 },
   emptyChip: { backgroundColor: Colors.gray[100], borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
   emptyChipText: { fontSize: 12, color: Colors.textSecondary },
-  cropChip: { backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9, borderWidth: 1, borderColor: Colors.gray[200] },
+  cropChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9, borderWidth: 1, borderColor: Colors.gray[200] },
   cropChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   cropChipText: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
   cropChipTextActive: { color: '#fff' },

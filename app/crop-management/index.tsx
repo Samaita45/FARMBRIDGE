@@ -30,7 +30,10 @@ export default function CropManagementHub() {
             <Pressable onPress={() => router.back()} style={s.backBtn}>
               <Ionicons name="arrow-back" size={20} color="#fff" />
             </Pressable>
-            <Text style={s.heroTitle}>🌱 Crop Management</Text>
+            <View style={s.heroTitleRow}>
+              <Ionicons name="leaf" size={22} color="#fff" />
+              <Text style={s.heroTitle}>Crop Management</Text>
+            </View>
             <Text style={s.heroSub}>Plan, track, and optimise your crops</Text>
           </View>
         </ImageBackground>
@@ -91,7 +94,7 @@ export default function CropManagementHub() {
           {/* ── Season tip ── */}
           <View style={s.tipCard}>
             <View style={s.tipHeader}>
-              <Text style={s.tipEmoji}>💡</Text>
+              <Ionicons name="bulb-outline" size={18} color={Colors.warning} />
               <Text style={s.tipTitle}>Seasonal Tip</Text>
             </View>
             <Text style={s.tipBody}>
@@ -122,6 +125,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center', justifyContent: 'center',
   },
+  heroTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   heroTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
   heroSub: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 3 },
 
@@ -163,7 +167,6 @@ const s = StyleSheet.create({
     borderWidth: 1.5, borderColor: Colors.primaryMid,
   },
   tipHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  tipEmoji: { fontSize: 18 },
   tipTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   tipBody: { fontSize: 13, color: Colors.textSecondary, lineHeight: 19, marginBottom: 12 },
   tipBtn: { flexDirection: 'row', alignItems: 'center', gap: 5 },

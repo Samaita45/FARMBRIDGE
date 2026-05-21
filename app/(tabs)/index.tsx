@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   RefreshControl,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,7 +25,6 @@ import {
   CROPS,
   MARKET_PRODUCTS,
   getCropsForMonth,
-  getCurrentSeason,
   getTopDemandCrops,
 } from '@/constants/zimbabwe-data';
 import Colors from '@/constants/colors';
@@ -33,7 +33,7 @@ import { useWeather } from '@/hooks/useWeather';
 import { upsertCachedCropData, upsertCachedProduct } from '@/services/database';
 import { isOnline } from '@/services/syncService';
 import { useAuthStore, selectIsSubscribed } from '@/stores/authStore';
-import { getCropEmoji } from '@/utils/crop-emoji';
+import { getCropIcon, getCropImage } from '@/utils/crop-emoji';
 
 const MONTH = new Date().getMonth() + 1;
 const HOURS = new Date().getHours();
@@ -57,8 +57,6 @@ export default function HomeScreen() {
 
   const topCrops = useMemo(() => getTopDemandCrops(8), []);
   const plantNow = useMemo(() => getCropsForMonth(MONTH).slice(0, 4), []);
-  const season = getCurrentSeason(MONTH);
-
   useEffect(() => {
     void (async () => {
       if (!(await isOnline())) return;
@@ -113,7 +111,7 @@ export default function HomeScreen() {
 
         {/* ── Weather card ── */}
         <View style={s.section}>
-          <SectionHeader title="🌤 Weather" onPress={() => setWeatherModalOpen(true)} actionLabel="7-day" />
+          <SectionHeader icon="partly-sunny-outline" title="Weather" onPress={() => setWeatherModalOpen(true)} actionLabel="7-day" />
           <View style={s.weatherRow}>
             <WeatherWidget
               current={weather?.current}
@@ -126,9 +124,9 @@ export default function HomeScreen() {
               <View style={s.agriCard}>
                 <Text style={s.agriTitle}>Farming Conditions</Text>
                 {[
-                  { label: 'Spray conditions', value: weather.agricultural.sprayCondition, icon: 'cloudy-outline' },
-                  { label: 'Frost risk', value: weather.agricultural.frostRisk, icon: 'snow-outline' },
-                  { label: 'Irrigation', value: weather.agricultural.irrigationAdvice, icon: 'water-outline' },
+                  { label: 'Soil temperature', value: `${weather.agricultural.soilTemperature}°C`, icon: 'thermometer-outline' as const },
+                  { label: 'Soil moisture', value: `${weather.agricultural.soilMoisture}%`, icon: 'water-outline' as const },
+                  { label: 'Insight', value: weather.agricultural.insight, icon: 'bulb-outline' as const },
                 ].map((row) => (
                   <View key={row.label} style={s.agriRow}>
                     <Ionicons name={row.icon as keyof typeof Ionicons.glyphMap} size={12} color={Colors.textSecondary} />
@@ -149,7 +147,7 @@ export default function HomeScreen() {
 
         {/* ── Crops in demand ── */}
         <View style={s.section}>
-          <SectionHeader title="🔥 Crops in Demand" onPress={() => router.push('/(tabs)/market' as Href)} actionLabel="Market" />
+          <SectionHeader icon="trending-up-outline" title="Crops in Demand" onPress={() => router.push('/(tabs)/market' as Href)} actionLabel="Market" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 4 }}>
             {topCrops.length === 0
               ? [1, 2, 3].map((i) => <CropCardSkeleton key={i} />)
@@ -159,13 +157,13 @@ export default function HomeScreen() {
 
         {/* ── Demand forecast chart ── */}
         <View style={s.section}>
-          <SectionHeader title="📊 Demand Forecast" />
+          <SectionHeader icon="bar-chart-outline" title="Demand Forecast" />
           <CropDemandChart />
         </View>
 
         {/* ── Quick access grid ── */}
         <View style={s.section}>
-          <SectionHeader title="⚡ Quick Access" />
+          <SectionHeader icon="apps-outline" title="Quick Access" />
           <View style={s.quickGrid}>
             {QUICK_ACCESS.map((item) => (
               <Link key={item.href} href={item.href as Href} asChild>
@@ -183,7 +181,8 @@ export default function HomeScreen() {
         {/* ── Plant now section ── */}
         <View style={s.section}>
           <SectionHeader
-            title={`${season.icon} Plant Now`}
+            icon="leaf-outline"
+            title="Plant Now"
             onPress={() => router.push('/crop-management/planner' as Href)}
             actionLabel="Calendar"
           />
@@ -193,7 +192,10 @@ export default function HomeScreen() {
               style={({ pressed }) => [s.plantCard, pressed && { opacity: 0.9 }]}
               onPress={() => router.push('/crop-management/planner' as Href)}>
               <View style={s.plantEmojiWrap}>
-                <Text style={s.plantEmoji}>{getCropEmoji(crop.id, crop.category)}</Text>
+                <Image source={getCropImage(crop.id, crop.category)} style={s.plantImage} resizeMode="cover" />
+                <View style={s.plantImageIcon}>
+                  <Ionicons name={getCropIcon(crop.category) as keyof typeof Ionicons.glyphMap} size={11} color={Colors.primary} />
+                </View>
               </View>
               <View style={s.plantInfo}>
                 <Text style={s.plantName}>{crop.name}</Text>
@@ -259,12 +261,15 @@ export default function HomeScreen() {
 
 // ── Sub-components ────────────────────────────────────────────────────────
 
-function SectionHeader({ title, onPress, actionLabel = 'View All' }: {
-  title: string; onPress?: () => void; actionLabel?: string;
+function SectionHeader({ icon, title, onPress, actionLabel = 'View All' }: {
+  icon?: keyof typeof Ionicons.glyphMap; title: string; onPress?: () => void; actionLabel?: string;
 }) {
   return (
     <View style={sh.row}>
-      <Text style={sh.title}>{title}</Text>
+      <View style={sh.titleRow}>
+        {icon ? <Ionicons name={icon} size={18} color={Colors.primary} /> : null}
+        <Text style={sh.title}>{title}</Text>
+      </View>
       {onPress ? (
         <Pressable onPress={onPress} style={({ pressed }) => [sh.btn, pressed && { opacity: 0.7 }]}>
           <Text style={sh.btnText}>{actionLabel}</Text>
@@ -335,8 +340,19 @@ const s = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
     borderWidth: 1, borderColor: Colors.primaryMid,
   },
-  plantEmojiWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.primaryBg, alignItems: 'center', justifyContent: 'center' },
-  plantEmoji: { fontSize: 24 },
+  plantEmojiWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.primaryBg, overflow: 'hidden' },
+  plantImage: { width: '100%', height: '100%' },
+  plantImageIcon: {
+    position: 'absolute',
+    right: 3,
+    bottom: 3,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   plantInfo: { flex: 1 },
   plantName: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   plantMeta: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
@@ -371,6 +387,7 @@ const s = StyleSheet.create({
 
 const sh = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   title: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
   btn: {
     flexDirection: 'row', alignItems: 'center', gap: 2,

@@ -25,7 +25,7 @@ import {
 } from '@/constants/zimbabwe-data';
 import { useCartStore, type CartState } from '@/stores/cartStore';
 import { useAuthStore, selectIsSubscribed, type AuthState } from '@/stores/authStore';
-import { getCategoryEmoji } from '@/utils/product-emoji';
+import { getCategoryIcon } from '@/utils/product-emoji';
 import { asHref } from '@/lib/href';
 
 const TAB_CATEGORIES = ['All', ...MARKET_CATEGORIES] as const;
@@ -77,7 +77,10 @@ export default function MarketplaceScreen() {
         <View style={s.heroOverlay}>
           <View style={s.heroTop}>
             <View>
-              <Text style={s.heroTitle}>🛒 FarmBridge Market</Text>
+              <View style={s.heroTitleRow}>
+                <Ionicons name="storefront" size={20} color="#fff" />
+                <Text style={s.heroTitle}>FarmBridge Market</Text>
+              </View>
               <Text style={s.heroSub}>Fresh produce · Direct from farmers</Text>
             </View>
             {/* Cart button */}
@@ -120,8 +123,13 @@ export default function MarketplaceScreen() {
               key={cat}
               onPress={() => setCategory(cat)}
               style={[s.tab, category === cat && s.tabActive]}>
+              <Ionicons
+                name={(cat === 'All' ? 'storefront-outline' : getCategoryIcon(cat)) as keyof typeof Ionicons.glyphMap}
+                size={14}
+                color={category === cat ? '#fff' : Colors.textSecondary}
+              />
               <Text style={[s.tabText, category === cat && s.tabTextActive]}>
-                {cat === 'All' ? '🛒 All' : `${getCategoryEmoji(cat)} ${cat.split(' ')[0]}`}
+                {cat === 'All' ? 'All' : cat.split(' ')[0]}
               </Text>
             </Pressable>
           ))}
@@ -133,7 +141,7 @@ export default function MarketplaceScreen() {
         {!search && category === 'All' ? (
           <>
             {/* Featured */}
-            <Text style={s.sectionTitle}>⭐ Featured Products</Text>
+            <SectionTitle icon="ribbon-outline" title="Featured Products" />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.hscroll}>
               {featured.map((p) => (
                 <View key={p.id} style={s.hCard}>
@@ -162,7 +170,7 @@ export default function MarketplaceScreen() {
             </ScrollView>
 
             {/* Honey */}
-            <Text style={s.sectionTitle}>🍯 Honey &amp; Bee Products</Text>
+            <SectionTitle icon="flower-outline" title="Honey & Bee Products" />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.hscroll}>
               {honeyProducts.map((p) => (
                 <View key={p.id} style={s.hCard}>
@@ -175,9 +183,7 @@ export default function MarketplaceScreen() {
 
         {/* All / filtered products */}
         <View style={s.allHeader}>
-          <Text style={s.sectionTitle}>
-            {category === 'All' ? 'All Products' : category}
-          </Text>
+          <SectionTitle icon={category === 'All' ? 'storefront-outline' : getCategoryIcon(category)} title={category === 'All' ? 'All Products' : category} />
           <View style={s.countBadge}>
             <Text style={s.countText}>{products.length} items</Text>
           </View>
@@ -206,6 +212,15 @@ export default function MarketplaceScreen() {
   );
 }
 
+function SectionTitle({ icon, title }: { icon: string; title: string }) {
+  return (
+    <View style={s.sectionTitleRow}>
+      <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={17} color={Colors.primary} />
+      <Text style={s.sectionTitle}>{title}</Text>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.primaryBg },
 
@@ -218,6 +233,7 @@ const s = StyleSheet.create({
     paddingBottom: 16,
   },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
+  heroTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   heroTitle: { fontSize: 18, fontWeight: '800', color: '#fff' },
   heroSub: { fontSize: 12, color: 'rgba(255,255,255,0.80)', marginTop: 2 },
   cartBtn: {
@@ -249,6 +265,7 @@ const s = StyleSheet.create({
   tabsBg: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: Colors.gray[100] },
   tabsContent: { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
   tab: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, paddingVertical: 7,
     borderRadius: 20, backgroundColor: Colors.gray[100],
   },
@@ -261,7 +278,8 @@ const s = StyleSheet.create({
   scrollContent: { padding: 16, paddingBottom: 32 },
 
   // Section titles
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10, marginTop: 6 },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10, marginTop: 6 },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
   hscroll: { marginBottom: 16 },
   hCard: { marginRight: 12 },
 

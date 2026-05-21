@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import Colors from '@/constants/colors';
 import { asHref } from '@/lib/href';
 import { useCartStore, type CartState } from '@/stores/cartStore';
 import type { MarketProduct } from '@/types';
-import { getProductEmoji } from '@/utils/product-emoji';
+import { getCategoryIcon, getProductImage } from '@/utils/product-emoji';
 
 interface ProductCardProps {
   product: MarketProduct;
@@ -15,7 +15,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, compact }: ProductCardProps) {
   const addItem = useCartStore((s: CartState) => s.addItem);
-  const inCart = useCartStore((s: CartState) => s.items.some((i) => i.productId === product.id));
+  const inCart = useCartStore((s: CartState) => s.items.some((i) => i.product.id === product.id));
 
   return (
     <View style={[s.card, compact && s.cardCompact]}>
@@ -23,7 +23,11 @@ export function ProductCard({ product, compact }: ProductCardProps) {
         <Pressable style={({ pressed }) => pressed && { opacity: 0.9 }}>
           {/* Product image area */}
           <View style={[s.imageArea, compact && s.imageAreaCompact]}>
-            <Text style={s.emoji}>{getProductEmoji(product.name, product.category)}</Text>
+            <Image source={getProductImage(product)} style={s.productImage} resizeMode="cover" />
+            <View style={s.imageShade} />
+            <View style={s.categoryIcon}>
+              <Ionicons name={getCategoryIcon(product.category) as keyof typeof Ionicons.glyphMap} size={14} color={Colors.primary} />
+            </View>
             {product.isOrganic && (
               <View style={s.organicBadge}>
                 <Ionicons name="leaf" size={8} color={Colors.success} />
@@ -108,10 +112,21 @@ const s = StyleSheet.create({
   imageArea: {
     height: 120, backgroundColor: Colors.primaryBg,
     alignItems: 'center', justifyContent: 'center',
-    position: 'relative',
+    position: 'relative', overflow: 'hidden',
   },
   imageAreaCompact: { height: 96 },
-  emoji: { fontSize: 46 },
+  productImage: { width: '100%', height: '100%' },
+  imageShade: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15,23,42,0.06)',
+  },
+  categoryIcon: {
+    position: 'absolute', right: 8, bottom: 8,
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#fff',
+    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 6, elevation: 2,
+  },
   organicBadge: {
     position: 'absolute', top: 8, left: 8,
     flexDirection: 'row', alignItems: 'center', gap: 3,

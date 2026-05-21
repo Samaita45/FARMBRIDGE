@@ -21,7 +21,10 @@ export function MarketLocked() {
     <SafeAreaView style={s.root} edges={['top']}>
       {/* Header */}
       <View style={s.header}>
-        <Text style={s.headerTitle}>🛒 Marketplace</Text>
+        <View style={s.headerTitleRow}>
+          <Ionicons name="storefront" size={24} color="#fff" />
+          <Text style={s.headerTitle}>Marketplace</Text>
+        </View>
         <Text style={s.headerSub}>{MARKET_PRODUCTS.length}+ products available</Text>
       </View>
 
@@ -111,6 +114,7 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.primaryBg },
 
   header: { backgroundColor: Colors.primary, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16 },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
   headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
 

@@ -98,7 +98,7 @@ export default function RegisterScreen() {
               {/* ── Header ── */}
               <View style={s.header}>
                 <View style={s.logoCircle}>
-                  <Text style={s.logoEmoji}>🌿</Text>
+                  <Ionicons name="leaf" size={28} color="#fff" />
                 </View>
                 <Text style={s.title}>Create Account</Text>
                 <Text style={s.subtitle}>Join Zimbabwe's farming community</Text>
