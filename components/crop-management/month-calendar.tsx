@@ -8,13 +8,13 @@ import type { CropPlan, FarmTask } from '@/types/crop-management';
 // ── Types ──────────────────────────────────────────────────────────────────
 type EventType = 'plant' | 'water' | 'fertilize' | 'harvest' | 'treat' | 'mixed';
 
-const EVENT_CONFIG: Record<EventType, { color: string; bg: string; icon: string; label: string }> = {
-  plant:     { color: '#388E3C', bg: '#E8F5E9', icon: '🌱', label: 'Planting' },
-  water:     { color: '#1976D2', bg: '#E3F2FD', icon: '💧', label: 'Watering' },
-  fertilize: { color: '#F57C00', bg: '#FFF3E0', icon: '🌿', label: 'Fertilize' },
-  harvest:   { color: '#C62828', bg: '#FFEBEE', icon: '🌾', label: 'Harvest' },
-  treat:     { color: '#6A1B9A', bg: '#F3E5F5', icon: '💊', label: 'Treatment' },
-  mixed:     { color: '#37474F', bg: '#ECEFF1', icon: '📅', label: 'Multiple' },
+const EVENT_CONFIG: Record<EventType, { color: string; bg: string; icon: keyof typeof Ionicons.glyphMap; label: string }> = {
+  plant:     { color: '#388E3C', bg: '#E8F5E9', icon: 'leaf-outline', label: 'Planting' },
+  water:     { color: '#1976D2', bg: '#E3F2FD', icon: 'water-outline', label: 'Watering' },
+  fertilize: { color: '#F57C00', bg: '#FFF3E0', icon: 'flask-outline', label: 'Fertilize' },
+  harvest:   { color: '#C62828', bg: '#FFEBEE', icon: 'basket-outline', label: 'Harvest' },
+  treat:     { color: '#6A1B9A', bg: '#F3E5F5', icon: 'medkit-outline', label: 'Treatment' },
+  mixed:     { color: '#37474F', bg: '#ECEFF1', icon: 'calendar-outline', label: 'Multiple' },
 };
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -199,7 +199,7 @@ export function MonthCalendar({ plans, tasks, onDayPress, onAddTask }: MonthCale
               <AgendaItem
                 key={`plan-${plan.id}`}
                 type={plan.plantDate === selectedDate ? 'plant' : 'harvest'}
-                title={`${plan.plantDate === selectedDate ? '🌱 Plant' : '🌾 Harvest'} ${plan.cropName}`}
+                title={`${plan.plantDate === selectedDate ? 'Plant' : 'Harvest'} ${plan.cropName}`}
                 subtitle={`${plan.hectares} ha · Est. yield ${plan.expectedYieldKg.toLocaleString()} kg`}
               />
             ))}
@@ -208,7 +208,7 @@ export function MonthCalendar({ plans, tasks, onDayPress, onAddTask }: MonthCale
                 key={task.id}
                 type={task.taskType as EventType}
                 title={task.title}
-                subtitle={task.notes ?? task.taskType}
+                subtitle={task.taskType}
                 done={task.status === 'completed'}
               />
             ))}
@@ -238,7 +238,7 @@ function AgendaItem({ type, title, subtitle, done }: {
     <View style={[ai.item, done && ai.itemDone]}>
       <View style={[ai.stripe, { backgroundColor: cfg.color }]} />
       <View style={[ai.iconWrap, { backgroundColor: cfg.bg }]}>
-        <Text style={{ fontSize: 16 }}>{cfg.icon}</Text>
+        <Ionicons name={cfg.icon} size={16} color={cfg.color} />
       </View>
       <View style={ai.text}>
         <Text style={[ai.title, done && ai.titleDone]} numberOfLines={1}>{title}</Text>
@@ -272,11 +272,11 @@ const ai = StyleSheet.create({
 
 // ── AddTaskModal sub-component ────────────────────────────────────────────
 const TASK_TYPES: { type: EventType; label: string }[] = [
-  { type: 'plant',     label: '🌱 Planting' },
-  { type: 'water',     label: '💧 Watering' },
-  { type: 'fertilize', label: '🌿 Fertilize' },
-  { type: 'harvest',   label: '🌾 Harvest' },
-  { type: 'treat',     label: '💊 Treatment' },
+  { type: 'plant',     label: 'Planting' },
+  { type: 'water',     label: 'Watering' },
+  { type: 'fertilize', label: 'Fertilize' },
+  { type: 'harvest',   label: 'Harvest' },
+  { type: 'treat',     label: 'Treatment' },
 ];
 
 function AddTaskModal({ visible, date, onClose, onSave }: {
@@ -316,6 +316,7 @@ function AddTaskModal({ visible, date, onClose, onSave }: {
                   key={type}
                   onPress={() => setTaskType(type)}
                   style={[m.typeChip, active && { backgroundColor: cfg.color, borderColor: cfg.color }]}>
+                  <Ionicons name={cfg.icon} size={13} color={active ? '#fff' : cfg.color} />
                   <Text style={[m.typeChipText, active && { color: '#fff' }]}>{label}</Text>
                 </Pressable>
               );
@@ -440,6 +441,7 @@ const m = StyleSheet.create({
   label: { fontSize: 12, fontWeight: '700', color: Colors.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   typeRow: { gap: 8, paddingBottom: 4, marginBottom: 16 },
   typeChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7,
     backgroundColor: Colors.gray[100], borderWidth: 1, borderColor: Colors.gray[200],
   },

@@ -7,8 +7,8 @@ import type {
 } from '@/types/community';
 
 export const TRENDING_TOPICS: TrendingTopic[] = [
-  { id: 't1', tag: 'maize', label: '#MaizePrice 🔥', postCount: 42 },
-  { id: 't2', tag: 'tomato-blight', label: '#TomatoBlight ⚠️', postCount: 28 },
+  { id: 't1', tag: 'maize', label: '#MaizePrice', postCount: 42 },
+  { id: 't2', tag: 'tomato-blight', label: '#TomatoBlight', postCount: 28 },
   { id: 't3', tag: 'ecocash', label: '#EcocashPayment', postCount: 19 },
   { id: 't4', tag: 'harvest', label: '#HarvestSeason2025', postCount: 35 },
   { id: 't5', tag: 'irrigation', label: '#DripIrrigation', postCount: 15 },
@@ -102,7 +102,7 @@ export const MOCK_POSTS: CommunityPost[] = [
     authorName: 'Agritex Weekly',
     authorRole: 'expert',
     province: 'National',
-    title: '📌 Weekly Tips: Prepare for dry spell in Matabeleland',
+    title: 'Weekly Tips: Prepare for dry spell in Matabeleland',
     body: 'Reduce planting density for dryland maize. Mulch around vegetable seedlings. Check stored grain moisture weekly.',
     category: 'tip',
     tags: ['weather', 'drought', 'agritex'],
@@ -210,7 +210,7 @@ export const MOCK_POSTS: CommunityPost[] = [
     authorName: 'Rudo C.',
     authorRole: 'farmer',
     province: 'Marondera',
-    title: 'Success: 4 tonnes tomatoes from 0.5 hectares! 🎉',
+    title: 'Success: 4 tonnes tomatoes from 0.5 hectares!',
     body: 'Used ZimFarm planner and sold at $0.85/kg. Total revenue over $3,400 this season.',
     category: 'success',
     tags: ['tomatoes', 'success', 'harvest'],

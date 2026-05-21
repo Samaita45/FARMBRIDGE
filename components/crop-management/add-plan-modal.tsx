@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -14,7 +15,7 @@ import {
 import Colors from '@/constants/colors';
 import { CROPS } from '@/constants/zimbabwe-data';
 import type { Crop } from '@/types';
-import { getCropEmoji } from '@/utils/crop-emoji';
+import { getCropIcon, getCropImage } from '@/utils/crop-emoji';
 
 interface AddPlanModalProps {
   visible: boolean;
@@ -102,7 +103,10 @@ export function AddPlanModal({ visible, onClose, onSubmit, loading }: AddPlanMod
                   onPress={() => setSelectedCrop(item)}
                   style={({ pressed }) => [s.cropRow, pressed && { opacity: 0.8 }]}>
                   <View style={s.cropEmojiWrap}>
-                    <Text style={s.cropEmoji}>{getCropEmoji(item.id, item.category)}</Text>
+                    <Image source={getCropImage(item.id, item.category)} style={s.cropImage} resizeMode="cover" />
+                    <View style={s.cropImageIcon}>
+                      <Ionicons name={getCropIcon(item.category) as keyof typeof Ionicons.glyphMap} size={11} color={Colors.primary} />
+                    </View>
                   </View>
                   <View style={s.cropInfo}>
                     <Text style={s.cropName}>{item.name}</Text>
@@ -128,7 +132,7 @@ export function AddPlanModal({ visible, onClose, onSubmit, loading }: AddPlanMod
             {/* Selected crop card */}
             <View style={s.selectedCropCard}>
               <View style={s.selectedEmojiWrap}>
-                <Text style={{ fontSize: 36 }}>{getCropEmoji(selectedCrop.id, selectedCrop.category)}</Text>
+                <Image source={getCropImage(selectedCrop.id, selectedCrop.category)} style={s.selectedImage} resizeMode="cover" />
               </View>
               <View style={s.selectedInfo}>
                 <Text style={s.selectedName}>{selectedCrop.name}</Text>
@@ -240,8 +244,13 @@ const s = StyleSheet.create({
     backgroundColor: '#fff', borderRadius: 14, padding: 12,
     borderWidth: 1, borderColor: Colors.primaryMid,
   },
-  cropEmojiWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.primaryBg, alignItems: 'center', justifyContent: 'center' },
-  cropEmoji: { fontSize: 24 },
+  cropEmojiWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.primaryBg, overflow: 'hidden' },
+  cropImage: { width: '100%', height: '100%' },
+  cropImageIcon: {
+    position: 'absolute', right: 3, bottom: 3,
+    width: 18, height: 18, borderRadius: 9,
+    backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
+  },
   cropInfo: { flex: 1 },
   cropName: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   cropMeta: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
@@ -258,7 +267,8 @@ const s = StyleSheet.create({
     borderWidth: 1.5, borderColor: Colors.primaryMid,
     shadowColor: Colors.primary, shadowOpacity: 0.1, shadowRadius: 8, elevation: 2,
   },
-  selectedEmojiWrap: { width: 60, height: 60, borderRadius: 18, backgroundColor: Colors.primaryBg, alignItems: 'center', justifyContent: 'center' },
+  selectedEmojiWrap: { width: 60, height: 60, borderRadius: 18, backgroundColor: Colors.primaryBg, overflow: 'hidden' },
+  selectedImage: { width: '100%', height: '100%' },
   selectedInfo: { flex: 1 },
   selectedName: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
   selectedMeta: { fontSize: 11, color: Colors.textSecondary, marginTop: 3, lineHeight: 16 },

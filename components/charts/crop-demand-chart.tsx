@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import Colors from '@/constants/colors';
 import { CROPS } from '@/constants/zimbabwe-data';
-import { getCropEmoji } from '@/utils/crop-emoji';
+import { getCropIcon } from '@/utils/crop-emoji';
 
 const BAR_COLORS = [Colors.primary, Colors.accent, '#f59e0b', '#8b5cf6', '#0ea5e9'];
 
@@ -58,8 +59,13 @@ export function CropDemandChart() {
               key={crop.id}
               onPress={() => toggle(crop.id)}
               style={[s.chip, active && { backgroundColor: BAR_COLORS[i % BAR_COLORS.length] }]}>
+              <Ionicons
+                name={getCropIcon(crop.category) as keyof typeof Ionicons.glyphMap}
+                size={12}
+                color={active ? '#fff' : Colors.primary}
+              />
               <Text style={[s.chipText, active && s.chipTextActive]}>
-                {getCropEmoji(crop.id)} {crop.name}
+                {crop.name}
               </Text>
             </Pressable>
           );
@@ -108,6 +114,9 @@ const s = StyleSheet.create({
   title: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: Colors.gray[100],
     borderRadius: 20,
     paddingHorizontal: 10,

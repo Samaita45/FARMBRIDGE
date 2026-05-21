@@ -2,15 +2,16 @@ import { Link } from 'expo-router';
 import { ImageBackground, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 
 import { AuthImages } from '@/constants/images';
 import Colors from '@/constants/colors';
 
 const FEATURES = [
-  { icon: '🌾', label: 'Crop Management' },
-  { icon: '🛒', label: 'Marketplace' },
-  { icon: '🚛', label: 'Transport' },
-  { icon: '💰', label: 'Financials' },
+  { icon: 'leaf-outline', label: 'Crop Management' },
+  { icon: 'storefront-outline', label: 'Marketplace' },
+  { icon: 'bus-outline', label: 'Transport' },
+  { icon: 'wallet-outline', label: 'Financials' },
 ];
 
 export default function OnboardingScreen() {
@@ -26,7 +27,7 @@ export default function OnboardingScreen() {
           {/* ── Brand header ── */}
           <Animated.View entering={FadeInUp.delay(100).duration(700)} style={s.brandRow}>
             <View style={s.logoCircle}>
-              <Text style={s.logoEmoji}>🌿</Text>
+              <Ionicons name="leaf" size={28} color="#fff" />
             </View>
             <View>
               <Text style={s.brandName}>FarmBridge</Text>
@@ -38,7 +39,7 @@ export default function OnboardingScreen() {
           <Animated.View entering={FadeInUp.delay(250).duration(600)} style={s.featureRow}>
             {FEATURES.map((f) => (
               <View key={f.label} style={s.featurePill}>
-                <Text style={s.featureIcon}>{f.icon}</Text>
+                <Ionicons name={f.icon as keyof typeof Ionicons.glyphMap} size={15} color="#fff" />
                 <Text style={s.featureLabel}>{f.label}</Text>
               </View>
             ))}
@@ -105,7 +106,6 @@ const s = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
-  logoEmoji: { fontSize: 26 },
   brandName: { fontSize: 24, fontWeight: '800', color: '#fff', letterSpacing: 0.4 },
   brandSub: { fontSize: 12, color: 'rgba(255,255,255,0.70)', marginTop: 2 },
 
@@ -127,7 +127,6 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.22)',
   },
-  featureIcon: { fontSize: 16 },
   featureLabel: { fontSize: 12, fontWeight: '600', color: '#fff' },
 
   // CTA card

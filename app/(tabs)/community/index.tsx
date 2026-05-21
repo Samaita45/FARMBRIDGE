@@ -44,7 +44,10 @@ export default function CommunityHubScreen() {
       <View style={s.header}>
         <View style={s.headerTop}>
           <View>
-            <Text style={s.headerTitle}>👥 Community</Text>
+            <View style={s.headerTitleRow}>
+              <Ionicons name="people" size={22} color="#fff" />
+              <Text style={s.headerTitle}>Community</Text>
+            </View>
             <Text style={s.headerSub}>{user?.province ?? 'Zimbabwe'} · Farmers helping farmers</Text>
           </View>
           <Pressable
@@ -94,7 +97,7 @@ export default function CommunityHubScreen() {
           onPress={() => router.push(asHref('/(tabs)/community/experts'))}
           style={s.expertCard}>
           <View style={s.expertIcon}>
-            <Text style={{ fontSize: 20 }}>🎓</Text>
+            <Ionicons name="school-outline" size={20} color={Colors.primary} />
           </View>
           <View style={s.expertText}>
             <Text style={s.expertTitle}>Expert Q&A</Text>
@@ -105,7 +108,10 @@ export default function CommunityHubScreen() {
 
         {/* Trending */}
         <View style={s.section}>
-          <Text style={s.sectionTitle}>🔥 Trending</Text>
+          <View style={s.sectionTitleRow}>
+            <Ionicons name="flame-outline" size={17} color={Colors.primary} />
+            <Text style={s.sectionTitle}>Trending</Text>
+          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.trendingRow}>
             {TRENDING_TOPICS.map((t) => (
               <Pressable
@@ -121,7 +127,10 @@ export default function CommunityHubScreen() {
 
         {/* Success stories */}
         <View style={s.section}>
-          <Text style={s.sectionTitle}>🌟 Success Stories</Text>
+          <View style={s.sectionTitleRow}>
+            <Ionicons name="star-outline" size={17} color={Colors.primary} />
+            <Text style={s.sectionTitle}>Success Stories</Text>
+          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.trendingRow}>
             {SUCCESS_STORIES.map((story) => (
               <View key={story.id} style={s.storyCard}>
@@ -174,6 +183,7 @@ const s = StyleSheet.create({
   // Header
   header: { backgroundColor: Colors.primary, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
   headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
   newPostBtn: {
@@ -216,7 +226,8 @@ const s = StyleSheet.create({
 
   // Sections
   section: { marginBottom: 16 },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 10 },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   trendingRow: { gap: 8, paddingRight: 4 },
   trendingChip: {
     backgroundColor: '#fff', borderRadius: 12, padding: 10,

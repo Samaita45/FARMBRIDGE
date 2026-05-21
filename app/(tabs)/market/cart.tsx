@@ -1,55 +1,53 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/ui/primary-button';
+import Colors from '@/constants/colors';
+import { cardShadow } from '@/lib/platform-ui';
 import { asHref } from '@/lib/href';
 import { useCartStore, type CartItem } from '@/stores/cartStore';
-import { getProductEmoji } from '@/utils/product-emoji';
+import { getProductImage } from '@/utils/product-emoji';
 
 export default function CartScreen() {
-  const { items, updateQuantity, removeItem, getTotalUSD, getTotalZWG, clearCart } =
-    useCartStore();
+  const { items, updateQuantity, removeItem, getTotalUSD, getTotalZWG, clearCart } = useCartStore();
 
   if (items.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface p-4">
-        <Text className="text-5xl">🛒</Text>
-        <Text className="mt-2 font-sans text-gray-500">Your cart is empty</Text>
-        <Pressable onPress={() => router.back()} className="mt-4">
-          <Text className="font-sans-semibold text-primary">Browse marketplace</Text>
-        </Pressable>
-      </View>
+      <SafeAreaView style={s.root} edges={['bottom', 'left', 'right']}>
+        <View style={s.empty}>
+          <Ionicons name="cart-outline" size={56} color={Colors.gray[400]} />
+          <Text style={s.emptyText}>Your cart is empty</Text>
+          <Pressable onPress={() => router.back()} style={({ pressed }) => [s.emptyBtn, pressed && { opacity: 0.8 }]}>
+            <Text style={s.emptyBtnText}>Browse marketplace</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View className="flex-1 bg-surface">
-      <ScrollView className="flex-1 px-4 pt-2" contentContainerStyle={{ paddingBottom: 120 }}>
+    <SafeAreaView style={s.root} edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {items.map(({ product, quantity }: CartItem) => (
-          <View
-            key={product.id}
-            className="mb-3 flex-row gap-3 rounded-2xl bg-white p-3"
-            style={{ shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 }}>
-            <View className="h-16 w-16 items-center justify-center rounded-xl bg-surface">
-              <Text className="text-2xl">{getProductEmoji(product.name, product.category)}</Text>
+          <View key={product.id} style={s.itemCard}>
+            <View style={s.thumb}>
+              <Image source={getProductImage(product)} style={s.thumbImg} resizeMode="cover" />
             </View>
-            <View className="flex-1">
-              <Text className="font-sans-semibold text-dark" numberOfLines={2}>
-                {product.name}
-              </Text>
-              <Text className="font-sans text-sm text-primary">
-                ${(product.priceUSD * quantity).toFixed(2)}
-              </Text>
-              <View className="mt-2 flex-row items-center gap-3">
-                <Pressable onPress={() => updateQuantity(product.id, quantity - 1)}>
-                  <Text className="font-sans-bold text-lg text-gray-500">−</Text>
+            <View style={s.itemBody}>
+              <Text style={s.itemName} numberOfLines={2}>{product.name}</Text>
+              <Text style={s.itemPrice}>${(product.priceUSD * quantity).toFixed(2)}</Text>
+              <View style={s.qtyRow}>
+                <Pressable onPress={() => updateQuantity(product.id, quantity - 1)} style={s.qtyBtn}>
+                  <Ionicons name="remove" size={18} color={Colors.gray[500]} />
                 </Pressable>
-                <Text className="font-sans-semibold">{quantity}</Text>
-                <Pressable onPress={() => updateQuantity(product.id, quantity + 1)}>
-                  <Text className="font-sans-bold text-lg text-primary">+</Text>
+                <Text style={s.qty}>{quantity}</Text>
+                <Pressable onPress={() => updateQuantity(product.id, quantity + 1)} style={s.qtyBtn}>
+                  <Ionicons name="add" size={18} color={Colors.primary} />
                 </Pressable>
-                <Pressable onPress={() => removeItem(product.id)} className="ml-auto">
-                  <Text className="font-sans text-sm text-error">Remove</Text>
+                <Pressable onPress={() => removeItem(product.id)} style={s.removeBtn}>
+                  <Text style={s.removeText}>Remove</Text>
                 </Pressable>
               </View>
             </View>
@@ -57,23 +55,71 @@ export default function CartScreen() {
         ))}
       </ScrollView>
 
-      <View className="border-t border-gray-100 bg-white px-4 py-4">
-        <View className="flex-row justify-between">
-          <Text className="font-sans text-gray-600">Subtotal (USD)</Text>
-          <Text className="font-sans-bold text-dark">${getTotalUSD().toFixed(2)}</Text>
+      <View style={s.footer}>
+        <View style={s.footerRow}>
+          <Text style={s.footerLabel}>Subtotal (USD)</Text>
+          <Text style={s.footerValue}>${getTotalUSD().toFixed(2)}</Text>
         </View>
-        <View className="flex-row justify-between">
-          <Text className="font-sans text-gray-600">Subtotal (ZWG)</Text>
-          <Text className="font-sans-bold text-dark">ZWG {getTotalZWG()}</Text>
+        <View style={s.footerRow}>
+          <Text style={s.footerLabel}>Subtotal (ZWG)</Text>
+          <Text style={s.footerValue}>ZWG {getTotalZWG()}</Text>
         </View>
         <PrimaryButton
           title="Proceed to Checkout"
           onPress={() => router.push(asHref('/(tabs)/market/checkout'))}
         />
-        <Pressable onPress={clearCart} className="mt-2 py-2">
-          <Text className="text-center font-sans text-sm text-gray-500">Clear cart</Text>
+        <Pressable onPress={clearCart} style={s.clearBtn}>
+          <Text style={s.clearText}>Clear cart</Text>
         </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
+
+const s = StyleSheet.create({
+  root: { flex: 1, backgroundColor: Colors.primaryBg },
+  scroll: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  emptyText: { marginTop: 12, fontSize: 15, color: Colors.textSecondary },
+  emptyBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12, backgroundColor: Colors.primaryMid },
+  emptyBtnText: { fontSize: 14, fontWeight: '700', color: Colors.primary },
+  itemCard: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: Colors.white,
+    ...cardShadow(),
+  },
+  thumb: { width: 64, height: 64, borderRadius: 12, overflow: 'hidden', backgroundColor: Colors.primaryBg },
+  thumbImg: { width: '100%', height: '100%' },
+  itemBody: { flex: 1 },
+  itemName: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
+  itemPrice: { marginTop: 4, fontSize: 14, fontWeight: '700', color: Colors.primary },
+  qtyRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 8 },
+  qtyBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: Colors.gray[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qty: { fontSize: 15, fontWeight: '700', minWidth: 24, textAlign: 'center' },
+  removeBtn: { marginLeft: 'auto' },
+  removeText: { fontSize: 12, fontWeight: '600', color: Colors.error },
+  footer: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray[100],
+    backgroundColor: Colors.white,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    ...cardShadow(true),
+  },
+  footerRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  footerLabel: { fontSize: 14, color: Colors.textSecondary },
+  footerValue: { fontSize: 14, fontWeight: '800', color: Colors.textPrimary },
+  clearBtn: { marginTop: 8, paddingVertical: 10 },
+  clearText: { textAlign: 'center', fontSize: 13, color: Colors.textSecondary },
+});

@@ -27,13 +27,13 @@ export function DashboardHeader({ locationLabel, notificationCount = 2 }: Dashbo
             </View>
             <View>
               <Text style={s.greeting}>Good morning,</Text>
-              <Text style={s.userName}>{firstName} 👋</Text>
+              <Text style={s.userName}>{firstName}</Text>
             </View>
           </View>
         ) : (
           <View style={s.userSection}>
             <View style={s.avatar}>
-              <Text style={s.avatarEmoji}>🌿</Text>
+              <Ionicons name="leaf" size={24} color="#fff" />
             </View>
             <View>
               <Text style={s.greeting}>Welcome to</Text>

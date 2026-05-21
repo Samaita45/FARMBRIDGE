@@ -109,7 +109,7 @@ export default function LoginScreen() {
               {/* ── Header ── */}
               <View style={s.header}>
                 <View style={s.logoCircle}>
-                  <Text style={s.logoEmoji}>🌿</Text>
+                  <Ionicons name="leaf" size={28} color="#fff" />
                 </View>
                 <Text style={s.title}>Welcome Back!</Text>
                 <Text style={s.subtitle}>Sign in to your FarmBridge account</Text>

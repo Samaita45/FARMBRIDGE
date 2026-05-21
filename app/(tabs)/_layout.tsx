@@ -1,39 +1,52 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import React from 'react';
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/colors';
+import Colors from '@/constants/colors';
+import { tabBarStyle } from '@/lib/platform-ui';
 import { useAuthStore, selectIsSubscribed } from '@/stores/authStore';
 
 export default function TabLayout() {
   const isSubscribed = useAuthStore(selectIsSubscribed);
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.gray[400],
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          fontFamily: 'PlusJakartaSans_600SemiBold',
+          marginBottom: Platform.OS === 'android' ? 2 : 0,
+        },
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarStyle: {
-          backgroundColor: Colors.white,
-          borderTopColor: Colors.gray[200],
-        },
+        tabBarStyle: tabBarStyle(insets.bottom),
+        tabBarHideOnKeyboard: true,
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="house.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="market"
         options={{
           title: 'Market',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={26} name={isSubscribed ? 'cart.fill' : 'lock.fill'} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={isSubscribed ? (focused ? 'cart' : 'cart-outline') : 'lock-closed-outline'}
+              size={24}
+              color={color}
+            />
           ),
         }}
       />
@@ -41,21 +54,27 @@ export default function TabLayout() {
         name="transport"
         options={{
           title: 'Transport',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="box.truck.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'bus' : 'bus-outline'} size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="community"
         options={{
           title: 'Community',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="person.3.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <IconSymbol size={26} name="person.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+          ),
         }}
       />
     </Tabs>
