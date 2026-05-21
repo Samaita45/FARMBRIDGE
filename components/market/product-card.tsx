@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
 import { useCartStore, type CartState } from '@/stores/cartStore';
 import type { MarketProduct } from '@/types';
@@ -26,17 +26,17 @@ export function ProductCard({ product, compact }: ProductCardProps) {
             <Image source={getProductImage(product)} style={s.productImage} resizeMode="cover" />
             <View style={s.imageShade} />
             <View style={s.categoryIcon}>
-              <Ionicons name={getCategoryIcon(product.category) as keyof typeof Ionicons.glyphMap} size={14} color={Colors.primary} />
+              <Ionicons name={getCategoryIcon(product.category) as keyof typeof Ionicons.glyphMap} size={14} color={DS.colors.primary} />
             </View>
             {product.isOrganic && (
               <View style={s.organicBadge}>
-                <Ionicons name="leaf" size={8} color={Colors.success} />
+                <Ionicons name="leaf" size={8} color={DS.colors.success} />
                 <Text style={s.organicText}>Organic</Text>
               </View>
             )}
             {product.isCertified && (
               <View style={s.certifiedBadge}>
-                <Ionicons name="shield-checkmark" size={10} color={Colors.accent} />
+                <Ionicons name="shield-checkmark" size={10} color={DS.colors.accent} />
               </View>
             )}
           </View>
@@ -54,7 +54,7 @@ export function ProductCard({ product, compact }: ProductCardProps) {
 
             {/* Seller */}
             <View style={s.sellerRow}>
-              <Ionicons name="person-circle-outline" size={11} color={Colors.textSecondary} />
+              <Ionicons name="person-circle-outline" size={11} color={DS.colors.textMuted} />
               <Text style={s.seller} numberOfLines={1}>{product.sellerName}</Text>
             </View>
 
@@ -88,9 +88,9 @@ export function ProductCard({ product, compact }: ProductCardProps) {
           <Ionicons
             name={inCart ? 'checkmark' : 'cart'}
             size={12}
-            color={inCart ? Colors.success : '#fff'}
+            color={inCart ? DS.colors.success : '#fff'}
           />
-          <Text style={[s.cartBtnText, inCart && { color: Colors.success }]}>
+          <Text style={[s.cartBtnText, inCart && { color: DS.colors.success }]}>
             {inCart ? 'Added' : '+ Cart'}
           </Text>
         </Pressable>
@@ -101,16 +101,19 @@ export function ProductCard({ product, compact }: ProductCardProps) {
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden',
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.lg,
+    overflow: 'hidden',
     marginBottom: 14,
-    shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 3 }, elevation: 4,
-    borderWidth: 1, borderColor: Colors.primaryMid,
+    ...DS.shadow.card,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
   },
   cardCompact: { width: 150, marginRight: 12, marginBottom: 0 },
 
   // Image
   imageArea: {
-    height: 120, backgroundColor: Colors.primaryBg,
+    height: 120, backgroundColor: DS.colors.primaryBg,
     alignItems: 'center', justifyContent: 'center',
     position: 'relative', overflow: 'hidden',
   },
@@ -130,28 +133,28 @@ const s = StyleSheet.create({
   organicBadge: {
     position: 'absolute', top: 8, left: 8,
     flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: Colors.accentLight, borderRadius: 6,
+    backgroundColor: DS.colors.accentLight, borderRadius: 6,
     paddingHorizontal: 6, paddingVertical: 3,
   },
-  organicText: { fontSize: 9, fontWeight: '700', color: Colors.success },
+  organicText: { fontSize: 9, fontWeight: '700', color: DS.colors.success },
   certifiedBadge: {
     position: 'absolute', top: 8, right: 8,
-    backgroundColor: Colors.accentLight, borderRadius: 6,
+    backgroundColor: DS.colors.accentLight, borderRadius: 6,
     padding: 4,
   },
 
   // Info
   info: { padding: 10 },
-  name: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, lineHeight: 17, marginBottom: 5 },
+  name: { fontSize: 13, fontWeight: '700', color: DS.colors.text, lineHeight: 17, marginBottom: 5 },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginBottom: 4 },
-  rating: { fontSize: 11, fontWeight: '700', color: Colors.textPrimary },
-  reviewCount: { fontSize: 10, color: Colors.textSecondary },
+  rating: { fontSize: 11, fontWeight: '700', color: DS.colors.text },
+  reviewCount: { fontSize: 10, color: DS.colors.textMuted },
   sellerRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6 },
-  seller: { fontSize: 10, color: Colors.textSecondary, flex: 1 },
+  seller: { fontSize: 10, color: DS.colors.textMuted, flex: 1 },
   priceRow: { flexDirection: 'row', alignItems: 'baseline' },
-  priceUSD: { fontSize: 16, fontWeight: '900', color: Colors.primary },
-  priceUnit: { fontSize: 11, color: Colors.textSecondary, fontWeight: '400' },
-  priceZWG: { fontSize: 10, color: Colors.textSecondary, marginTop: 1 },
+  priceUSD: { fontSize: 16, fontWeight: '900', color: DS.colors.primary },
+  priceUnit: { fontSize: 11, color: DS.colors.textMuted, fontWeight: '400' },
+  priceZWG: { fontSize: 10, color: DS.colors.textMuted, marginTop: 1 },
 
   // Footer
   footer: {
@@ -160,16 +163,16 @@ const s = StyleSheet.create({
   },
   stockPill: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   stockPillOut: {},
-  stockDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: Colors.success },
-  stockDotOut: { backgroundColor: Colors.error },
-  stockText: { fontSize: 11, fontWeight: '600', color: Colors.success },
-  stockTextOut: { color: Colors.error },
+  stockDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: DS.colors.success },
+  stockDotOut: { backgroundColor: DS.colors.red },
+  stockText: { fontSize: 11, fontWeight: '600', color: DS.colors.success },
+  stockTextOut: { color: DS.colors.red },
   cartBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.primary, borderRadius: 8,
+    backgroundColor: DS.colors.primary, borderRadius: DS.radius.sm,
     paddingHorizontal: 10, paddingVertical: 6,
   },
-  cartBtnDisabled: { backgroundColor: Colors.gray[300] },
-  cartBtnInCart: { backgroundColor: Colors.accentLight, borderWidth: 1, borderColor: Colors.success },
+  cartBtnDisabled: { backgroundColor: DS.colors.gray[300] },
+  cartBtnInCart: { backgroundColor: DS.colors.accentLight, borderWidth: 1, borderColor: DS.colors.success },
   cartBtnText: { fontSize: 11, fontWeight: '700', color: '#fff' },
 });

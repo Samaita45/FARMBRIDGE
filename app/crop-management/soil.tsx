@@ -4,7 +4,9 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModuleHeader } from '@/components/design-system';
 import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { FERTILIZER_RECOMMENDATIONS, CROPS } from '@/constants/zimbabwe-data';
 import { getCropIcon } from '@/utils/crop-emoji';
 
@@ -15,6 +17,7 @@ export default function SoilScreen() {
   const [soilType, setSoilType] = useState<string>('Loam');
   const [ph, setPh] = useState(6.5);
   const [cropId, setCropId] = useState('maize');
+  const [moisture, setMoisture] = useState(55);
 
   const crop = CROPS.find((c) => c.id === cropId);
   const recommendation = useMemo(() => {
@@ -29,19 +32,11 @@ export default function SoilScreen() {
   return (
     <SafeAreaView style={s.root} edges={['top']}>
 
-      {/* Header */}
-      <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={20} color="#fff" />
-        </Pressable>
-        <View>
-          <View style={s.headerTitleRow}>
-            <Ionicons name="water" size={22} color="#fff" />
-            <Text style={s.headerTitle}>Soil & Fertilizer</Text>
-          </View>
-          <Text style={s.headerSub}>NPK recommendations for your crops</Text>
-        </View>
-      </View>
+      <ModuleHeader
+        title="Soil & Fertilizer"
+        subtitle="NPK, moisture & pH-aware recommendations"
+        icon="water"
+      />
 
       <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
 
@@ -58,7 +53,28 @@ export default function SoilScreen() {
           ))}
         </View>
 
-        {/* pH slider */}
+        <View style={s.card}>
+          <Text style={s.phTitle}>Soil moisture</Text>
+          <Text style={s.moistureHint}>
+            {moisture < 40 ? 'Dry — increase irrigation' : moisture > 70 ? 'Wet — reduce watering' : 'Optimal range'}
+          </Text>
+          <View style={s.moistureTrack}>
+            <View style={[s.moistureFill, { width: `${moisture}%` }]} />
+          </View>
+          <View style={s.phLevels}>
+            {[25, 40, 55, 70, 85].map((m) => (
+              <Pressable
+                key={m}
+                onPress={() => setMoisture(m)}
+                style={[s.phLevel, Math.abs(moisture - m) < 8 && { backgroundColor: DS.colors.primary }]}>
+                <Text style={[s.phLevelText, Math.abs(moisture - m) < 8 && { color: '#fff', fontWeight: '800' }]}>
+                  {m}%
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
         <View style={s.card}>
           <View style={s.phHeader}>
             <Text style={s.phTitle}>pH Level</Text>
@@ -204,6 +220,15 @@ const s = StyleSheet.create({
   },
   phHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   phTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
+  moistureHint: { fontSize: 12, color: Colors.textSecondary, marginBottom: 10 },
+  moistureTrack: {
+    height: 8,
+    backgroundColor: Colors.gray[100],
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  moistureFill: { height: '100%', backgroundColor: DS.colors.primary, borderRadius: 4 },
   phBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
   phBadgeText: { fontSize: 12, fontWeight: '700' },
   phLevels: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },

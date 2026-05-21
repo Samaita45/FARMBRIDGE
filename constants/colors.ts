@@ -1,16 +1,16 @@
 /**
  * FarmBridge Design System — Color Tokens
  *
- * Primary palette: Blue (#1a56db family) — modern, trustworthy, professional
+ * Primary palette: Royal Blue (#2563EB) — unified with design-system.ts
  * Accent: Green (#16a34a) — agriculture identity kept as a highlight
  */
 const Colors = {
   // ─── Primary Blue ─────────────────────────────────
-  primary:      '#1a56db',   // main blue — buttons, active states, links
-  primaryDark:  '#1e40af',   // darker blue — pressed states, header gradient bottom
-  primaryLight: '#93c5fd',   // light blue — blobs, highlights, badges
-  primaryBg:    '#eff6ff',   // very light blue — screen backgrounds
-  primaryMid:   '#dbeafe',   // slightly deeper bg — card surfaces, chips
+  primary:      '#2563EB',
+  primaryDark:  '#1D4ED8',
+  primaryLight: '#60A5FA',
+  primaryBg:    '#F8FAFC',
+  primaryMid:   '#DBEAFE',
 
   // ─── Accent Green (agriculture identity) ──────────
   accent:       '#16a34a',   // green — crop badges, success, FAB, tags
@@ -35,9 +35,9 @@ const Colors = {
   overlay:      'rgba(0,0,0,0.45)',
 
   // ─── Legacy aliases (keep nativewind + older components working) ─
-  surface:      '#f8fafc',   // used by bg-surface className
-  dark:         '#1e293b',   // used by text-dark className
-  secondary:    '#1e40af',   // used by text-secondary className
+  surface:      '#F8FAFC',
+  dark:         '#0F172A',
+  secondary:    '#1D4ED8',
 
   // ─── Gray scale (Tailwind Slate) ──────────────────
   gray: {

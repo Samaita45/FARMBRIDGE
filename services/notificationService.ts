@@ -1,9 +1,11 @@
 import type { FarmTask } from '@/types/crop-management';
+import type { AppNotification } from '@/types/notifications';
 
 import { updateTaskNotificationId } from './database';
 import { fastGetAsync, fastSetAsync } from './fastStorage';
 import { isOnline } from './syncService';
 import { sendTaskSmsReminder } from './smsService';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 // Set notification handler lazily so the module doesn't crash when
 // expo-notifications is not installed yet.
@@ -25,7 +27,39 @@ async function ensureHandler() {
 }
 void ensureHandler();
 
-const DIGEST_STORAGE_KEY = 'zimfarm_digest_notif_id';
+const DIGEST_STORAGE_KEY = 'farmbridge_digest_notif_id';
+const APP_NAME = 'FarmBridge';
+
+function pushEnabled(): boolean {
+  return useSettingsStore.getState().pushNotifications;
+}
+
+/** Listen for foreground push notifications and mirror into the in-app inbox. */
+export async function registerNotificationListeners(
+  onInboxItem: (item: AppNotification) => void,
+): Promise<(() => void) | null> {
+  await ensureHandler();
+  const Notifications = await import('expo-notifications').catch(() => null);
+  if (!Notifications?.addNotificationReceivedListener) return null;
+
+  const sub = Notifications.addNotificationReceivedListener((notification) => {
+    const content = notification.request.content;
+    const title = typeof content.title === 'string' ? content.title : APP_NAME;
+    const body = typeof content.body === 'string' ? content.body : '';
+    const data = (content.data ?? {}) as { taskId?: string; href?: string };
+    onInboxItem({
+      id: `push-${notification.date}-${title}`.slice(0, 80),
+      title,
+      body,
+      type: data.taskId ? 'task' : 'system',
+      createdAt: new Date(notification.date).toISOString(),
+      read: false,
+      href: data.href ?? (data.taskId ? '/crop-management/tasks' : undefined),
+    });
+  });
+
+  return () => sub.remove();
+}
 
 export async function requestNotificationPermissions(): Promise<boolean> {
   const Notifications = await import('expo-notifications').catch(() => null);
@@ -37,6 +71,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 }
 
 export async function scheduleTaskNotification(task: FarmTask): Promise<string | null> {
+  if (!pushEnabled()) return null;
   const Notifications = await import('expo-notifications').catch(() => null);
   if (!Notifications) return null;
 
@@ -64,7 +99,7 @@ export async function scheduleTaskNotification(task: FarmTask): Promise<string |
   for (const trigger of triggers) {
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'ZimFarm Reminder',
+        title: `${APP_NAME} Reminder`,
         body: trigger.title,
         data: { taskId: task.id },
       },
@@ -121,6 +156,10 @@ export async function cancelDailyDigestNotification(): Promise<void> {
 
 /** Schedules the next 6:00 local notification (re-schedule on app open for fresh task count). */
 export async function rescheduleDailyDigestNotification(taskCountToday: number): Promise<void> {
+  if (!pushEnabled()) {
+    await cancelDailyDigestNotification();
+    return;
+  }
   const Notifications = await import('expo-notifications').catch(() => null);
   if (!Notifications) return;
 
@@ -132,10 +171,10 @@ export async function rescheduleDailyDigestNotification(taskCountToday: number):
   const body =
     taskCountToday > 0
       ? `You have ${taskCountToday} farm task(s) due today.`
-      : "Open ZimFarm for today's tasks and market tips.";
+      : "Open FarmBridge for today's tasks and market tips.";
 
   const id = await Notifications.scheduleNotificationAsync({
-    content: { title: '🌱 ZimFarm', body },
+    content: { title: `🌱 ${APP_NAME}`, body, data: { href: '/(tabs)' } },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: when,
