@@ -31,7 +31,7 @@ export function DashboardHeader({
             </View>
             <View>
               <Text style={s.greeting}>Good morning,</Text>
-              <Text style={s.userName}>{firstName} 👋</Text>
+              <Text style={s.userName}>{firstName}</Text>
             </View>
           </View>
         ) : (

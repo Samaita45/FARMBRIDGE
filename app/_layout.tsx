@@ -98,7 +98,7 @@ export default function RootLayout() {
                 options={{ presentation: 'modal', headerShown: true, title: 'Modal' }}
               />
             </Stack>
-            <StatusBar style="auto" />
+            <StatusBar style="dark" />
         </ThemeProvider>
       </ToastProvider>
     </SafeAreaProvider>

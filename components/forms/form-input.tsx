@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState, type ReactNode } from 'react';
-import { Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 
-import { Colors } from '@/constants/colors';
+import Colors from '@/constants/colors';
+import { Typography } from '@/constants/Typography';
 
 interface FormInputProps extends TextInputProps {
   label?: string;
@@ -18,26 +19,22 @@ export function FormInput({
   icon,
   prefix,
   isPassword,
+  style,
   ...props
 }: FormInputProps) {
   const [visible, setVisible] = useState(false);
 
   return (
-    <View className="mb-4">
-      {label ? (
-        <Text className="mb-1.5 font-sans text-sm text-gray-600">{label}</Text>
-      ) : null}
-      <View
-        className={`flex-row items-center rounded-full border bg-white px-4 ${
-          error ? 'border-error' : 'border-gray-200'
-        }`}>
+    <View style={s.wrap}>
+      {label ? <Text style={s.label}>{label}</Text> : null}
+      <View style={[s.row, error ? s.rowError : null]}>
         {icon ? (
-          <Ionicons name={icon} size={20} color={Colors.gray[400]} style={{ marginRight: 10 }} />
+          <Ionicons name={icon} size={20} color={Colors.gray[400]} style={s.icon} />
         ) : null}
         {prefix}
         <TextInput
-          className="flex-1 py-3.5 font-sans text-base text-gray-900"
-          placeholderTextColor={Colors.gray[400]}
+          style={[s.input, style]}
+          placeholderTextColor={Colors.placeholder}
           secureTextEntry={isPassword && !visible}
           {...props}
         />
@@ -51,7 +48,32 @@ export function FormInput({
           </Pressable>
         ) : null}
       </View>
-      {error ? <Text className="mt-1 px-2 font-sans text-sm text-error">{error}</Text> : null}
+      {error ? <Text style={s.error}>{error}</Text> : null}
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  wrap: { marginBottom: 16 },
+  label: { ...Typography.label, color: Colors.textSecondary, marginBottom: 6 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: Colors.inputBorder,
+    backgroundColor: Colors.white,
+    paddingHorizontal: 16,
+    minHeight: 52,
+  },
+  rowError: { borderColor: Colors.error },
+  icon: { marginRight: 10 },
+  input: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    fontFamily: 'PlusJakartaSans_400Regular',
+    color: Colors.textPrimary,
+  },
+  error: { marginTop: 4, paddingHorizontal: 8, fontSize: 12, color: Colors.error },
+});
