@@ -3,8 +3,9 @@ import { Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GlassCard, TabScreenHeader } from '@/components/design-system';
 import { ProductCard } from '@/components/market/product-card';
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import {
   getFeaturedProducts,
   MARKET_PRODUCTS,
@@ -19,14 +20,11 @@ export function MarketLocked() {
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
-      {/* Header */}
-      <View style={s.header}>
-        <View style={s.headerTitleRow}>
-          <Ionicons name="storefront" size={24} color="#fff" />
-          <Text style={s.headerTitle}>Marketplace</Text>
-        </View>
-        <Text style={s.headerSub}>{MARKET_PRODUCTS.length}+ products available</Text>
-      </View>
+      <TabScreenHeader
+        title="Marketplace"
+        subtitle={`${MARKET_PRODUCTS.length}+ products · Subscribe to unlock`}
+        icon="storefront"
+      />
 
       {/* Blurred preview */}
       <View style={s.previewWrap}>
@@ -41,10 +39,9 @@ export function MarketLocked() {
         <View style={s.previewOverlay} />
       </View>
 
-      {/* Lock card */}
-      <View style={s.lockCard}>
+      <GlassCard elevated style={s.lockCard}>
         <View style={s.lockIcon}>
-          <Ionicons name="lock-closed" size={28} color={Colors.primary} />
+          <Ionicons name="lock-closed" size={28} color={DS.colors.primary} />
         </View>
         <Text style={s.lockTitle}>Subscription Required</Text>
         <Text style={s.lockSub}>Unlock seeds, equipment, honey, fresh produce & more</Text>
@@ -82,7 +79,7 @@ export function MarketLocked() {
           </Pressable>
         </Link>
         <Text style={s.trialText}>Try free for 7 days on Farmer Pro</Text>
-      </View>
+      </GlassCard>
     </SafeAreaView>
   );
 }
@@ -97,12 +94,12 @@ function PlanRow({ name, price, code, features, highlight }: {
           <Text style={s.planName}>{name}</Text>
           {highlight && <View style={s.popularBadge}><Text style={s.popularText}>Popular</Text></View>}
         </View>
-        <Text style={[s.planPrice, highlight && { color: Colors.accent }]}>{price}</Text>
+        <Text style={[s.planPrice, highlight && { color: DS.colors.accent }]}>{price}</Text>
       </View>
       {code && <Text style={s.planCode}>{code}</Text>}
       {features.map((f) => (
         <View key={f} style={s.featureRow}>
-          <Ionicons name="checkmark-circle" size={13} color={highlight ? Colors.accent : Colors.primary} />
+          <Ionicons name="checkmark-circle" size={13} color={highlight ? DS.colors.accent : DS.colors.primary} />
           <Text style={s.featureText}>{f}</Text>
         </View>
       ))}
@@ -111,12 +108,7 @@ function PlanRow({ name, price, code, features, highlight }: {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.primaryBg },
-
-  header: { backgroundColor: Colors.primary, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16 },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
+  root: { flex: 1, backgroundColor: DS.colors.background },
 
   previewWrap: { height: 160, overflow: 'hidden', position: 'relative' },
   previewRow: { paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
@@ -129,49 +121,62 @@ const s = StyleSheet.create({
 
   lockCard: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 20,
-    shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 20, elevation: 10,
-    overflow: 'scroll',
+    margin: DS.spacing.md,
+    marginTop: 0,
+    borderTopLeftRadius: DS.radius.xl,
+    borderTopRightRadius: DS.radius.xl,
   },
   lockIcon: {
-    width: 56, height: 56, borderRadius: 18,
-    backgroundColor: Colors.primaryBg,
-    alignItems: 'center', justifyContent: 'center',
-    alignSelf: 'center', marginBottom: 12,
-    borderWidth: 1.5, borderColor: Colors.primaryMid,
+    width: 56,
+    height: 56,
+    borderRadius: DS.radius.lg,
+    backgroundColor: DS.colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: DS.colors.primaryMid,
   },
-  lockTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, textAlign: 'center', marginBottom: 6 },
-  lockSub: { fontSize: 13, color: Colors.textSecondary, textAlign: 'center', marginBottom: 16, lineHeight: 18 },
+  lockTitle: { fontSize: 20, fontWeight: '800', color: DS.colors.text, textAlign: 'center', marginBottom: 6 },
+  lockSub: { fontSize: 14, color: DS.colors.textMuted, textAlign: 'center', marginBottom: 16, lineHeight: 20 },
 
   plans: { gap: 10, marginBottom: 16 },
   planRow: {
-    backgroundColor: Colors.primaryBg, borderRadius: 14, padding: 12,
-    borderWidth: 1, borderColor: Colors.primaryMid,
+    backgroundColor: DS.colors.primaryBg,
+    borderRadius: DS.radius.lg,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: DS.colors.primaryMid,
   },
   planRowHighlight: {
-    backgroundColor: Colors.accentLight, borderColor: '#fbbf24',
+    backgroundColor: DS.colors.accentLight,
+    borderColor: DS.colors.orange,
   },
   planTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   planNameWrap: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  planName: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  popularBadge: { backgroundColor: Colors.accent, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 },
+  planName: { fontSize: 14, fontWeight: '700', color: DS.colors.text },
+  popularBadge: { backgroundColor: DS.colors.accent, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 },
   popularText: { fontSize: 10, fontWeight: '700', color: '#fff' },
-  planPrice: { fontSize: 15, fontWeight: '800', color: Colors.primary },
-  planCode: { fontSize: 11, color: Colors.textSecondary, marginBottom: 6 },
+  planPrice: { fontSize: 15, fontWeight: '800', color: DS.colors.primary },
+  planCode: { fontSize: 11, color: DS.colors.textMuted, marginBottom: 6 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  featureText: { fontSize: 12, color: Colors.textSecondary },
+  featureText: { fontSize: 12, color: DS.colors.textMuted },
 
-  payLabel: { fontSize: 11, fontWeight: '600', color: Colors.textSecondary, marginBottom: 8, textAlign: 'center' },
+  payLabel: { fontSize: 11, fontWeight: '600', color: DS.colors.textMuted, marginBottom: 8, textAlign: 'center' },
   payRow: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 16 },
   payIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   payIconText: { fontSize: 11, fontWeight: '800', color: '#fff' },
 
   subscribeBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.primary, borderRadius: 16, paddingVertical: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: DS.colors.primary,
+    borderRadius: DS.radius.lg,
+    paddingVertical: 15,
   },
   subscribeBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  trialText: { fontSize: 11, color: Colors.textSecondary, textAlign: 'center', marginTop: 8 },
+  trialText: { fontSize: 12, color: DS.colors.textMuted, textAlign: 'center', marginTop: 8 },
 });

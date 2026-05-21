@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppLogo } from "@/components/ui/app-logo";
@@ -13,8 +13,10 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({
   locationLabel,
-  notificationCount = 2,
+  notificationCount = 0,
 }: DashboardHeaderProps) {
+  const badge =
+    notificationCount > 99 ? "99+" : String(notificationCount);
   const user = useAuthStore((s) => s.user);
   const initial = user?.name?.charAt(0)?.toUpperCase() ?? "F";
   const firstName = user?.name?.split(" ")[0] ?? "Farmer";
@@ -47,6 +49,9 @@ export function DashboardHeader({
         {/* Notifications + settings */}
         <View style={s.iconRow}>
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+            onPress={() => router.push("/notifications")}
             style={({ pressed }) => [s.iconBtn, pressed && { opacity: 0.7 }]}
           >
             <Ionicons
@@ -56,7 +61,7 @@ export function DashboardHeader({
             />
             {notificationCount > 0 && (
               <View style={s.badge}>
-                <Text style={s.badgeText}>{notificationCount}</Text>
+                <Text style={s.badgeText}>{badge}</Text>
               </View>
             )}
           </Pressable>

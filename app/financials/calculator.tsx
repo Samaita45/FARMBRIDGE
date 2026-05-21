@@ -1,139 +1,230 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, Text, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
+import { AppText, FadeInView, GlassCard, SectionHeader } from '@/components/design-system';
+import { Screen } from '@/components/ui/screen';
+import { DS } from '@/constants/design-system';
 import { CROPS } from '@/constants/zimbabwe-data';
 
 function calc(
-  hectares: number,
   yieldKg: number,
   pricePerKg: number,
   seed: number,
   fertilizer: number,
   labor: number,
-  other: number
+  transport: number,
+  other: number,
 ) {
   const gross = yieldKg * pricePerKg;
-  const costs = seed + fertilizer + labor + other;
+  const costs = seed + fertilizer + labor + transport + other;
   const net = gross - costs;
   const roi = costs > 0 ? (net / costs) * 100 : 0;
   const breakEven = yieldKg > 0 ? costs / yieldKg : 0;
   return { gross, costs, net, roi, breakEven };
 }
 
-export default function ProfitCalculatorScreen() {
-  const [hectares, setHectares] = useState('1');
-  const [yieldKg, setYieldKg] = useState('8000');
-  const [pricePerKg, setPricePerKg] = useState('0.85');
-  const [seed, setSeed] = useState('120');
-  const [fertilizer, setFertilizer] = useState('350');
-  const [labor, setLabor] = useState('200');
-  const [other, setOther] = useState('80');
+const INPUTS = [
+  { key: 'hectares', label: 'Hectares', placeholder: '1' },
+  { key: 'yieldKg', label: 'Expected yield (kg)', placeholder: '8000' },
+  { key: 'pricePerKg', label: 'Market price ($/kg)', placeholder: '0.85' },
+  { key: 'seed', label: 'Seed cost ($)', placeholder: '120' },
+  { key: 'fertilizer', label: 'Fertilizer ($)', placeholder: '350' },
+  { key: 'labor', label: 'Labor ($)', placeholder: '200' },
+  { key: 'transport', label: 'Transport ($)', placeholder: '60' },
+  { key: 'other', label: 'Other costs ($)', placeholder: '80' },
+] as const;
 
-  const h = parseFloat(hectares) || 0;
-  const y = parseFloat(yieldKg) || 0;
-  const p = parseFloat(pricePerKg) || 0;
+export default function ProfitCalculatorScreen() {
+  const [values, setValues] = useState<Record<string, string>>({
+    hectares: '1',
+    yieldKg: '8000',
+    pricePerKg: '0.85',
+    seed: '120',
+    fertilizer: '350',
+    labor: '200',
+    transport: '60',
+    other: '80',
+  });
+
+  const h = parseFloat(values.hectares) || 0;
+  const y = (parseFloat(values.yieldKg) || 0) * h;
+  const p = parseFloat(values.pricePerKg) || 0;
 
   const result = useMemo(
     () =>
       calc(
-        h,
         y,
         p,
-        parseFloat(seed) || 0,
-        parseFloat(fertilizer) || 0,
-        parseFloat(labor) || 0,
-        parseFloat(other) || 0
+        parseFloat(values.seed) || 0,
+        parseFloat(values.fertilizer) || 0,
+        parseFloat(values.labor) || 0,
+        parseFloat(values.transport) || 0,
+        parseFloat(values.other) || 0,
       ),
-    [h, y, p, seed, fertilizer, labor, other]
+    [y, p, values],
   );
 
   const tomato = CROPS.find((c) => c.id === 'tomatoes');
-  const onion = CROPS.find((c) => c.id === 'onions');
-
-  const compare = useMemo(() => {
-    if (!tomato || !onion) return null;
-    const t = calc(h, 12000 * h, tomato.currentPriceUSD, 150 * h, 400 * h, 250 * h, 100 * h);
-    const o = calc(h, 10000 * h, onion.currentPriceUSD, 80 * h, 300 * h, 200 * h, 80 * h);
-    return { tomato: t, onion: o };
-  }, [h, tomato, onion]);
+  const maize = CROPS.find((c) => c.id === 'maize');
 
   return (
-    <ScrollView className="flex-1 bg-surface p-4" keyboardShouldPersistTaps="handled">
-      <Text className="font-sans text-gray-600">Estimate profit before planting</Text>
-
-      <Field label="Hectares" value={hectares} onChange={setHectares} />
-      <Field label="Expected yield (kg)" value={yieldKg} onChange={setYieldKg} />
-      <Field label="Market price ($/kg)" value={pricePerKg} onChange={setPricePerKg} />
-      <Field label="Seed cost ($)" value={seed} onChange={setSeed} />
-      <Field label="Fertilizer ($)" value={fertilizer} onChange={setFertilizer} />
-      <Field label="Labor ($)" value={labor} onChange={setLabor} />
-      <Field label="Other costs ($)" value={other} onChange={setOther} />
-
-      <View className="mt-4 rounded-2xl bg-white p-4">
-        <Row label="Gross revenue" value={`$${result.gross.toFixed(0)}`} />
-        <Row label="Total costs" value={`$${result.costs.toFixed(0)}`} />
-        <Row label="Net profit" value={`$${result.net.toFixed(0)}`} highlight={result.net >= 0} />
-        <Row label="ROI" value={`${result.roi.toFixed(1)}%`} />
-        <Row label="Break-even price" value={`$${result.breakEven.toFixed(2)}/kg`} />
-      </View>
-
-      {compare ? (
-        <View className="mt-4 rounded-2xl bg-primary/10 p-4">
-          <Text className="font-sans-semibold text-dark">Tomatoes vs Onions ({h} ha)</Text>
-          <Text className="mt-2 font-sans text-sm text-gray-700">
-            🍅 Tomatoes: ${compare.tomato.net.toFixed(0)} net · ROI {compare.tomato.roi.toFixed(0)}%
-          </Text>
-          <Text className="mt-1 font-sans text-sm text-gray-700">
-            🧅 Onions: ${compare.onion.net.toFixed(0)} net · ROI {compare.onion.roi.toFixed(0)}%
-          </Text>
-          <Text className="mt-2 font-sans text-xs text-primary">
-            {compare.tomato.net >= compare.onion.net
-              ? 'Tomatoes look more profitable this season at current prices.'
-              : 'Onions look more profitable this season at current prices.'}
-          </Text>
-        </View>
-      ) : null}
-    </ScrollView>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <>
-      <Text className="mt-3 font-sans-semibold text-dark">{label}</Text>
-      <TextInput
-        className="mt-1 rounded-xl bg-white px-4 py-3 font-sans"
-        keyboardType="decimal-pad"
-        value={value}
-        onChangeText={onChange}
+    <Screen scroll contentContainerStyle={styles.scroll}>
+      <SectionHeader
+        title="Farm profit calculator"
+        subtitle="ROI, break-even, and crop comparison"
+        icon="calculator-outline"
       />
-    </>
+
+      <GlassCard style={styles.form}>
+        {INPUTS.map((field, i) => (
+          <FadeInView key={field.key} delay={i}>
+            <AppText variant="label" muted style={styles.label}>
+              {field.label}
+            </AppText>
+            <TextInput
+              style={styles.input}
+              keyboardType="decimal-pad"
+              placeholder={field.placeholder}
+              placeholderTextColor={DS.colors.textSoft}
+              value={values[field.key]}
+              onChangeText={(t) => setValues((v) => ({ ...v, [field.key]: t }))}
+            />
+          </FadeInView>
+        ))}
+      </GlassCard>
+
+      <FadeInView delay={4}>
+        <GlassCard elevated style={styles.summary}>
+          <AppText variant="h2" style={styles.summaryTitle}>
+            Forecast
+          </AppText>
+          <MetricRow label="Gross revenue" value={`$${result.gross.toFixed(0)}`} />
+          <MetricRow label="Total costs" value={`$${result.costs.toFixed(0)}`} />
+          <MetricRow
+            label="Net profit"
+            value={`$${result.net.toFixed(0)}`}
+            highlight={result.net >= 0}
+          />
+          <MetricRow label="ROI" value={`${result.roi.toFixed(1)}%`} accent />
+          <MetricRow label="Break-even price" value={`$${result.breakEven.toFixed(2)}/kg`} />
+        </GlassCard>
+      </FadeInView>
+
+      {tomato && maize ? (
+        <FadeInView delay={5}>
+          <GlassCard style={styles.compare}>
+            <AppText variant="h3">Crop comparison (per ha)</AppText>
+            <CompareRow
+              crop="Tomatoes"
+              net={
+                calc(
+                  12000 * h,
+                  tomato.currentPriceUSD,
+                  150 * h,
+                  400 * h,
+                  250 * h,
+                  80 * h,
+                  100 * h,
+                ).net
+              }
+            />
+            <CompareRow
+              crop="Maize"
+              net={
+                calc(
+                  5000 * h,
+                  maize.currentPriceUSD,
+                  80 * h,
+                  300 * h,
+                  200 * h,
+                  50 * h,
+                  80 * h,
+                ).net
+              }
+            />
+          </GlassCard>
+        </FadeInView>
+      ) : null}
+    </Screen>
   );
 }
 
-function Row({
+function MetricRow({
   label,
   value,
   highlight,
+  accent,
 }: {
   label: string;
   value: string;
   highlight?: boolean;
+  accent?: boolean;
 }) {
   return (
-    <View className="flex-row justify-between border-b border-gray-50 py-2">
-      <Text className="font-sans text-gray-600">{label}</Text>
-      <Text className={`font-sans-semibold ${highlight === false ? 'text-error' : 'text-dark'}`}>
+    <View style={styles.metricRow}>
+      <AppText variant="bodySm" muted>
+        {label}
+      </AppText>
+      <AppText
+        variant="h3"
+        color={
+          accent
+            ? DS.colors.primary
+            : highlight === false
+              ? DS.colors.red
+              : highlight
+                ? DS.colors.accent
+                : DS.colors.text
+        }>
         {value}
-      </Text>
+      </AppText>
     </View>
   );
 }
+
+function CompareRow({ crop, net }: { crop: string; net: number }) {
+  return (
+    <View style={styles.compareRow}>
+      <AppText variant="bodySm">{crop}</AppText>
+      <AppText variant="bodySm" color={net >= 0 ? DS.colors.accent : DS.colors.red}>
+        ${net.toFixed(0)} net
+      </AppText>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  scroll: { padding: DS.spacing.md, paddingBottom: 48 },
+  form: { marginBottom: DS.spacing.md },
+  label: { marginTop: DS.spacing.sm, marginBottom: 4 },
+  input: {
+    backgroundColor: DS.colors.surfaceMuted,
+    borderRadius: DS.radius.md,
+    paddingHorizontal: DS.spacing.md,
+    paddingVertical: 12,
+    fontSize: 16,
+    fontFamily: 'PlusJakartaSans_400Regular',
+    color: DS.colors.text,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
+  },
+  summary: { marginBottom: DS.spacing.md },
+  summaryTitle: { marginBottom: DS.spacing.md },
+  metricRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: DS.colors.borderLight,
+  },
+  compare: { gap: 8 },
+  compareRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: DS.colors.borderLight,
+  },
+});
