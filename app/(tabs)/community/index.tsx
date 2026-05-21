@@ -1,19 +1,27 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+  ChipTabs,
+  EmptyState,
+  FadeInView,
+  GlassCard,
+  SectionHeader,
+  TabScreenHeader,
+  type ChipTabItem,
+} from '@/components/design-system';
 import { PostCard } from '@/components/community/post-card';
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { SUCCESS_STORIES, TRENDING_TOPICS } from '@/constants/community-data';
 import { asHref } from '@/lib/href';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
@@ -31,144 +39,136 @@ export default function CommunityHubScreen() {
   const [filter, setFilter] = useState<FeedFilter>('All');
   const [search, setSearch] = useState('');
 
-  useEffect(() => { void hydrate(); }, [hydrate]);
+  useEffect(() => {
+    void hydrate();
+  }, [hydrate]);
 
   const filtered = filterPosts(filter, search);
   const pinned = posts.filter((p: CommunityPost) => p.isPinned);
-  const onRefresh = useCallback(() => { void hydrate(); }, [hydrate]);
+  const onRefresh = useCallback(() => {
+    void hydrate();
+  }, [hydrate]);
+
+  const filterChips: ChipTabItem[] = useMemo(
+    () => FEED_FILTERS.map((f) => ({ id: f, label: f })),
+    [],
+  );
+
+  const newPostBtn = (
+    <Pressable
+      onPress={() => router.push(asHref('/(tabs)/community/create'))}
+      style={styles.newPostBtn}>
+      <Ionicons name="add" size={20} color={DS.colors.textInverse} />
+      <Text style={styles.newPostText}>Post</Text>
+    </Pressable>
+  );
 
   return (
-    <SafeAreaView style={s.root} edges={['top']}>
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <TabScreenHeader
+        title="Community"
+        subtitle={`${user?.province ?? 'Zimbabwe'} · Farmers helping farmers`}
+        icon="people"
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search posts, tags…"
+        searchTint="light"
+        rightAction={newPostBtn}
+      />
 
-      {/* ── Blue header ── */}
-      <View style={s.header}>
-        <View style={s.headerTop}>
-          <View>
-            <View style={s.headerTitleRow}>
-              <Ionicons name="people" size={22} color="#fff" />
-              <Text style={s.headerTitle}>Community</Text>
-            </View>
-            <Text style={s.headerSub}>{user?.province ?? 'Zimbabwe'} · Farmers helping farmers</Text>
-          </View>
-          <Pressable
-            onPress={() => router.push(asHref('/(tabs)/community/create'))}
-            style={s.newPostBtn}>
-            <Ionicons name="add" size={18} color="#fff" />
-            <Text style={s.newPostText}>Post</Text>
+      <ChipTabs
+        items={filterChips}
+        activeId={filter}
+        onChange={(id) => setFilter(id as FeedFilter)}
+      />
+
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        showsVerticalScrollIndicator={false}>
+        <FadeInView>
+          <Pressable onPress={() => router.push(asHref('/(tabs)/community/experts'))}>
+            <GlassCard elevated style={styles.expertCard}>
+              <View style={styles.expertIcon}>
+                <Ionicons name="school-outline" size={22} color={DS.colors.primary} />
+              </View>
+              <View style={styles.expertText}>
+                <Text style={styles.expertTitle}>Expert Q&A</Text>
+                <Text style={styles.expertSub}>Ask Agritex & verified specialists</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={DS.colors.primary} />
+            </GlassCard>
           </Pressable>
-        </View>
+        </FadeInView>
 
-        {/* Search bar */}
-        <View style={s.searchBar}>
-          <Ionicons name="search" size={17} color="rgba(255,255,255,0.7)" />
-          <TextInput
-            style={s.searchInput}
-            placeholder="Search posts, tags..."
-            placeholderTextColor="rgba(255,255,255,0.55)"
-            value={search}
-            onChangeText={setSearch}
-          />
-          {search.length > 0 && (
-            <Pressable onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={17} color="rgba(255,255,255,0.7)" />
-            </Pressable>
-          )}
-        </View>
-      </View>
-
-      {/* ── Filter tabs ── */}
-      <View style={s.tabsWrap}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabs}>
-          {FEED_FILTERS.map((f) => (
-            <Pressable
-              key={f}
-              onPress={() => setFilter(f)}
-              style={[s.tab, filter === f && s.tabActive]}>
-              <Text style={[s.tabText, filter === f && s.tabTextActive]}>{f}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
-
-      <ScrollView style={s.body} contentContainerStyle={s.bodyContent} showsVerticalScrollIndicator={false}>
-
-        {/* Expert Q&A card */}
-        <Pressable
-          onPress={() => router.push(asHref('/(tabs)/community/experts'))}
-          style={s.expertCard}>
-          <View style={s.expertIcon}>
-            <Ionicons name="school-outline" size={20} color={Colors.primary} />
-          </View>
-          <View style={s.expertText}>
-            <Text style={s.expertTitle}>Expert Q&A</Text>
-            <Text style={s.expertSub}>Ask Agritex & verified specialists</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={Colors.primary} />
-        </Pressable>
-
-        {/* Trending */}
-        <View style={s.section}>
-          <View style={s.sectionTitleRow}>
-            <Ionicons name="flame-outline" size={17} color={Colors.primary} />
-            <Text style={s.sectionTitle}>Trending</Text>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.trendingRow}>
+        <FadeInView delay={1}>
+          <SectionHeader title="Trending" icon="flame-outline" />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.trendingRow}>
             {TRENDING_TOPICS.map((t) => (
-              <Pressable
-                key={t.id}
-                onPress={() => setSearch(t.tag)}
-                style={s.trendingChip}>
-                <Text style={s.trendingTag}>{t.label}</Text>
-                <Text style={s.trendingCount}>{t.postCount} posts</Text>
+              <Pressable key={t.id} onPress={() => setSearch(t.tag)} style={styles.trendingChip}>
+                <Text style={styles.trendingTag}>{t.label}</Text>
+                <Text style={styles.trendingCount}>{t.postCount} posts</Text>
               </Pressable>
             ))}
           </ScrollView>
-        </View>
+        </FadeInView>
 
-        {/* Success stories */}
-        <View style={s.section}>
-          <View style={s.sectionTitleRow}>
-            <Ionicons name="star-outline" size={17} color={Colors.primary} />
-            <Text style={s.sectionTitle}>Success Stories</Text>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.trendingRow}>
+        <FadeInView delay={2}>
+          <SectionHeader title="Success stories" icon="star-outline" />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.trendingRow}>
             {SUCCESS_STORIES.map((story) => (
-              <View key={story.id} style={s.storyCard}>
-                <Text style={s.storyName}>{story.name}</Text>
-                <Text style={s.storyCrop}>{story.crop} · <Text style={s.storyEarnings}>${story.earningsUSD.toLocaleString()}</Text></Text>
-                <Text style={s.storyQuote} numberOfLines={2}>{story.quote}</Text>
-              </View>
+              <GlassCard key={story.id} style={styles.storyCard}>
+                <Text style={styles.storyName}>{story.name}</Text>
+                <Text style={styles.storyCrop}>
+                  {story.crop} ·{' '}
+                  <Text style={styles.storyEarnings}>${story.earningsUSD.toLocaleString()}</Text>
+                </Text>
+                <Text style={styles.storyQuote} numberOfLines={2}>
+                  {story.quote}
+                </Text>
+              </GlassCard>
             ))}
           </ScrollView>
-        </View>
+        </FadeInView>
 
-        {/* Feed */}
         {!isHydrated ? (
-          <ActivityIndicator style={{ marginTop: 32 }} color={Colors.primary} size="large" />
+          <ActivityIndicator color={DS.colors.primary} size="large" style={styles.loader} />
         ) : (
           <>
-            {pinned.map((p: CommunityPost) => <PostCard key={p.id} post={p} />)}
-
-            <View style={s.feedHeader}>
-              <Text style={s.feedTitle}>Feed {filter !== 'All' ? `· ${filter}` : ''}</Text>
-              <Text style={s.feedCount}>{filtered.length} posts</Text>
-            </View>
-
-            {filtered.filter((p: CommunityPost) => !p.isPinned).map((p: CommunityPost) => (
+            {pinned.map((p: CommunityPost) => (
               <PostCard key={p.id} post={p} />
             ))}
 
-            {filtered.length === 0 && (
-              <View style={s.emptyState}>
-                <Ionicons name="search-outline" size={40} color={Colors.gray[300]} />
-                <Text style={s.emptyTitle}>No posts found</Text>
-                <Text style={s.emptyHint}>Try a different filter or search term</Text>
-              </View>
-            )}
+            <View style={styles.feedHeader}>
+              <Text style={styles.feedTitle}>
+                Feed{filter !== 'All' ? ` · ${filter}` : ''}
+              </Text>
+              <Text style={styles.feedCount}>{filtered.length} posts</Text>
+            </View>
 
-            <Pressable onPress={onRefresh} style={s.refreshBtn}>
-              <Ionicons name="refresh" size={16} color={Colors.primary} />
-              <Text style={s.refreshText}>Refresh Feed</Text>
+            {filtered.filter((p: CommunityPost) => !p.isPinned).map((p: CommunityPost, i) => (
+              <FadeInView key={p.id} delay={i % 5}>
+                <PostCard post={p} />
+              </FadeInView>
+            ))}
+
+            {filtered.length === 0 ? (
+              <EmptyState
+                icon="search-outline"
+                title="No posts found"
+                description="Try a different filter or search term."
+              />
+            ) : null}
+
+            <Pressable onPress={onRefresh} style={styles.refreshBtn}>
+              <Ionicons name="refresh" size={16} color={DS.colors.primary} />
+              <Text style={styles.refreshText}>Refresh feed</Text>
             </Pressable>
           </>
         )}
@@ -177,91 +177,72 @@ export default function CommunityHubScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.primaryBg },
-
-  // Header
-  header: { backgroundColor: Colors.primary, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14 },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
-  headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: DS.colors.background },
   newPostBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderRadius: DS.radius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
-  newPostText: { fontSize: 13, fontWeight: '700', color: '#fff' },
-  searchBar: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
-  },
-  searchInput: { flex: 1, fontSize: 14, color: '#fff' },
-
-  // Tabs
-  tabsWrap: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: Colors.gray[100] },
-  tabs: { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
-  tab: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: Colors.gray[100] },
-  tabActive: { backgroundColor: Colors.primary },
-  tabText: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
-  tabTextActive: { color: '#fff' },
-
-  // Body
+  newPostText: { fontSize: 14, fontWeight: '700', color: DS.colors.textInverse },
   body: { flex: 1 },
-  bodyContent: { padding: 14, paddingBottom: 100, gap: 4 },
-
-  // Expert card
-  expertCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#fff', borderRadius: 16, padding: 14, marginBottom: 14,
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
-    borderWidth: 1, borderColor: Colors.primaryMid,
+  bodyContent: { padding: DS.spacing.md, paddingBottom: 100 },
+  expertCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: DS.spacing.md },
+  expertIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: DS.radius.md,
+    backgroundColor: DS.colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  expertIcon: { width: 42, height: 42, borderRadius: 12, backgroundColor: Colors.primaryBg, alignItems: 'center', justifyContent: 'center' },
   expertText: { flex: 1 },
-  expertTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  expertSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-
-  // Sections
-  section: { marginBottom: 16 },
-  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  trendingRow: { gap: 8, paddingRight: 4 },
+  expertTitle: { fontSize: 16, fontWeight: '700', color: DS.colors.text },
+  expertSub: { fontSize: 13, color: DS.colors.textMuted, marginTop: 2 },
+  trendingRow: { gap: 10, paddingRight: 8, marginBottom: DS.spacing.lg },
   trendingChip: {
-    backgroundColor: '#fff', borderRadius: 12, padding: 10,
-    minWidth: 110,
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 1,
-    borderWidth: 1, borderColor: Colors.gray[100],
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.md,
+    padding: 12,
+    minWidth: 120,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
+    ...DS.shadow.soft,
   },
-  trendingTag: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary },
-  trendingCount: { fontSize: 10, color: Colors.textSecondary, marginTop: 2 },
-
-  // Story card
-  storyCard: {
-    width: 200, backgroundColor: Colors.primaryBg,
-    borderRadius: 14, padding: 12,
-    borderWidth: 1, borderColor: Colors.primaryMid,
+  trendingTag: { fontSize: 14, fontWeight: '700', color: DS.colors.text },
+  trendingCount: { fontSize: 11, color: DS.colors.textMuted, marginTop: 4 },
+  storyCard: { width: 200, marginRight: 0 },
+  storyName: { fontSize: 14, fontWeight: '700', color: DS.colors.text },
+  storyCrop: { fontSize: 12, color: DS.colors.textMuted, marginTop: 4 },
+  storyEarnings: { fontWeight: '700', color: DS.colors.accent },
+  storyQuote: { fontSize: 12, color: DS.colors.textMuted, marginTop: 8, lineHeight: 17 },
+  loader: { marginTop: 40 },
+  feedHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: DS.spacing.sm,
+    marginTop: DS.spacing.sm,
   },
-  storyName: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary },
-  storyCrop: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  storyEarnings: { fontWeight: '700', color: Colors.accent },
-  storyQuote: { fontSize: 11, color: Colors.textSecondary, marginTop: 6, lineHeight: 15 },
-
-  // Feed
-  feedHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginTop: 4 },
-  feedTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  feedCount: { fontSize: 12, color: Colors.textSecondary },
-
-  emptyState: { alignItems: 'center', paddingVertical: 40, gap: 8 },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  emptyHint: { fontSize: 13, color: Colors.textSecondary },
-
+  feedTitle: { fontSize: 16, fontWeight: '700', color: DS.colors.text },
+  feedCount: { fontSize: 13, color: DS.colors.textMuted },
   refreshBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    marginTop: 8, paddingVertical: 13, borderRadius: 14,
-    backgroundColor: Colors.primaryBg, borderWidth: 1.5, borderColor: Colors.primaryMid,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: DS.spacing.md,
+    paddingVertical: 14,
+    borderRadius: DS.radius.lg,
+    backgroundColor: DS.colors.primaryBg,
+    borderWidth: 1,
+    borderColor: DS.colors.primaryMid,
   },
-  refreshText: { fontSize: 13, fontWeight: '700', color: Colors.primary },
+  refreshText: { fontSize: 14, fontWeight: '700', color: DS.colors.primary },
 });

@@ -3,9 +3,9 @@ import { router } from 'expo-router';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '@/components/ui/primary-button';
-import Colors from '@/constants/colors';
-import { cardShadow } from '@/lib/platform-ui';
+import { EmptyState, GlassCard } from '@/components/design-system';
+import { Button } from '@/components/ui/Button';
+import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
 import { useCartStore, type CartItem } from '@/stores/cartStore';
 import { getProductImage } from '@/utils/product-emoji';
@@ -16,13 +16,13 @@ export default function CartScreen() {
   if (items.length === 0) {
     return (
       <SafeAreaView style={s.root} edges={['bottom', 'left', 'right']}>
-        <View style={s.empty}>
-          <Ionicons name="cart-outline" size={56} color={Colors.gray[400]} />
-          <Text style={s.emptyText}>Your cart is empty</Text>
-          <Pressable onPress={() => router.back()} style={({ pressed }) => [s.emptyBtn, pressed && { opacity: 0.8 }]}>
-            <Text style={s.emptyBtnText}>Browse marketplace</Text>
-          </Pressable>
-        </View>
+        <EmptyState
+          icon="cart-outline"
+          title="Your cart is empty"
+          description="Browse the marketplace and add fresh produce from local farmers."
+          actionLabel="Browse marketplace"
+          onAction={() => router.back()}
+        />
       </SafeAreaView>
     );
   }
@@ -31,31 +31,33 @@ export default function CartScreen() {
     <SafeAreaView style={s.root} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {items.map(({ product, quantity }: CartItem) => (
-          <View key={product.id} style={s.itemCard}>
+          <GlassCard key={product.id} style={s.itemCard}>
             <View style={s.thumb}>
               <Image source={getProductImage(product)} style={s.thumbImg} resizeMode="cover" />
             </View>
             <View style={s.itemBody}>
-              <Text style={s.itemName} numberOfLines={2}>{product.name}</Text>
+              <Text style={s.itemName} numberOfLines={2}>
+                {product.name}
+              </Text>
               <Text style={s.itemPrice}>${(product.priceUSD * quantity).toFixed(2)}</Text>
               <View style={s.qtyRow}>
                 <Pressable onPress={() => updateQuantity(product.id, quantity - 1)} style={s.qtyBtn}>
-                  <Ionicons name="remove" size={18} color={Colors.gray[500]} />
+                  <Ionicons name="remove" size={18} color={DS.colors.textMuted} />
                 </Pressable>
                 <Text style={s.qty}>{quantity}</Text>
                 <Pressable onPress={() => updateQuantity(product.id, quantity + 1)} style={s.qtyBtn}>
-                  <Ionicons name="add" size={18} color={Colors.primary} />
+                  <Ionicons name="add" size={18} color={DS.colors.primary} />
                 </Pressable>
                 <Pressable onPress={() => removeItem(product.id)} style={s.removeBtn}>
                   <Text style={s.removeText}>Remove</Text>
                 </Pressable>
               </View>
             </View>
-          </View>
+          </GlassCard>
         ))}
       </ScrollView>
 
-      <View style={s.footer}>
+      <GlassCard elevated style={s.footer}>
         <View style={s.footerRow}>
           <Text style={s.footerLabel}>Subtotal (USD)</Text>
           <Text style={s.footerValue}>${getTotalUSD().toFixed(2)}</Text>
@@ -64,62 +66,59 @@ export default function CartScreen() {
           <Text style={s.footerLabel}>Subtotal (ZWG)</Text>
           <Text style={s.footerValue}>ZWG {getTotalZWG()}</Text>
         </View>
-        <PrimaryButton
-          title="Proceed to Checkout"
+        <Button
+          title="Proceed to checkout"
           onPress={() => router.push(asHref('/(tabs)/market/checkout'))}
         />
         <Pressable onPress={clearCart} style={s.clearBtn}>
           <Text style={s.clearText}>Clear cart</Text>
         </Pressable>
-      </View>
+      </GlassCard>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.primaryBg },
-  scroll: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  emptyText: { marginTop: 12, fontSize: 15, color: Colors.textSecondary },
-  emptyBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12, backgroundColor: Colors.primaryMid },
-  emptyBtnText: { fontSize: 14, fontWeight: '700', color: Colors.primary },
+  root: { flex: 1, backgroundColor: DS.colors.background },
+  scroll: { padding: DS.spacing.md, paddingBottom: 200 },
   itemCard: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 12,
-    padding: 12,
-    borderRadius: 16,
-    backgroundColor: Colors.white,
-    ...cardShadow(),
+    marginBottom: DS.spacing.sm,
+    padding: DS.spacing.sm,
   },
-  thumb: { width: 64, height: 64, borderRadius: 12, overflow: 'hidden', backgroundColor: Colors.primaryBg },
+  thumb: {
+    width: 72,
+    height: 72,
+    borderRadius: DS.radius.md,
+    overflow: 'hidden',
+    backgroundColor: DS.colors.primaryBg,
+  },
   thumbImg: { width: '100%', height: '100%' },
   itemBody: { flex: 1 },
-  itemName: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  itemPrice: { marginTop: 4, fontSize: 14, fontWeight: '700', color: Colors.primary },
-  qtyRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 8 },
+  itemName: { fontSize: 15, fontWeight: '700', color: DS.colors.text },
+  itemPrice: { fontSize: 16, fontWeight: '800', color: DS.colors.primary, marginTop: 4 },
+  qtyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   qtyBtn: {
     width: 32,
     height: 32,
-    borderRadius: 8,
-    backgroundColor: Colors.gray[100],
+    borderRadius: DS.radius.sm,
+    backgroundColor: DS.colors.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
   qty: { fontSize: 15, fontWeight: '700', minWidth: 24, textAlign: 'center' },
   removeBtn: { marginLeft: 'auto' },
-  removeText: { fontSize: 12, fontWeight: '600', color: Colors.error },
+  removeText: { fontSize: 13, fontWeight: '600', color: DS.colors.red },
   footer: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.gray[100],
-    backgroundColor: Colors.white,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    ...cardShadow(true),
+    position: 'absolute',
+    left: DS.spacing.md,
+    right: DS.spacing.md,
+    bottom: DS.spacing.md,
   },
-  footerRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  footerLabel: { fontSize: 14, color: Colors.textSecondary },
-  footerValue: { fontSize: 14, fontWeight: '800', color: Colors.textPrimary },
-  clearBtn: { marginTop: 8, paddingVertical: 10 },
-  clearText: { textAlign: 'center', fontSize: 13, color: Colors.textSecondary },
+  footerRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  footerLabel: { fontSize: 14, color: DS.colors.textMuted },
+  footerValue: { fontSize: 16, fontWeight: '800', color: DS.colors.text },
+  clearBtn: { alignItems: 'center', marginTop: 12 },
+  clearText: { fontSize: 14, fontWeight: '600', color: DS.colors.textMuted },
 });

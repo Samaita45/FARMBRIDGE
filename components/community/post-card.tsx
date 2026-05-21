@@ -4,13 +4,13 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { asHref } from '@/lib/href';
 import { useCommunityStore, type CommunityState } from '@/stores/communityStore';
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import type { CommunityPost } from '@/types/community';
 
 const ROLE_LABELS: Record<string, string> = {
   farmer: 'Farmer', buyer: 'Buyer', expert: 'Expert', both: 'Farmer & Buyer',
 };
-const AVATAR_COLORS = [Colors.primary, '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
+const AVATAR_COLORS = [DS.colors.primary, DS.colors.purple, DS.colors.orange, '#3b82f6', '#ec4899'];
 
 function avatarColor(name: string): string {
   let h = 0; for (let i = 0; i < name.length; i++) h += name.charCodeAt(i);
@@ -33,7 +33,7 @@ export function PostCard({ post }: { post: CommunityPost }) {
     <View style={[s.card, post.isPinned && s.cardPinned]}>
       {post.isPinned && (
         <View style={s.pinnedBadge}>
-          <Ionicons name="pin" size={11} color={Colors.primary} />
+          <Ionicons name="pin" size={11} color={DS.colors.primary} />
           <Text style={s.pinnedText}>Pinned · Agritex</Text>
         </View>
       )}
@@ -51,7 +51,7 @@ export function PostCard({ post }: { post: CommunityPost }) {
             </View>
             {post.authorRole === 'expert' && (
               <View style={s.expertBadge}>
-                <Ionicons name="checkmark-circle" size={10} color={Colors.primary} />
+                <Ionicons name="checkmark-circle" size={10} color={DS.colors.primary} />
                 <Text style={s.expertText}>Expert</Text>
               </View>
             )}
@@ -77,8 +77,8 @@ export function PostCard({ post }: { post: CommunityPost }) {
         ))}
         {post.isSolved && (
           <View style={[s.tag, s.tagSolved]}>
-            <Ionicons name="checkmark-circle" size={10} color={Colors.accent} />
-            <Text style={[s.tagText, { color: Colors.accent }]}>Solved</Text>
+            <Ionicons name="checkmark-circle" size={10} color={DS.colors.accent} />
+            <Text style={[s.tagText, { color: DS.colors.accent }]}>Solved</Text>
           </View>
         )}
       </View>
@@ -86,15 +86,15 @@ export function PostCard({ post }: { post: CommunityPost }) {
       {/* Action row */}
       <View style={s.actions}>
         <Pressable onPress={() => toggleLike(post.id)} style={s.actionBtn}>
-          <Ionicons name={liked ? 'heart' : 'heart-outline'} size={16} color={liked ? Colors.error : Colors.gray[400]} />
-          <Text style={[s.actionText, liked && { color: Colors.error }]}>{post.likes}</Text>
+          <Ionicons name={liked ? 'heart' : 'heart-outline'} size={16} color={liked ? DS.colors.red : DS.colors.textSoft} />
+          <Text style={[s.actionText, liked && { color: DS.colors.red }]}>{post.likes}</Text>
         </Pressable>
         <View style={s.actionBtn}>
-          <Ionicons name="chatbubble-outline" size={16} color={Colors.gray[400]} />
+          <Ionicons name="chatbubble-outline" size={16} color={DS.colors.textSoft} />
           <Text style={s.actionText}>{post.commentCount}</Text>
         </View>
         <View style={s.actionBtn}>
-          <Ionicons name="share-social-outline" size={16} color={Colors.gray[400]} />
+          <Ionicons name="share-social-outline" size={16} color={DS.colors.textSoft} />
           <Text style={s.actionText}>Share</Text>
         </View>
       </View>
@@ -104,32 +104,36 @@ export function PostCard({ post }: { post: CommunityPost }) {
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 14, marginBottom: 10,
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
-    borderWidth: 1, borderColor: Colors.gray[100],
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.lg,
+    padding: 14,
+    marginBottom: 12,
+    ...DS.shadow.soft,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
   },
-  cardPinned: { borderColor: Colors.primaryMid, borderWidth: 1.5 },
+  cardPinned: { borderColor: DS.colors.primary, borderWidth: 1.5 },
   pinnedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
-  pinnedText: { fontSize: 11, fontWeight: '600', color: Colors.primary },
+  pinnedText: { fontSize: 11, fontWeight: '600', color: DS.colors.primary },
   authorRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
-  avatar: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 16, fontWeight: '800', color: '#fff' },
   authorInfo: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  authorName: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary },
-  rolePill: { backgroundColor: Colors.primaryBg, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
-  rolePillText: { fontSize: 10, fontWeight: '600', color: Colors.textSecondary },
-  expertBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: Colors.primaryMid, borderRadius: 8, paddingHorizontal: 5, paddingVertical: 2 },
-  expertText: { fontSize: 10, fontWeight: '700', color: Colors.primary },
-  meta: { fontSize: 11, color: Colors.gray[400], marginTop: 2 },
+  authorName: { fontSize: 14, fontWeight: '700', color: DS.colors.text },
+  rolePill: { backgroundColor: DS.colors.primaryBg, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2 },
+  rolePillText: { fontSize: 10, fontWeight: '600', color: DS.colors.textMuted },
+  expertBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: DS.colors.primaryMid, borderRadius: 8, paddingHorizontal: 5, paddingVertical: 2 },
+  expertText: { fontSize: 10, fontWeight: '700', color: DS.colors.primary },
+  meta: { fontSize: 11, color: DS.colors.textSoft, marginTop: 2 },
   bodyWrap: { marginBottom: 10 },
-  title: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
-  body: { fontSize: 13, color: Colors.textSecondary, lineHeight: 18 },
+  title: { fontSize: 15, fontWeight: '700', color: DS.colors.text, marginBottom: 4 },
+  body: { fontSize: 14, color: DS.colors.textMuted, lineHeight: 20 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  tag: { backgroundColor: Colors.primaryBg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, flexDirection: 'row', alignItems: 'center', gap: 3 },
-  tagSolved: { backgroundColor: Colors.accentLight },
-  tagText: { fontSize: 11, fontWeight: '600', color: Colors.primary },
-  actions: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: Colors.gray[100], paddingTop: 10 },
+  tag: { backgroundColor: DS.colors.primaryBg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, flexDirection: 'row', alignItems: 'center', gap: 3 },
+  tagSolved: { backgroundColor: DS.colors.accentLight },
+  tagText: { fontSize: 11, fontWeight: '600', color: DS.colors.primary },
+  actions: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: DS.colors.borderLight, paddingTop: 10 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  actionText: { fontSize: 12, fontWeight: '600', color: Colors.gray[400] },
+  actionText: { fontSize: 12, fontWeight: '600', color: DS.colors.textSoft },
 });

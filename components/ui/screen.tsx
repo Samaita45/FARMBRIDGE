@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, View, type ScrollViewProps, type ViewStyle } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { SCREEN_EDGES } from '@/lib/platform-ui';
 
 interface ScreenProps {
@@ -46,7 +46,7 @@ export function Screen({
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.primaryBg },
+  root: { flex: 1, backgroundColor: DS.colors.background },
   inner: { flex: 1 },
   scrollContent: { paddingBottom: 32 },
 });
