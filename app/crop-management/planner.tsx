@@ -20,7 +20,7 @@ import { CROPS, getCropsForMonth, getCurrentSeason } from '@/constants/zimbabwe-
 import { useCropPlans } from '@/hooks/useCropPlans';
 import { useFarmTasks } from '@/hooks/useFarmTasks';
 import { getRotationSuggestion } from '@/services/taskGenerator';
-import { getCropEmoji } from '@/utils/crop-emoji';
+import { getCropIcon } from '@/utils/crop-emoji';
 
 const MONTH = new Date().getMonth() + 1;
 
@@ -106,7 +106,7 @@ export default function CropPlannerScreen() {
 
         {/* ── Season info ── */}
         <View style={s.seasonCard}>
-          <View style={s.seasonIcon}><Text style={{ fontSize: 22 }}>{season.icon}</Text></View>
+          <View style={s.seasonIcon}><Ionicons name="partly-sunny-outline" size={22} color={Colors.primary} /></View>
           <View style={s.seasonText}>
             <Text style={s.seasonName}>{season.name} Season</Text>
             <Text style={s.seasonDesc}>Optimal planting window active</Text>
@@ -121,7 +121,9 @@ export default function CropPlannerScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
           {recommended.map((c) => (
             <Pressable key={c.id} style={s.cropChip} onPress={() => setModalOpen(true)}>
-              <Text style={s.cropChipEmoji}>{getCropEmoji(c.id)}</Text>
+              <View style={s.cropChipIcon}>
+                <Ionicons name={getCropIcon(c.category) as keyof typeof Ionicons.glyphMap} size={18} color={Colors.primary} />
+              </View>
               <Text style={s.cropChipName}>{c.name}</Text>
               <Text style={s.cropChipPrice}>${c.currentPriceUSD.toFixed(2)}/kg</Text>
             </Pressable>
@@ -151,7 +153,7 @@ export default function CropPlannerScreen() {
             <View style={s.warnCard}>
               {notRecommended.map((c) => (
                 <View key={c.id} style={s.warnRow}>
-                  <Text style={s.warnEmoji}>{getCropEmoji(c.id)}</Text>
+                  <Ionicons name={getCropIcon(c.category) as keyof typeof Ionicons.glyphMap} size={17} color={Colors.warning} />
                   <Text style={s.warnName}>{c.name}</Text>
                   <Text style={s.warnNote}>Wait for {season.name.toLowerCase()}</Text>
                 </View>
@@ -189,7 +191,7 @@ export default function CropPlannerScreen() {
                 {/* Plan header */}
                 <View style={s.planTop}>
                   <View style={s.planEmoji}>
-                    <Text style={{ fontSize: 24 }}>{getCropEmoji(plan.cropId, crop?.category)}</Text>
+                    <Ionicons name={getCropIcon(crop?.category) as keyof typeof Ionicons.glyphMap} size={24} color={Colors.primary} />
                   </View>
                   <View style={s.planInfo}>
                     <Text style={s.planName}>{plan.cropName}</Text>
@@ -316,7 +318,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.primaryMid,
     shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1,
   },
-  cropChipEmoji: { fontSize: 22, marginBottom: 4 },
+  cropChipIcon: { width: 34, height: 34, borderRadius: 12, backgroundColor: Colors.primaryBg, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   cropChipName: { fontSize: 11, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center' },
   cropChipPrice: { fontSize: 10, color: Colors.success, fontWeight: '600', marginTop: 2 },
 
@@ -334,7 +336,6 @@ const s = StyleSheet.create({
   // Warning
   warnCard: { backgroundColor: '#FFF8E1', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#FFE082' },
   warnRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  warnEmoji: { fontSize: 16 },
   warnName: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, flex: 1 },
   warnNote: { fontSize: 11, color: Colors.warning, fontWeight: '600' },
 

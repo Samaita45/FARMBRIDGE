@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Colors from '@/constants/colors';
 import { FERTILIZER_RECOMMENDATIONS, CROPS } from '@/constants/zimbabwe-data';
-import { getCropEmoji } from '@/utils/crop-emoji';
+import { getCropIcon } from '@/utils/crop-emoji';
 
 const SOIL_TYPES = ['Sandy', 'Clay', 'Loam', 'Sandy-Loam', 'Clay-Loam'] as const;
 const PH_LEVELS = [4.5, 5.5, 6.5, 7.5, 8.5];
@@ -35,7 +35,10 @@ export default function SoilScreen() {
           <Ionicons name="arrow-back" size={20} color="#fff" />
         </Pressable>
         <View>
-          <Text style={s.headerTitle}>💧 Soil & Fertilizer</Text>
+          <View style={s.headerTitleRow}>
+            <Ionicons name="water" size={22} color="#fff" />
+            <Text style={s.headerTitle}>Soil & Fertilizer</Text>
+          </View>
           <Text style={s.headerSub}>NPK recommendations for your crops</Text>
         </View>
       </View>
@@ -94,8 +97,13 @@ export default function SoilScreen() {
                 key={id}
                 onPress={() => setCropId(id)}
                 style={[s.cropChip, active && s.cropChipActive]}>
+                <Ionicons
+                  name={getCropIcon(c?.category) as keyof typeof Ionicons.glyphMap}
+                  size={13}
+                  color={active ? '#fff' : Colors.primary}
+                />
                 <Text style={[s.cropChipText, active && s.cropChipTextActive]}>
-                  {getCropEmoji(id)} {c?.name ?? id}
+                  {c?.name ?? id}
                 </Text>
               </Pressable>
             );
@@ -140,7 +148,7 @@ export default function SoilScreen() {
         {/* Soil tips */}
         <View style={s.tipsCard}>
           <View style={s.tipsHeader}>
-            <Text style={s.tipsEmoji}>💡</Text>
+            <Ionicons name="bulb-outline" size={18} color={Colors.warning} />
             <Text style={s.tipsTitle}>Soil Health Tips</Text>
           </View>
           {[
@@ -176,6 +184,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16,
   },
   backBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerTitle: { fontSize: 20, fontWeight: '800', color: '#fff' },
   headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
 
@@ -204,7 +213,7 @@ const s = StyleSheet.create({
   phFill: { height: '100%', borderRadius: 4 },
 
   cropRow: { gap: 8, paddingRight: 4 },
-  cropChip: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: Colors.gray[200] },
+  cropChip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: Colors.gray[200] },
   cropChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
   cropChipText: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
   cropChipTextActive: { color: '#fff' },
@@ -227,7 +236,6 @@ const s = StyleSheet.create({
 
   tipsCard: { backgroundColor: Colors.primaryBg, borderRadius: 16, padding: 16, borderWidth: 1.5, borderColor: Colors.primaryMid },
   tipsHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  tipsEmoji: { fontSize: 18 },
   tipsTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   tipRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 8 },
   tipDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.primary, marginTop: 6 },

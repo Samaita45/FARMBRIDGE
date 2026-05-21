@@ -48,7 +48,10 @@ export default function TransportHubScreen() {
         {/* ── Hero banner ── */}
         <ImageBackground source={ScreenImages.transport} style={s.heroBg} resizeMode="cover">
           <View style={s.heroOverlay}>
-            <Text style={s.heroTitle}>🚛 Farm Transport</Text>
+            <View style={s.heroTitleRow}>
+              <Ionicons name="bus" size={22} color="#fff" />
+              <Text style={s.heroTitle}>Farm Transport</Text>
+            </View>
             <Text style={s.heroSub}>Move your harvest safely &amp; affordably</Text>
             <View style={s.heroMeta}>
               <View style={s.heroPill}>
@@ -90,7 +93,7 @@ export default function TransportHubScreen() {
             onPress={() => router.push(asHref('/(tabs)/transport/request'))}
             style={({ pressed }) => [s.ctaCard, pressed && { opacity: 0.88 }]}>
             <View style={[s.ctaIconCircle, { backgroundColor: Colors.primaryBg }]}>
-              <Text style={s.ctaEmoji}>📦</Text>
+              <Ionicons name="cube-outline" size={22} color={Colors.primary} />
             </View>
             <View style={s.ctaContent}>
               <Text style={s.ctaTitle}>Find Transport</Text>
@@ -105,7 +108,7 @@ export default function TransportHubScreen() {
             onPress={() => router.push(asHref('/(tabs)/transport/register'))}
             style={({ pressed }) => [s.ctaCard, s.ctaCardAccent, pressed && { opacity: 0.88 }]}>
             <View style={[s.ctaIconCircle, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <Text style={s.ctaEmoji}>🚛</Text>
+              <Ionicons name="car-sport-outline" size={22} color="#fff" />
             </View>
             <View style={s.ctaContent}>
               <Text style={[s.ctaTitle, { color: '#fff' }]}>Offer Transport</Text>
@@ -174,6 +177,7 @@ const s = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 24,
   },
+  heroTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   heroTitle: { fontSize: 24, fontWeight: '800', color: '#fff' },
   heroSub: { fontSize: 13, color: 'rgba(255,255,255,0.80)', marginTop: 4 },
   heroMeta: { flexDirection: 'row', gap: 10, marginTop: 14, flexWrap: 'wrap' },
@@ -230,7 +234,6 @@ const s = StyleSheet.create({
     shadowOpacity: 0.35,
   },
   ctaIconCircle: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-  ctaEmoji: { fontSize: 26 },
   ctaContent: { flex: 1 },
   ctaTitle: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
   ctaSub: { fontSize: 13, color: Colors.textSecondary, marginTop: 3 },

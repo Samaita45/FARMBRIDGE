@@ -68,7 +68,10 @@ export default function FinancialsHubScreen() {
           <Ionicons name="arrow-back" size={22} color="#fff" />
         </Pressable>
         <View style={s.headerText}>
-          <Text style={s.headerTitle}>💰 Financials</Text>
+          <View style={s.headerTitleRow}>
+            <Ionicons name="wallet" size={22} color="#fff" />
+            <Text style={s.headerTitle}>Financials</Text>
+          </View>
           <Text style={s.headerSub}>Track income, costs &amp; profit</Text>
         </View>
       </View>
@@ -181,6 +184,7 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   headerText: { flex: 1 },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
   headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
 

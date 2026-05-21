@@ -15,7 +15,10 @@ export function TransportLocked() {
 
       {/* Header */}
       <View style={s.header}>
-        <Text style={s.headerTitle}>🚛 Farm Transport</Text>
+        <View style={s.headerTitleRow}>
+          <Ionicons name="bus" size={24} color="#fff" />
+          <Text style={s.headerTitle}>Farm Transport</Text>
+        </View>
         <Text style={s.headerSub}>Move your harvest safely & affordably</Text>
       </View>
 
@@ -83,6 +86,7 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.primaryBg },
 
   header: { backgroundColor: Colors.primary, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18 },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
   headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
 

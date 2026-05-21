@@ -1,6 +1,6 @@
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useState } from 'react';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { useToast } from '@/components/ui/toast-provider';
@@ -8,7 +8,7 @@ import { getMockReviews } from '@/constants/mock-reviews';
 import { getProductById } from '@/constants/zimbabwe-data';
 import { asHref } from '@/lib/href';
 import { useCartStore, type CartState } from '@/stores/cartStore';
-import { getProductEmoji } from '@/utils/product-emoji';
+import { getProductImage } from '@/utils/product-emoji';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,8 +34,8 @@ export default function ProductDetailScreen() {
 
   return (
     <ScrollView className="flex-1 bg-surface" contentContainerStyle={{ paddingBottom: 32 }}>
-      <View className="h-56 items-center justify-center bg-primary/10">
-        <Text className="text-7xl">{getProductEmoji(product.name, product.category)}</Text>
+      <View className="h-56 bg-primary/10">
+        <Image source={getProductImage(product)} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
       </View>
 
       <View className="px-4 pt-4">
@@ -49,7 +49,7 @@ export default function ProductDetailScreen() {
           {product.isOrganic ? (
             <Badge text="Organic" color="#22c55e" />
           ) : null}
-          {product.isCertified ? <Badge text="Certified ✓" color="#16a34a" /> : null}
+          {product.isCertified ? <Badge text="Certified" color="#16a34a" /> : null}
           <Badge
             text={product.inStock ? 'In Stock' : 'Out of Stock'}
             color={product.inStock ? '#22c55e' : '#ef4444'}
@@ -61,9 +61,12 @@ export default function ProductDetailScreen() {
         <View className="mt-4 rounded-2xl bg-white p-4">
           <Text className="font-sans-bold text-dark">Seller</Text>
           <Text className="font-sans text-dark">{product.sellerName}</Text>
-          <Text className="font-sans text-sm text-gray-500">📍 {product.location}</Text>
+          <View className="mt-1 flex-row items-center gap-1">
+            <Ionicons name="location-outline" size={13} color="#6b7280" />
+            <Text className="font-sans text-sm text-gray-500">{product.location}</Text>
+          </View>
           <Text className="font-sans text-sm text-amber-500">
-            ⭐ {product.rating} ({product.reviewCount} reviews)
+            {product.rating} ({product.reviewCount} reviews)
           </Text>
         </View>
 
@@ -71,7 +74,11 @@ export default function ProductDetailScreen() {
         {reviews.map((r) => (
           <View key={r.id} className="mt-2 rounded-xl bg-white p-3">
             <Text className="font-sans-semibold text-dark">{r.author}</Text>
-            <Text className="font-sans text-xs text-amber-500">{'⭐'.repeat(r.rating)}</Text>
+            <View className="mt-1 flex-row">
+              {Array.from({ length: r.rating }).map((_, i) => (
+                <Ionicons key={i} name="star" size={12} color="#f59e0b" />
+              ))}
+            </View>
             <Text className="mt-1 font-sans text-sm text-gray-600">{r.comment}</Text>
           </View>
         ))}
