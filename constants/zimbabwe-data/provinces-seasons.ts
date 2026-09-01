@@ -43,4 +43,11 @@ export const getCurrentSeason = (month: number) => {
   return SEASONS.hotDry;
 };
 
-export const USD_TO_ZWG_RATE = 100;
+/**
+ * @deprecated Use `getExchangeRate()` from `@/services/exchangeRateService`.
+ *
+ * Retained only to price the bundled seed catalogue, whose ZWG figures are
+ * baked in at build time. Anything a user sees as a live number must go
+ * through the service, which knows the rate's source and age.
+ */
+export const SEED_CATALOGUE_ZWG_RATE = 26.5;

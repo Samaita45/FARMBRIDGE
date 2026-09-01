@@ -8,7 +8,7 @@ export {
   PROVINCES,
   SEASONS,
   getCurrentSeason,
-  USD_TO_ZWG_RATE,
+  SEED_CATALOGUE_ZWG_RATE,
 } from './zimbabwe-data/provinces-seasons';
 
 export {

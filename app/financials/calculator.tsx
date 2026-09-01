@@ -1,230 +1,401 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppText, FadeInView, GlassCard, SectionHeader } from '@/components/design-system';
-import { Screen } from '@/components/ui/screen';
+import { Card, Input } from '@/components/design-system';
+import { BUDGET_DISCLAIMER, getCropBudget } from '@/constants/crop-budgets';
 import { DS } from '@/constants/design-system';
 import { CROPS } from '@/constants/zimbabwe-data';
+import {
+  breakEvenPricePerKg,
+  calculateProductionCost,
+  calculateProfit,
+  forecastYield,
+  rankCropProfitability,
+  returnOnInvestment,
+} from '@/lib/farm-finance';
 
-function calc(
-  yieldKg: number,
-  pricePerKg: number,
-  seed: number,
-  fertilizer: number,
-  labor: number,
-  transport: number,
-  other: number,
-) {
-  const gross = yieldKg * pricePerKg;
-  const costs = seed + fertilizer + labor + transport + other;
-  const net = gross - costs;
-  const roi = costs > 0 ? (net / costs) * 100 : 0;
-  const breakEven = yieldKg > 0 ? costs / yieldKg : 0;
-  return { gross, costs, net, roi, breakEven };
+const COMPARE_CROP_IDS = ['maize', 'tomatoes', 'groundnuts', 'potatoes'];
+
+function num(value: string): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }
-
-const INPUTS = [
-  { key: 'hectares', label: 'Hectares', placeholder: '1' },
-  { key: 'yieldKg', label: 'Expected yield (kg)', placeholder: '8000' },
-  { key: 'pricePerKg', label: 'Market price ($/kg)', placeholder: '0.85' },
-  { key: 'seed', label: 'Seed cost ($)', placeholder: '120' },
-  { key: 'fertilizer', label: 'Fertilizer ($)', placeholder: '350' },
-  { key: 'labor', label: 'Labor ($)', placeholder: '200' },
-  { key: 'transport', label: 'Transport ($)', placeholder: '60' },
-  { key: 'other', label: 'Other costs ($)', placeholder: '80' },
-] as const;
 
 export default function ProfitCalculatorScreen() {
-  const [values, setValues] = useState<Record<string, string>>({
-    hectares: '1',
-    yieldKg: '8000',
-    pricePerKg: '0.85',
-    seed: '120',
-    fertilizer: '350',
-    labor: '200',
-    transport: '60',
-    other: '80',
-  });
+  const [cropId, setCropId] = useState('maize');
+  const [hectares, setHectares] = useState('1');
+  const [price, setPrice] = useState('');
+  const [overrides, setOverrides] = useState<Record<string, string>>({});
 
-  const h = parseFloat(values.hectares) || 0;
-  const y = (parseFloat(values.yieldKg) || 0) * h;
-  const p = parseFloat(values.pricePerKg) || 0;
+  const crop = CROPS.find((c) => c.id === cropId);
+  const budget = getCropBudget(cropId);
 
-  const result = useMemo(
+  const ha = num(hectares);
+  const pricePerKg = num(price) || crop?.currentPriceUSD || 0;
+
+  const field = (key: keyof typeof budget, fallback: number) =>
+    overrides[key] !== undefined ? num(overrides[key]) : fallback;
+
+  const cost = useMemo(
     () =>
-      calc(
-        y,
-        p,
-        parseFloat(values.seed) || 0,
-        parseFloat(values.fertilizer) || 0,
-        parseFloat(values.labor) || 0,
-        parseFloat(values.transport) || 0,
-        parseFloat(values.other) || 0,
-      ),
-    [y, p, values],
+      calculateProductionCost({
+        hectares: ha,
+        seedsPerHa: field('seedsPerHa', budget.seedsPerHa),
+        fertilizerPerHa: field('fertilizerPerHa', budget.fertilizerPerHa),
+        chemicalsPerHa: field('chemicalsPerHa', budget.chemicalsPerHa),
+        labourPerHa: field('labourPerHa', budget.labourPerHa),
+        fixedCosts: num(overrides.fixedCosts ?? '0'),
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ha, budget, overrides]
   );
 
-  const tomato = CROPS.find((c) => c.id === 'tomatoes');
-  const maize = CROPS.find((c) => c.id === 'maize');
+  const yieldForecast = useMemo(
+    () =>
+      forecastYield({
+        hectares: ha,
+        yieldPerHectareKg: field('yieldPerHectareKg', budget.yieldPerHectareKg),
+        pricePerKgUSD: pricePerKg,
+        lossRate: budget.lossRate,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ha, budget, pricePerKg, overrides]
+  );
+
+  const profit = calculateProfit(yieldForecast.expectedRevenueUSD, cost.totalUSD);
+  const roi = returnOnInvestment(profit.netProfitUSD, cost.totalUSD);
+  const breakEven = breakEvenPricePerKg(cost.totalUSD, yieldForecast.saleableYieldKg);
+
+  const comparison = useMemo(
+    () =>
+      rankCropProfitability(
+        COMPARE_CROP_IDS.map((id) => {
+          const c = CROPS.find((x) => x.id === id);
+          const b = getCropBudget(id);
+          const cropCost = calculateProductionCost({
+            hectares: ha,
+            seedsPerHa: b.seedsPerHa,
+            fertilizerPerHa: b.fertilizerPerHa,
+            chemicalsPerHa: b.chemicalsPerHa,
+            labourPerHa: b.labourPerHa,
+            fixedCosts: 0,
+          });
+          const cropYield = forecastYield({
+            hectares: ha,
+            yieldPerHectareKg: b.yieldPerHectareKg,
+            pricePerKgUSD: c?.currentPriceUSD ?? 0,
+            lossRate: b.lossRate,
+          });
+          return {
+            cropName: c?.name ?? id,
+            revenueUSD: cropYield.expectedRevenueUSD,
+            expensesUSD: cropCost.totalUSD,
+            hectares: ha,
+          };
+        })
+      ),
+    [ha]
+  );
 
   return (
-    <Screen scroll contentContainerStyle={styles.scroll}>
-      <SectionHeader
-        title="Farm profit calculator"
-        subtitle="ROI, break-even, and crop comparison"
-        icon="calculator-outline"
-      />
+    <SafeAreaView style={styles.root} edges={['bottom']}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <Text style={styles.intro}>
+            Costs and yields start from the planting budget for the crop you pick. Change any
+            figure to match your own farm.
+          </Text>
 
-      <GlassCard style={styles.form}>
-        {INPUTS.map((field, i) => (
-          <FadeInView key={field.key} delay={i}>
-            <AppText variant="label" muted style={styles.label}>
-              {field.label}
-            </AppText>
-            <TextInput
-              style={styles.input}
+          <View>
+            <Text style={styles.sectionTitle}>Crop</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipRow}>
+              {COMPARE_CROP_IDS.map((id) => {
+                const c = CROPS.find((x) => x.id === id);
+                const active = cropId === id;
+                return (
+                  <Pressable
+                    key={id}
+                    onPress={() => {
+                      setCropId(id);
+                      setOverrides({});
+                      setPrice('');
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={c?.name ?? id}
+                    style={[styles.chip, active && styles.chipActive]}>
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                      {c?.name ?? id}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          <Card style={styles.form}>
+            <Input
+              label="Area planted"
+              icon="resize-outline"
+              value={hectares}
+              onChangeText={setHectares}
               keyboardType="decimal-pad"
-              placeholder={field.placeholder}
-              placeholderTextColor={DS.colors.textSoft}
-              value={values[field.key]}
-              onChangeText={(t) => setValues((v) => ({ ...v, [field.key]: t }))}
+              hint="Hectares"
             />
-          </FadeInView>
-        ))}
-      </GlassCard>
-
-      <FadeInView delay={4}>
-        <GlassCard elevated style={styles.summary}>
-          <AppText variant="h2" style={styles.summaryTitle}>
-            Forecast
-          </AppText>
-          <MetricRow label="Gross revenue" value={`$${result.gross.toFixed(0)}`} />
-          <MetricRow label="Total costs" value={`$${result.costs.toFixed(0)}`} />
-          <MetricRow
-            label="Net profit"
-            value={`$${result.net.toFixed(0)}`}
-            highlight={result.net >= 0}
-          />
-          <MetricRow label="ROI" value={`${result.roi.toFixed(1)}%`} accent />
-          <MetricRow label="Break-even price" value={`$${result.breakEven.toFixed(2)}/kg`} />
-        </GlassCard>
-      </FadeInView>
-
-      {tomato && maize ? (
-        <FadeInView delay={5}>
-          <GlassCard style={styles.compare}>
-            <AppText variant="h3">Crop comparison (per ha)</AppText>
-            <CompareRow
-              crop="Tomatoes"
-              net={
-                calc(
-                  12000 * h,
-                  tomato.currentPriceUSD,
-                  150 * h,
-                  400 * h,
-                  250 * h,
-                  80 * h,
-                  100 * h,
-                ).net
+            <Input
+              label="Selling price"
+              icon="pricetag-outline"
+              value={price}
+              onChangeText={setPrice}
+              keyboardType="decimal-pad"
+              placeholder={crop ? crop.currentPriceUSD.toFixed(2) : '0.00'}
+              hint={
+                crop
+                  ? `Current market price is $${crop.currentPriceUSD.toFixed(2)}/kg`
+                  : 'US dollars per kilogram'
               }
             />
-            <CompareRow
-              crop="Maize"
-              net={
-                calc(
-                  5000 * h,
-                  maize.currentPriceUSD,
-                  80 * h,
-                  300 * h,
-                  200 * h,
-                  50 * h,
-                  80 * h,
-                ).net
+          </Card>
+
+          <Card style={styles.form}>
+            <Text style={styles.cardTitle}>Costs per hectare</Text>
+            {(
+              [
+                ['seedsPerHa', 'Seeds', budget.seedsPerHa],
+                ['fertilizerPerHa', 'Fertilizer', budget.fertilizerPerHa],
+                ['chemicalsPerHa', 'Chemicals', budget.chemicalsPerHa],
+                ['labourPerHa', 'Labour', budget.labourPerHa],
+              ] as [string, string, number][]
+            ).map(([key, label, fallback]) => (
+              <Input
+                key={key}
+                label={label}
+                value={overrides[key] ?? ''}
+                onChangeText={(t) => setOverrides((o) => ({ ...o, [key]: t }))}
+                keyboardType="decimal-pad"
+                placeholder={String(fallback)}
+              />
+            ))}
+            <Input
+              label="Other fixed costs"
+              value={overrides.fixedCosts ?? ''}
+              onChangeText={(t) => setOverrides((o) => ({ ...o, fixedCosts: t }))}
+              keyboardType="decimal-pad"
+              placeholder="0"
+              hint="Costs that do not scale with area"
+            />
+          </Card>
+
+          <Card style={styles.result}>
+            <Text style={styles.cardTitle}>Forecast</Text>
+            <Metric
+              label="Saleable yield"
+              value={`${yieldForecast.saleableYieldKg.toLocaleString()} kg`}
+              note={`After ${Math.round(budget.lossRate * 100)}% expected losses`}
+            />
+            <Metric label="Gross revenue" value={`$${profit.revenueUSD.toLocaleString()}`} />
+            <Metric label="Total costs" value={`$${profit.expensesUSD.toLocaleString()}`} />
+
+            <View style={styles.divider} />
+
+            <Metric
+              label="Net profit"
+              value={`${profit.netProfitUSD >= 0 ? '' : '−'}$${Math.abs(profit.netProfitUSD).toLocaleString()}`}
+              tone={profit.isProfitable ? 'success' : 'danger'}
+              large
+            />
+            <Metric
+              label="Margin"
+              value={profit.marginPercent === null ? '—' : `${profit.marginPercent}%`}
+            />
+            <Metric label="Return on spend" value={roi === null ? '—' : `${roi}%`} />
+            <Metric
+              label="Break-even price"
+              value={breakEven === null ? '—' : `$${breakEven.toFixed(2)}/kg`}
+              note={
+                breakEven !== null && pricePerKg > 0 && breakEven > pricePerKg
+                  ? 'Above the market price — this crop loses money at these figures'
+                  : undefined
+              }
+              tone={
+                breakEven !== null && pricePerKg > 0 && breakEven > pricePerKg
+                  ? 'danger'
+                  : undefined
               }
             />
-          </GlassCard>
-        </FadeInView>
-      ) : null}
-    </Screen>
+          </Card>
+
+          <Card style={styles.result}>
+            <Text style={styles.cardTitle}>
+              If you planted {ha || 1} ha of something else
+            </Text>
+            {comparison.map((line, index) => (
+              <View key={line.cropName} style={styles.compareRow}>
+                <Text style={styles.compareRank}>{index + 1}</Text>
+                <Text style={styles.compareName}>{line.cropName}</Text>
+                <Text
+                  style={[
+                    styles.compareValue,
+                    {
+                      color:
+                        line.netProfitUSD >= 0
+                          ? DS.semantic.success.fg
+                          : DS.semantic.danger.fg,
+                    },
+                  ]}>
+                  {line.netProfitUSD >= 0 ? '+' : '−'}$
+                  {Math.abs(line.netProfitUSD).toLocaleString()}
+                </Text>
+              </View>
+            ))}
+          </Card>
+
+          <View style={styles.disclaimer}>
+            <Ionicons name="information-circle-outline" size={14} color={DS.colors.textSoft} />
+            <Text style={styles.disclaimerText}>{BUDGET_DISCLAIMER}</Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
-function MetricRow({
+function Metric({
   label,
   value,
-  highlight,
-  accent,
+  note,
+  tone,
+  large,
 }: {
   label: string;
   value: string;
-  highlight?: boolean;
-  accent?: boolean;
+  note?: string;
+  tone?: 'success' | 'danger';
+  large?: boolean;
 }) {
   return (
-    <View style={styles.metricRow}>
-      <AppText variant="bodySm" muted>
-        {label}
-      </AppText>
-      <AppText
-        variant="h3"
-        color={
-          accent
-            ? DS.colors.primary
-            : highlight === false
-              ? DS.colors.red
-              : highlight
-                ? DS.colors.accent
-                : DS.colors.text
-        }>
-        {value}
-      </AppText>
-    </View>
-  );
-}
-
-function CompareRow({ crop, net }: { crop: string; net: number }) {
-  return (
-    <View style={styles.compareRow}>
-      <AppText variant="bodySm">{crop}</AppText>
-      <AppText variant="bodySm" color={net >= 0 ? DS.colors.accent : DS.colors.red}>
-        ${net.toFixed(0)} net
-      </AppText>
+    <View style={styles.metric} accessibilityRole="summary" accessibilityLabel={`${label}: ${value}`}>
+      <View style={styles.metricHead}>
+        <Text style={styles.metricLabel}>{label}</Text>
+        <Text
+          style={[
+            large ? styles.metricValueLarge : styles.metricValue,
+            tone ? { color: DS.semantic[tone].fg } : null,
+          ]}>
+          {value}
+        </Text>
+      </View>
+      {note ? <Text style={styles.metricNote}>{note}</Text> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: DS.spacing.md, paddingBottom: 48 },
-  form: { marginBottom: DS.spacing.md },
-  label: { marginTop: DS.spacing.sm, marginBottom: 4 },
-  input: {
-    backgroundColor: DS.colors.surfaceMuted,
-    borderRadius: DS.radius.md,
-    paddingHorizontal: DS.spacing.md,
-    paddingVertical: 12,
-    fontSize: 16,
-    fontFamily: 'PlusJakartaSans_400Regular',
+  root: { flex: 1, backgroundColor: DS.colors.background },
+  flex: { flex: 1 },
+  body: { padding: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.md },
+
+  intro: {
+    fontSize: DS.typography.bodySm.fontSize,
+    lineHeight: 20,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+  sectionTitle: {
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
     color: DS.colors.text,
+    marginBottom: DS.spacing.sm,
+  },
+  chipRow: { gap: DS.spacing.sm, paddingRight: DS.spacing.xs },
+  chip: {
+    minHeight: 38,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    borderRadius: DS.radius.sm,
+    backgroundColor: DS.colors.surface,
     borderWidth: 1,
     borderColor: DS.colors.border,
   },
-  summary: { marginBottom: DS.spacing.md },
-  summaryTitle: { marginBottom: DS.spacing.md },
-  metricRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: DS.colors.borderLight,
+  chipActive: { backgroundColor: DS.colors.primary, borderColor: DS.colors.primary },
+  chipText: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textMuted,
   },
-  compare: { gap: 8 },
-  compareRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: DS.colors.borderLight,
+  chipTextActive: { color: DS.colors.textInverse },
+
+  form: { gap: DS.spacing.sm + 4 },
+  cardTitle: {
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+
+  result: { gap: DS.spacing.sm },
+  metric: { gap: 2 },
+  metricHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: DS.spacing.sm },
+  metricLabel: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+  metricValue: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  metricValueLarge: {
+    fontSize: DS.typography.h1.fontSize,
+    fontFamily: DS.fontFamily.bold,
+    color: DS.colors.text,
+  },
+  metricNote: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textSoft,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: DS.colors.borderLight,
+    marginVertical: DS.spacing.xs,
+  },
+
+  compareRow: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm + 4 },
+  compareRank: {
+    width: 18,
+    fontSize: 11,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textFaint,
+  },
+  compareName: {
+    flex: 1,
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.text,
+  },
+  compareValue: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+  },
+
+  disclaimer: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  disclaimerText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textSoft,
   },
 });

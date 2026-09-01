@@ -1,14 +1,14 @@
 import type { MarketProduct, PaymentMethod, SubscriptionPlan, TransportProvider } from '@/types';
 
 import { EXTRA_MARKET_PRODUCTS } from './products-extra';
-import { USD_TO_ZWG_RATE } from './provinces-seasons';
+import { SEED_CATALOGUE_ZWG_RATE } from './provinces-seasons';
 
 function product(
   partial: Omit<MarketProduct, 'priceZWG'> & { priceZWG?: number }
 ): MarketProduct {
   return {
     ...partial,
-    priceZWG: partial.priceZWG ?? Math.round(partial.priceUSD * USD_TO_ZWG_RATE),
+    priceZWG: partial.priceZWG ?? Math.round(partial.priceUSD * SEED_CATALOGUE_ZWG_RATE),
   };
 }
 
@@ -73,7 +73,7 @@ export function getFlashDealProducts(count = 4): MarketProduct[] {
     .slice(0, count)
     .map((p) => {
       const priceUSD = Math.round(p.priceUSD * 0.85 * 100) / 100;
-      return { ...p, priceUSD, priceZWG: Math.round(priceUSD * USD_TO_ZWG_RATE) };
+      return { ...p, priceUSD, priceZWG: Math.round(priceUSD * SEED_CATALOGUE_ZWG_RATE) };
     });
 }
 

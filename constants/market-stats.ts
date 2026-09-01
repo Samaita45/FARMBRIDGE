@@ -38,8 +38,10 @@ export const PROVINCE_DEMAND: ProvinceDemand[] = [
   { province: 'Midlands', demandIndex: 76 },
 ];
 
-export const EXCHANGE_RATE = {
-  usdToZwg: 100,
-  changePercent: 0.3,
-  lastUpdated: new Date().toISOString(),
-};
+/**
+ * @deprecated Use `getExchangeRate()` from `@/services/exchangeRateService`.
+ *
+ * `lastUpdated` was `new Date().toISOString()`, evaluated when the bundle
+ * loaded -- so a hardcoded rate always claimed to have just been refreshed.
+ * Nothing should present a number as live unless the service says it is.
+ */

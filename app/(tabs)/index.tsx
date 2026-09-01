@@ -16,7 +16,7 @@ import { WeatherSummary } from '@/components/home/weather-glass-row';
 import { CropCardSkeleton } from '@/components/ui/skeleton';
 import type { InsightItem } from '@/components/home/insight-strip';
 import { WeatherForecastModal } from '@/components/weather/weather-forecast-modal';
-import { EXCHANGE_RATE } from '@/constants/market-stats';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { DS } from '@/constants/design-system';
 import {
   CROPS,
@@ -44,6 +44,7 @@ export default function HomeScreen() {
   const { unreadCount, refresh: refreshNotifications } = useNotifications();
   const { avatarUri, initials: avatarInitials, refresh: refreshAvatar } = useProfileAvatar();
   const { location, loading: locationLoading } = useLocation();
+  const { rate: fxRate, isIndicative: fxIsIndicative } = useExchangeRate();
   const { data: weather, isLoading: weatherLoading, refetch } = useWeather(location);
   const [weatherModalOpen, setWeatherModalOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -68,10 +69,10 @@ export default function HomeScreen() {
         id: 'fx',
         icon: 'swap-horizontal-outline',
         label: 'USD / ZWG',
-        value: `1:${EXCHANGE_RATE.usdToZwg}`,
-        // Not a live rate. It is a build-time constant until ExchangeRateService
-        // lands, and saying otherwise on the dashboard would be a lie about money.
-        trend: 'Indicative',
+        value: `1:${fxRate.usdToZwg}`,
+        // The tile states its own provenance. A number about money must never
+        // look more authoritative than its source actually is.
+        trend: fxIsIndicative ? 'Indicative' : 'Live',
         tone: 'info',
       },
       {
@@ -101,7 +102,7 @@ export default function HomeScreen() {
         tone: 'neutral',
       },
     ] satisfies InsightItem[],
-    [topCrops, weather],
+    [topCrops, weather, fxRate, fxIsIndicative],
   );
 
   const insightMessage = useMemo(() => {

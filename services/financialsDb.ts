@@ -9,11 +9,31 @@ import type {
 } from '@/types/financials';
 
 import { getDatabase } from './database';
+import { getExchangeRate, zwgToUsd } from './exchangeRateService';
 
-const EXCHANGE = 280;
+/**
+ * The rate every pre-migration ZWG row was written under.
+ *
+ * The ledger used a hardcoded 280 while the rest of the app used 100. Those
+ * rows meant something specific when they were entered, so the migration
+ * backfills this value rather than restating them at today's rate -- a
+ * farmer's books must not change because we shipped a release.
+ */
+const LEGACY_LEDGER_RATE = 280;
 
-export function toUSD(amount: number, currency: FinanceCurrency): number {
-  return currency === 'USD' ? amount : amount / EXCHANGE;
+/** Converts using the rate stored on the row, falling back to the legacy rate. */
+export function toUSD(
+  amount: number,
+  currency: FinanceCurrency,
+  rateUsed?: number | null
+): number {
+  if (currency === 'USD') return amount;
+  return zwgToUsd(amount, rateUsed && rateUsed > 0 ? rateUsed : LEGACY_LEDGER_RATE);
+}
+
+/** The rate to stamp on a new row. */
+async function currentRate(): Promise<number> {
+  return (await getExchangeRate()).usdToZwg;
 }
 
 async function initTables(): Promise<void> {
@@ -30,6 +50,7 @@ async function initTables(): Promise<void> {
       buyer TEXT NOT NULL,
       date TEXT NOT NULL,
       notes TEXT,
+      rateUsed REAL,
       createdAt TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS financials_expense (
@@ -40,6 +61,7 @@ async function initTables(): Promise<void> {
       currency TEXT NOT NULL,
       date TEXT NOT NULL,
       notes TEXT,
+      rateUsed REAL,
       createdAt TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS price_alerts (
@@ -51,14 +73,38 @@ async function initTables(): Promise<void> {
       createdAt TEXT NOT NULL
     );
   `);
+
+  await migrateRateColumns();
+}
+
+/**
+ * Adds `rateUsed` to installs created before it existed and stamps the rate
+ * those rows were actually written under, so their USD values do not move.
+ */
+async function migrateRateColumns(): Promise<void> {
+  const db = await getDatabase();
+  for (const table of ['financials_income', 'financials_expense']) {
+    try {
+      const cols = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
+      if (!cols.some((c) => c.name === 'rateUsed')) {
+        await db.execAsync(`ALTER TABLE ${table} ADD COLUMN rateUsed REAL`);
+        await db.runAsync(
+          `UPDATE ${table} SET rateUsed = ? WHERE currency = 'ZWG' AND rateUsed IS NULL`,
+          LEGACY_LEDGER_RATE
+        );
+      }
+    } catch {
+      // A missing table on a fresh install is fine; it is created above.
+    }
+  }
 }
 
 export async function insertIncome(entry: IncomeEntry): Promise<void> {
   await initTables();
   const db = await getDatabase();
   await db.runAsync(
-    `INSERT INTO financials_income (id, userId, cropName, quantity, unit, pricePerUnit, currency, buyer, date, notes, createdAt)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    `INSERT INTO financials_income (id, userId, cropName, quantity, unit, pricePerUnit, currency, buyer, date, notes, rateUsed, createdAt)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
     entry.id,
     entry.userId,
     entry.cropName,
@@ -69,6 +115,7 @@ export async function insertIncome(entry: IncomeEntry): Promise<void> {
     entry.buyer,
     entry.date,
     entry.notes ?? null,
+    entry.rateUsed ?? (entry.currency === 'ZWG' ? await currentRate() : null),
     entry.createdAt
   );
 }
@@ -91,6 +138,7 @@ export async function getIncome(userId: string): Promise<IncomeEntry[]> {
     buyer: String(r.buyer),
     date: String(r.date),
     notes: r.notes ? String(r.notes) : undefined,
+    rateUsed: r.rateUsed != null ? Number(r.rateUsed) : undefined,
     createdAt: String(r.createdAt),
   }));
 }
@@ -104,8 +152,8 @@ export async function insertExpense(entry: ExpenseEntry): Promise<void> {
   await initTables();
   const db = await getDatabase();
   await db.runAsync(
-    `INSERT INTO financials_expense (id, userId, category, amount, currency, date, notes, createdAt)
-     VALUES (?,?,?,?,?,?,?,?)`,
+    `INSERT INTO financials_expense (id, userId, category, amount, currency, date, notes, rateUsed, createdAt)
+     VALUES (?,?,?,?,?,?,?,?,?)`,
     entry.id,
     entry.userId,
     entry.category,
@@ -113,6 +161,7 @@ export async function insertExpense(entry: ExpenseEntry): Promise<void> {
     entry.currency,
     entry.date,
     entry.notes ?? null,
+    entry.rateUsed ?? (entry.currency === 'ZWG' ? await currentRate() : null),
     entry.createdAt
   );
 }
@@ -132,6 +181,7 @@ export async function getExpenses(userId: string): Promise<ExpenseEntry[]> {
     currency: r.currency as FinanceCurrency,
     date: String(r.date),
     notes: r.notes ? String(r.notes) : undefined,
+    rateUsed: r.rateUsed != null ? Number(r.rateUsed) : undefined,
     createdAt: String(r.createdAt),
   }));
 }
@@ -168,11 +218,14 @@ export async function getPriceAlerts(userId: string): Promise<PriceAlert[]> {
 }
 
 export function incomeTotalUSD(entries: IncomeEntry[]): number {
-  return entries.reduce((s, e) => s + toUSD(e.quantity * e.pricePerUnit, e.currency), 0);
+  return entries.reduce(
+    (sum, e) => sum + toUSD(e.quantity * e.pricePerUnit, e.currency, e.rateUsed),
+    0
+  );
 }
 
 export function expenseTotalUSD(entries: ExpenseEntry[]): number {
-  return entries.reduce((s, e) => s + toUSD(e.amount, e.currency), 0);
+  return entries.reduce((sum, e) => sum + toUSD(e.amount, e.currency, e.rateUsed), 0);
 }
 
 export async function getSeasonTotals(userId: string): Promise<SeasonTotals> {
@@ -193,13 +246,13 @@ export async function getMonthlySummaries(userId: string): Promise<MonthlyFinanc
   for (const e of income) {
     const month = e.date.slice(0, 7);
     const cur = map.get(month) ?? { revenueUSD: 0, expensesUSD: 0 };
-    cur.revenueUSD += toUSD(e.quantity * e.pricePerUnit, e.currency);
+    cur.revenueUSD += toUSD(e.quantity * e.pricePerUnit, e.currency, e.rateUsed);
     map.set(month, cur);
   }
   for (const e of expenses) {
     const month = e.date.slice(0, 7);
     const cur = map.get(month) ?? { revenueUSD: 0, expensesUSD: 0 };
-    cur.expensesUSD += toUSD(e.amount, e.currency);
+    cur.expensesUSD += toUSD(e.amount, e.currency, e.rateUsed);
     map.set(month, cur);
   }
 

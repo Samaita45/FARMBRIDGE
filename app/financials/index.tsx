@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ExpensePieBreakdown } from '@/components/financials/expense-pie-breakdown';
 import { RevenueExpenseChart } from '@/components/financials/revenue-expense-chart';
 import Colors from '@/constants/colors';
-import { EXCHANGE_RATE } from '@/constants/market-stats';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import {
   getExpenses,
   getMonthlySummaries,
@@ -18,8 +18,6 @@ import { asHref } from '@/lib/href';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useSettingsStore, selectCurrency } from '@/stores/settingsStore';
 import type { ExpenseEntry, MonthlyFinanceSummary, SeasonTotals } from '@/types/financials';
-
-const RATE = EXCHANGE_RATE.usdToZwg;
 
 const LINKS: { label: string; icon: keyof typeof Ionicons.glyphMap; href: string; desc: string }[] = [
   { label: 'Income Tracker',    icon: 'trending-up',   href: '/financials/income',     desc: 'Log your farm sales' },
@@ -32,6 +30,7 @@ const LINKS: { label: string; icon: keyof typeof Ionicons.glyphMap; href: string
 export default function FinancialsHubScreen() {
   const user = useAuthStore((s: AuthState) => s.user);
   const currency = useSettingsStore(selectCurrency);
+  const { rate, description: rateDescription, isIndicative } = useExchangeRate();
   const [totals, setTotals] = useState<SeasonTotals | null>(null);
   const [monthly, setMonthly] = useState<MonthlyFinanceSummary[]>([]);
   const [expenses, setExpenses] = useState<ExpenseEntry[]>([]);
@@ -52,7 +51,9 @@ export default function FinancialsHubScreen() {
   useEffect(() => { void load(); }, [load]);
 
   const fmt = (usd: number) =>
-    currency === 'USD' ? `$${usd.toFixed(0)}` : `ZWG ${(usd * RATE).toLocaleString()}`;
+    currency === 'USD'
+      ? `$${usd.toFixed(0)}`
+      : `ZWG ${Math.round(usd * rate.usdToZwg).toLocaleString()}`;
 
   const net = totals?.netProfitUSD ?? 0;
   const netPositive = net >= 0;
@@ -106,6 +107,24 @@ export default function FinancialsHubScreen() {
             <Ionicons name={netPositive ? 'trending-up' : 'trending-down'} size={22} color="#fff" />
           </View>
         </View>
+
+        {/*
+          Any ZWG figure on this screen is a conversion, so it has to carry the
+          provenance of the rate that produced it. Past entries convert at the
+          rate they were recorded under, not this one.
+        */}
+        {currency === 'ZWG' ? (
+          <View style={s.rateNote}>
+            <Ionicons
+              name={isIndicative ? 'alert-circle-outline' : 'information-circle-outline'}
+              size={13}
+              color={Colors.textSecondary}
+            />
+            <Text style={s.rateNoteText}>
+              1 USD = {rate.usdToZwg} ZWG · {rateDescription}
+            </Text>
+          </View>
+        ) : null}
 
         {/* ── Charts ── */}
         <View style={s.chartSection}>
@@ -209,6 +228,18 @@ const s = StyleSheet.create({
   netIcon: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
 
   // Charts
+  rateNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingHorizontal: 2,
+  },
+  rateNoteText: {
+    flex: 1,
+    fontSize: 11,
+    color: Colors.textSecondary,
+  },
   chartSection: { marginBottom: 12 },
 
   // Modules

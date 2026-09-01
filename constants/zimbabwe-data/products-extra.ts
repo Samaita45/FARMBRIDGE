@@ -1,9 +1,9 @@
 import type { MarketProduct } from '@/types';
 
-import { USD_TO_ZWG_RATE } from './provinces-seasons';
+import { SEED_CATALOGUE_ZWG_RATE } from './provinces-seasons';
 
 function p(partial: Omit<MarketProduct, 'priceZWG'> & { priceZWG?: number }): MarketProduct {
-  return { ...partial, priceZWG: partial.priceZWG ?? Math.round(partial.priceUSD * USD_TO_ZWG_RATE) };
+  return { ...partial, priceZWG: partial.priceZWG ?? Math.round(partial.priceUSD * SEED_CATALOGUE_ZWG_RATE) };
 }
 
 export const EXTRA_MARKET_PRODUCTS: MarketProduct[] = [

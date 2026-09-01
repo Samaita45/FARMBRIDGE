@@ -1,3 +1,4 @@
+import { getCropBudget } from '@/constants/crop-budgets';
 import type { Crop } from '@/types';
 import type { CropPlan, FarmTask, TaskPriority, TaskType } from '@/types/crop-management';
 
@@ -49,18 +50,14 @@ export function generateTasksForPlan(plan: CropPlan, crop: Crop): FarmTask[] {
   return tasks;
 }
 
+/**
+ * Expected saleable yield. Uses the shared crop budget table rather than a
+ * private copy — this function and the profit calculator previously disagreed
+ * about how much a hectare of maize produces.
+ */
 export function estimateYieldKg(hectares: number, crop: Crop): number {
-  const yieldPerHa: Record<string, number> = {
-    maize: 3500,
-    tomatoes: 25000,
-    tobacco: 2200,
-    onions: 18000,
-    potatoes: 20000,
-    beans: 1200,
-    groundnuts: 1500,
-  };
-  const base = yieldPerHa[crop.id] ?? 5000;
-  return Math.round(hectares * base);
+  const budget = getCropBudget(crop.id);
+  return Math.round(hectares * budget.yieldPerHectareKg);
 }
 
 export function estimateRevenueUSD(yieldKg: number, pricePerKg: number): number {
