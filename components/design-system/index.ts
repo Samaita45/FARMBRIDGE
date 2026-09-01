@@ -10,7 +10,6 @@ export { FadeInView } from './FadeInView';
 export { GlassCard } from './GlassCard';
 export { Input } from './Input';
 export type { InputProps } from './Input';
-export { ModuleHeader } from './ModuleHeader';
 export { ProfileScreenHeader } from './ProfileScreenHeader';
 export { SectionHeader } from './SectionHeader';
 export { TabScreenHeader } from './TabScreenHeader';

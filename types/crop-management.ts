@@ -1,3 +1,5 @@
+import type { IconName } from './icons';
+
 export type TaskType = 'plant' | 'water' | 'fertilize' | 'prune' | 'harvest' | 'treat' | 'other';
 export type TaskStatus = 'pending' | 'completed' | 'overdue';
 export type TaskPriority = 'low' | 'medium' | 'high';
@@ -31,15 +33,20 @@ export interface FarmTask {
   smsScheduled?: boolean;
 }
 
+/**
+ * Icon and tone per task type. Icons are Ionicons names, not emoji — emoji
+ * render inconsistently across Android OEM fonts and cannot be recoloured.
+ * `tone` selects a `DS.semantic` role so the badge colour carries meaning.
+ */
 export const TASK_TYPE_META: Record<
   TaskType,
-  { icon: string; label: string }
+  { icon: IconName; label: string; tone: 'success' | 'info' | 'warning' | 'neutral' }
 > = {
-  plant: { icon: '🌱', label: 'Plant' },
-  water: { icon: '💧', label: 'Water' },
-  fertilize: { icon: '🌿', label: 'Fertilize' },
-  prune: { icon: '✂️', label: 'Prune' },
-  harvest: { icon: '🌾', label: 'Harvest' },
-  treat: { icon: '💊', label: 'Treat' },
-  other: { icon: '📋', label: 'Other' },
+  plant: { icon: 'leaf-outline', label: 'Plant', tone: 'success' },
+  water: { icon: 'water-outline', label: 'Water', tone: 'info' },
+  fertilize: { icon: 'nutrition-outline', label: 'Fertilize', tone: 'success' },
+  prune: { icon: 'cut-outline', label: 'Prune', tone: 'neutral' },
+  harvest: { icon: 'basket-outline', label: 'Harvest', tone: 'warning' },
+  treat: { icon: 'medkit-outline', label: 'Treat', tone: 'warning' },
+  other: { icon: 'ellipsis-horizontal-circle-outline', label: 'Other', tone: 'neutral' },
 };

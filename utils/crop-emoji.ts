@@ -1,5 +1,7 @@
 import type { ImageSourcePropType } from 'react-native';
 
+import type { IconName } from '@/types/icons';
+
 const UNSPLASH_PARAMS = '?auto=format&fit=crop&w=600&q=80';
 
 const CROP_IMAGES: Record<string, string> = {
@@ -32,7 +34,7 @@ const CATEGORY_IMAGES: Record<string, string> = {
   'cash crop': `https://images.unsplash.com/photo-1501004318641-b39e6451bec6${UNSPLASH_PARAMS}`,
 };
 
-const CROP_ICONS: Record<string, string> = {
+const CROP_ICONS: Record<string, IconName> = {
   vegetable: 'leaf-outline',
   grain: 'nutrition-outline',
   fruit: 'restaurant-outline',
@@ -44,12 +46,8 @@ export function getCropImage(cropId: string, category?: string): ImageSourceProp
   return { uri: CROP_IMAGES[cropId] ?? CATEGORY_IMAGES[category ?? ''] ?? CATEGORY_IMAGES.vegetable };
 }
 
-export function getCropIcon(category?: string): string {
+export function getCropIcon(category?: string): IconName {
   return CROP_ICONS[category ?? ''] ?? 'leaf-outline';
-}
-
-export function getCropEmoji(cropId: string, category?: string): string {
-  return CROP_ICONS[cropId] ?? getCropIcon(category);
 }
 
 export function getDemandBadge(level: string): { label: string; color: string; bg: string } {
