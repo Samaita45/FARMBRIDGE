@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/toast-provider';
 import { getMockReviews } from '@/constants/mock-reviews';
 import { getProductById } from '@/constants/zimbabwe-data';
 import { asHref } from '@/lib/href';
+import { whatsAppUrl } from '@/constants/support';
 import { useCartStore, type CartState } from '@/stores/cartStore';
 import { getProductImage } from '@/utils/product-emoji';
 
@@ -28,8 +29,9 @@ export default function ProductDetailScreen() {
   }
 
   const whatsappSeller = () => {
-    const msg = encodeURIComponent(`Hi, I'm interested in ${product.name} on ZimFarm.`);
-    Linking.openURL(`https://wa.me/263771234567?text=${msg}`);
+    void Linking.openURL(
+      whatsAppUrl(`Hi, I'm interested in ${product.name} on FarmBridge.`)
+    );
   };
 
   return (

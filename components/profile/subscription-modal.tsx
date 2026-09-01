@@ -18,11 +18,21 @@ export function SubscriptionModal({ visible, onClose }: SubscriptionModalProps) 
   const currentPlanId = user?.subscription?.planId ?? 'basic';
   const isSubscribed = user?.subscription?.isActive ?? false;
 
+  // No payment provider is wired up yet, so nothing here can grant a real
+  // entitlement. Outside development the plan buttons say so rather than
+  // handing out a subscription the user has not paid for. Paynow lands in the
+  // payments phase, at which point entitlement moves server-side.
+  const canGrantLocally = __DEV__;
+
   const subscribe = (planId: string) => {
     if (planId === 'basic') return;
+    if (!canGrantLocally) {
+      showToast('Payments are not available yet — we will notify you at launch', 'info');
+      return;
+    }
     const expires = new Date(Date.now() + 30 * 86400000).toISOString();
     updateSubscription(planId, true, expires);
-    showToast('Subscription activated (demo)', 'success');
+    showToast('Development build: plan enabled locally without payment', 'warning');
     onClose();
   };
 
@@ -94,7 +104,19 @@ export function SubscriptionModal({ visible, onClose }: SubscriptionModalProps) 
                     <PrimaryButton title="Current Plan" variant="outline" disabled />
                   ) : (
                     <PrimaryButton
-                      title={isBiz ? 'Go Business' : 'Subscribe Now'}
+                      title={
+                        canGrantLocally
+                          ? isBiz
+                            ? 'Go Business'
+                            : 'Subscribe Now'
+                          : 'Coming soon'
+                      }
+                      variant={canGrantLocally ? 'primary' : 'outline'}
+                      accessibilityLabel={
+                        canGrantLocally
+                          ? `Subscribe to ${plan.name}`
+                          : `${plan.name} — payments are not available yet`
+                      }
                       onPress={() => subscribe(plan.id)}
                     />
                   )}

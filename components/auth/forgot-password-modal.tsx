@@ -1,119 +1,58 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Ionicons } from '@expo/vector-icons';
+import * as Linking from 'expo-linking';
 import { Modal, Pressable, Text, View } from 'react-native';
 
-import { FormInput } from '@/components/forms/form-input';
 import { PrimaryButton } from '@/components/ui/primary-button';
-import { useToast } from '@/components/ui/toast-provider';
-import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/lib/validation';
-import { sendPasswordResetCode, verifyResetCode } from '@/services/authService';
+import { SUPPORT_WHATSAPP_URL } from '@/constants/support';
 
 interface ForgotPasswordModalProps {
   visible: boolean;
   onClose: () => void;
 }
 
+/**
+ * Password reset is unavailable until account recovery runs on the server.
+ *
+ * The previous implementation generated the reset code on the device, stored it
+ * in unencrypted local storage, displayed it on screen and then verified it
+ * against itself — so anyone holding the phone could take over any account. It
+ * also never actually changed a password. Rather than leave a control that looks
+ * like it works, this states the real position and offers the one route that
+ * does work today.
+ */
 export function ForgotPasswordModal({ visible, onClose }: ForgotPasswordModalProps) {
-  const { showToast } = useToast();
-  const [step, setStep] = useState<'phone' | 'code'>('phone');
-  const [sentCode, setSentCode] = useState<string | null>(null);
-
-  const { control, handleSubmit, formState: { errors }, reset } = useForm<ForgotPasswordFormData>({
-    resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: { phone: '', code: '' },
-  });
-
-  const onSendCode = async (data: ForgotPasswordFormData) => {
-    try {
-      const code = await sendPasswordResetCode(data.phone);
-      setSentCode(code);
-      setStep('code');
-      showToast(`SMS code sent! (Demo: ${code})`, 'info');
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Failed to send code', 'error');
-    }
-  };
-
-  const onVerifyCode = async (data: ForgotPasswordFormData) => {
-    if (!data.code) {
-      showToast('Enter the 6-digit code', 'warning');
-      return;
-    }
-    const valid = await verifyResetCode(data.phone, data.code);
-    if (valid) {
-      showToast('Code verified! You can reset your password.', 'success');
-      handleClose();
-    } else {
-      showToast('Invalid or expired code', 'error');
-    }
-  };
-
-  const handleClose = () => {
-    reset();
-    setStep('phone');
-    setSentCode(null);
+  const contactSupport = () => {
+    void Linking.openURL(SUPPORT_WHATSAPP_URL);
     onClose();
   };
 
   return (
     <Modal visible={visible} transparent animationType="fade">
-      <Pressable className="flex-1 justify-center bg-black/50 px-6" onPress={handleClose}>
+      <Pressable className="flex-1 justify-center bg-black/50 px-6" onPress={onClose}>
         <Pressable className="rounded-3xl bg-white p-6" onPress={(e) => e.stopPropagation()}>
-          <Text className="font-display text-xl text-dark">Forgot Password</Text>
-          <Text className="mt-2 font-sans text-sm text-gray-500">
-            {step === 'phone'
-              ? 'We will send a verification code via SMS to your registered number.'
-              : 'Enter the 6-digit code sent to your phone.'}
+          <View className="mb-4 h-12 w-12 items-center justify-center rounded-2xl bg-primaryMid">
+            <Ionicons name="lock-closed-outline" size={22} color="#2563EB" />
+          </View>
+
+          <Text className="font-display text-xl text-dark">Password reset</Text>
+          <Text className="mt-2 font-sans text-sm leading-5 text-gray-500">
+            Self-service password reset isn’t available yet. Our team can verify your identity
+            and restore access to your account.
           </Text>
 
           <View className="mt-4">
-            <Controller
-              control={control}
-              name="phone"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <FormInput
-                  icon="call-outline"
-                  placeholder="+263 77 123 4567"
-                  keyboardType="phone-pad"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  error={errors.phone?.message}
-                  editable={step === 'phone'}
-                />
-              )}
+            <PrimaryButton
+              title="Contact support"
+              onPress={contactSupport}
+              accessibilityLabel="Contact FarmBridge support to reset your password"
             />
-            {step === 'code' ? (
-              <Controller
-                control={control}
-                name="code"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <FormInput
-                    icon="key-outline"
-                    placeholder="6-digit code"
-                    keyboardType="number-pad"
-                    maxLength={6}
-                    value={value}
-                    onChangeText={onChange}
-                    onBlur={onBlur}
-                  />
-                )}
-              />
-            ) : null}
           </View>
 
-          {sentCode && step === 'code' ? (
-            <Text className="mb-3 font-sans text-xs text-gray-400">
-              Demo mode: your code is {sentCode}
-            </Text>
-          ) : null}
-
-          <PrimaryButton
-            title={step === 'phone' ? 'Send SMS Code' : 'Verify Code'}
-            onPress={handleSubmit(step === 'phone' ? onSendCode : onVerifyCode)}
-          />
-          <Pressable onPress={handleClose} className="mt-3 py-2">
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            className="mt-3 py-2">
             <Text className="text-center font-sans text-gray-500">Cancel</Text>
           </Pressable>
         </Pressable>

@@ -1,8 +1,12 @@
 import { create } from 'zustand';
 
-import { getCurrentUser, logoutUser, updateUser as updateStoredUser } from '@/services/authService';
+import {
+  getCurrentUser,
+  logoutUser,
+  purgeLegacyCredentials,
+  updateUser as updateStoredUser,
+} from '@/services/authService';
 import { upsertUserCache } from '@/services/database';
-import { setJSON } from '@/services/storage';
 import type { User, UserRole } from '@/types';
 
 export interface AuthState {
@@ -36,6 +40,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   setLoading: (isLoading) => set({ isLoading }),
   hydrate: async () => {
     try {
+      // Clears credential material written by pre-hashing builds. Runs before
+      // the session is read so nothing recoverable outlives the first launch.
+      await purgeLegacyCredentials();
       const user = await getCurrentUser();
       set({ user, isAuthenticated: !!user, isHydrated: true });
       if (user) void upsertUserCache(user);
@@ -50,7 +57,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         ...state.user,
         subscription: { planId, isActive, expiresAt },
       };
-      void setJSON('current_user', user);
+      // Persisted through the user record; there is no separate session copy.
+      void updateStoredUser(user.id, { subscription: user.subscription });
       void upsertUserCache(user);
       return { user };
     }),

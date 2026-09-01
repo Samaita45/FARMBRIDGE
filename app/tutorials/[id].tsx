@@ -6,6 +6,7 @@ import { TutorialCard } from '@/components/cards/tutorial-card';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { useToast } from '@/components/ui/toast-provider';
 import { TUTORIALS } from '@/constants/tutorials-data';
+import { whatsAppUrl } from '@/constants/support';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useTutorialsStore, type TutorialsState } from '@/stores/tutorialsStore';
 
@@ -85,7 +86,7 @@ export default function TutorialDetailScreen() {
         </View>
 
         <Pressable
-          onPress={() => Linking.openURL('https://wa.me/263771234567?text=Expert%20question%20from%20ZimFarm')}
+          onPress={() => Linking.openURL(whatsAppUrl('Expert question from FarmBridge'))}
           className="mt-3 rounded-xl bg-surface py-3">
           <Text className="text-center font-sans-semibold text-primary">Ask an Expert →</Text>
         </Pressable>

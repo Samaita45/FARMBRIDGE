@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProvincePicker } from '@/components/forms/province-picker';
 import { Colors } from '@/constants/colors';
 import { MOCK_POSTS } from '@/constants/community-data';
+import { SUPPORT_WHATSAPP_URL } from '@/constants/support';
 import { CROPS, MARKET_PRODUCTS } from '@/constants/zimbabwe-data';
 import { cachePosts } from '@/services/communityDb';
 import { upsertCachedCropData, upsertCachedProduct } from '@/services/database';
@@ -167,7 +168,7 @@ export default function SettingsScreen() {
           <Section title="Support">
             <Pressable
               onPress={() =>
-                Linking.openURL('https://wa.me/263771234567?text=Hi%20ZimFarm%20support')
+                Linking.openURL(SUPPORT_WHATSAPP_URL)
               }
               className="mx-4 mb-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3">
               <Ionicons name="logo-whatsapp" size={22} color="#25D366" />

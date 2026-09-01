@@ -27,7 +27,8 @@ import { AuthImages } from "@/constants/images";
 import { asHref } from "@/lib/href";
 import { loginSchema, type LoginFormData } from "@/lib/validation";
 import {
-  getRememberedCredentials,
+  getDemoCredentials,
+  getRememberedEmail,
   loginUser,
   setRememberMe,
 } from "@/services/authService";
@@ -53,13 +54,13 @@ export default function LoginScreen() {
   });
 
   const rememberMe = Boolean(watch("rememberMe"));
+  const demoCredentials = getDemoCredentials();
 
   useEffect(() => {
     void (async () => {
-      const saved = await getRememberedCredentials();
-      if (saved) {
-        setValue("email", saved.email);
-        setValue("password", saved.password);
+      const email = await getRememberedEmail();
+      if (email) {
+        setValue("email", email);
         setValue("rememberMe", true);
       }
     })();
@@ -69,7 +70,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const user = await loginUser(data.email, data.password);
-      await setRememberMe(data.email, data.password, !!data.rememberMe);
+      await setRememberMe(data.email, !!data.rememberMe);
       login(user);
       showToast(`Welcome back, ${user.name.split(" ")[0]}!`, "success");
       router.replace(asHref("/(tabs)"));
@@ -78,21 +79,6 @@ export default function LoginScreen() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const onBiometricLogin = async () => {
-    const saved = await getRememberedCredentials();
-    if (!saved) {
-      showToast('Enable "Remember me" first to use quick login', "warning");
-      return;
-    }
-    setValue("email", saved.email);
-    setValue("password", saved.password);
-    await onSubmit({
-      email: saved.email,
-      password: saved.password,
-      rememberMe: true,
-    });
   };
 
   return (
@@ -230,45 +216,35 @@ export default function LoginScreen() {
                     <Text style={s.btnPrimaryText}>Login</Text>
                   )}
                 </Pressable>
+              </View>
 
-                {/* Quick login (biometric) */}
+              {/* Demo account — development builds only */}
+              {demoCredentials ? (
                 <Pressable
-                  onPress={onBiometricLogin}
+                  onPress={() => {
+                    setValue("email", demoCredentials.email);
+                    setValue("password", demoCredentials.password);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Fill in the demo account credentials"
                   style={({ pressed }) => [
-                    s.btnOutline,
+                    s.demoBtn,
                     pressed && { opacity: 0.75 },
                   ]}
                 >
                   <Ionicons
-                    name="finger-print"
-                    size={20}
-                    color={Colors.primary}
-                    style={{ marginRight: 8 }}
+                    name="flask-outline"
+                    size={15}
+                    color={Colors.primaryLight}
+                    style={{ marginRight: 6 }}
                   />
-                  <Text style={s.btnOutlineText}>Quick Login</Text>
+                  <Text style={s.demoText}>Use Demo Account</Text>
+                  <Text style={s.demoHint}>
+                    {" "}
+                    {demoCredentials.email}
+                  </Text>
                 </Pressable>
-              </View>
-
-              {/* Demo account hint */}
-              <Pressable
-                onPress={() => {
-                  setValue("email", "demo@farmbridge.zw");
-                  setValue("password", "demo1234");
-                }}
-                style={({ pressed }) => [
-                  s.demoBtn,
-                  pressed && { opacity: 0.75 },
-                ]}
-              >
-                <Ionicons
-                  name="flask-outline"
-                  size={15}
-                  color={Colors.primaryLight}
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={s.demoText}>Use Demo Account</Text>
-                <Text style={s.demoHint}> demo@farmbridge.zw · demo1234</Text>
-              </Pressable>
+              ) : null}
 
               {/* Register link — proper button, NOT plain text */}
               <Link href="/(auth)/register" asChild>
@@ -279,7 +255,7 @@ export default function LoginScreen() {
                   ]}
                 >
                   <Text style={s.registerText}>
-                    Don't have an account?{"  "}
+                    Don’t have an account?{"  "}
                     <Text style={s.registerLink}>Register</Text>
                   </Text>
                 </Pressable>
