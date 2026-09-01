@@ -15,6 +15,8 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 
+import { QueryClientProvider } from '@tanstack/react-query';
+
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 import { Colors } from '@/constants/colors';
@@ -25,11 +27,17 @@ import {
   registerNotificationListeners,
   requestNotificationPermissions,
 } from '@/services/notificationService';
+import { setSessionExpiredHandler } from '@/services/api/client';
+import { createQueryClient } from '@/services/api/query-client';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 SplashScreen.preventAutoHideAsync();
+
+// One client for the app's lifetime. Created outside the component so a
+// re-render cannot discard the cache.
+const queryClient = createQueryClient();
 
 const ZimFarmLightTheme = {
   ...DefaultTheme,
@@ -55,10 +63,22 @@ function AppBootstrap() {
   useDailyDigestScheduler();
   const userId = useAuthStore((s: AuthState) => s.user?.id);
   const addNotification = useNotificationStore((s) => s.add);
+  const logout = useAuthStore((s: AuthState) => s.logout);
 
   useEffect(() => {
     void requestNotificationPermissions();
   }, []);
+
+  // When a refresh token is rejected the API layer clears it and calls this, so
+  // the app returns to a signed-out state instead of sitting on a dead session
+  // and failing every request.
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      void logout();
+      queryClient.clear();
+    });
+    return () => setSessionExpiredHandler(null);
+  }, [logout]);
 
   useEffect(() => {
     if (!userId) return;
@@ -101,7 +121,8 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ToastProvider>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
         <AppBootstrap />
         <OfflineBanner />
         <ThemeProvider value={colorScheme === 'dark' ? ZimFarmDarkTheme : ZimFarmLightTheme}>
@@ -119,8 +140,9 @@ export default function RootLayout() {
               />
             </Stack>
             <StatusBar style="dark" />
-        </ThemeProvider>
-      </ToastProvider>
+          </ThemeProvider>
+        </ToastProvider>
+      </QueryClientProvider>
     </SafeAreaProvider>
   );
 }

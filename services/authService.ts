@@ -1,24 +1,39 @@
 /**
- * Device-local authentication.
+ * Authentication, in two modes.
  *
- * INTERIM. FarmBridge has no backend yet, so accounts live on the device. This
- * module's job is to make that arrangement safe to ship, not to pretend it is
- * real authentication:
+ * SERVER MODE (IS_API_ENABLED). Credentials are verified by the API, which
+ * holds Argon2id hashes, rotates refresh tokens and writes an audit trail. The
+ * device stores only tokens, in the platform keystore. This is the real thing
+ * and is what production runs.
  *
- *   - passwords are stored only as salted, iterated hashes (never recoverable)
- *   - the session lives in the platform keystore and expires
- *   - password reset is disabled rather than simulated on-device
+ * LOCAL MODE (no API configured). Accounts live on the device so a fresh
+ * checkout, a demo, or a build without a backend still works. It is deliberately
+ * limited: passwords are stored only as salted, iterated hashes, the session
+ * expires, and password reset is disabled rather than simulated.
  *
- * When the backend lands, this becomes a thin client over the auth API and the
- * local user table is retired. Anything added here should be written with that
- * migration in mind.
+ * Which mode is active is decided once, by configuration -- never guessed per
+ * call. An offline phone in server mode keeps its existing session (see
+ * `getCurrentUser`) but cannot mint a new one, because only the server can say
+ * whether a password is correct.
  */
 import { hashPassword, isHashedPassword, verifyPassword } from '@/lib/password';
 import type { User, UserRole } from '@/types';
 
+import {
+  apiChangePassword,
+  apiLogin,
+  apiLogout,
+  apiRegister,
+} from './api/auth.api';
+import { clearTokens, getStoredTokens } from './api/client';
+import { IS_API_ENABLED } from './api/config';
+import { isOfflineError } from './api/errors';
 import { getJSON, removeItem, setJSON } from './storage';
 import { fastGetAsync, fastRemove, fastSetAsync } from './fastStorage';
 import { deleteSecureItem, getSecureJSON, setSecureJSON } from './secureStorage';
+
+/** The profile of the signed-in user, cached so the app can start offline. */
+const CACHED_PROFILE_KEY = 'cached_profile';
 
 const USERS_KEY = 'users';
 const REMEMBER_EMAIL_KEY = 'remember_email';
@@ -150,6 +165,12 @@ async function saveAllUsers(users: StoredUser[]): Promise<void> {
 export async function purgeLegacyCredentials(): Promise<void> {
   await removeItem(LEGACY_CURRENT_USER_KEY);
   fastRemove(LEGACY_REMEMBER_PASSWORD_KEY);
+  // In server mode the on-device user table is not an authentication source,
+  // so there is nothing to migrate and nothing that should linger.
+  if (IS_API_ENABLED) {
+    await setJSON(USERS_KEY, []);
+    return;
+  }
   // Re-reading the table rewrites any plaintext password as a hash.
   await getAllUsers();
 }
@@ -197,6 +218,12 @@ async function readValidSession(): Promise<Session | null> {
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export async function registerUser(input: RegisterInput): Promise<User> {
+  if (IS_API_ENABLED) {
+    const user = await apiRegister(input);
+    await setJSON(CACHED_PROFILE_KEY, user);
+    return user;
+  }
+
   const users = await getAllUsers();
   const email = normalizeEmail(input.email);
 
@@ -223,6 +250,12 @@ export async function registerUser(input: RegisterInput): Promise<User> {
 }
 
 export async function loginUser(email: string, password: string): Promise<User> {
+  if (IS_API_ENABLED) {
+    const user = await apiLogin(email, password);
+    await setJSON(CACHED_PROFILE_KEY, user);
+    return user;
+  }
+
   const users = await getAllUsers();
   const normalized = normalizeEmail(email);
   const found = users.find((u) => normalizeEmail(u.email) === normalized);
@@ -241,6 +274,15 @@ export async function loginUser(email: string, password: string): Promise<User> 
 }
 
 export async function getCurrentUser(): Promise<User | null> {
+  if (IS_API_ENABLED) {
+    // Presence of a refresh token is the session. The profile is served from
+    // cache so the app opens instantly and works on a phone with no signal;
+    // the token is only exercised when a request actually needs the server.
+    const tokens = await getStoredTokens();
+    if (!tokens?.refreshToken) return null;
+    return getJSON<User>(CACHED_PROFILE_KEY);
+  }
+
   const session = await readValidSession();
   if (!session) return null;
 
@@ -254,7 +296,38 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 export async function logoutUser(): Promise<void> {
+  if (IS_API_ENABLED) {
+    const tokens = await getStoredTokens();
+    try {
+      await apiLogout(tokens?.refreshToken);
+    } catch (error) {
+      // A server we cannot reach must not trap the user in a session they
+      // asked to end. The refresh token is revoked locally either way, and the
+      // server's copy expires on its own.
+      if (!isOfflineError(error)) throw error;
+      await clearTokens();
+    }
+    await removeItem(CACHED_PROFILE_KEY);
+    return;
+  }
+
   await deleteSecureItem(SESSION_KEY);
+}
+
+/** Changes the password. Server mode only -- local mode has no reset path. */
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  if (!IS_API_ENABLED) {
+    throw new Error('Password changes need a connection to FarmBridge.');
+  }
+  await apiChangePassword(currentPassword, newPassword);
+}
+
+/** True when this build authenticates against the API rather than the device. */
+export function isServerAuth(): boolean {
+  return IS_API_ENABLED;
 }
 
 /**
@@ -274,6 +347,16 @@ export async function getRememberedEmail(): Promise<string | null> {
 }
 
 export async function updateUser(userId: string, updates: Partial<User>): Promise<User> {
+  if (IS_API_ENABLED) {
+    // No profile endpoint yet, so this updates the local cache only. When the
+    // users controller lands this becomes a PATCH and the cache follows the
+    // response rather than leading it.
+    const cached = await getJSON<User>(CACHED_PROFILE_KEY);
+    const merged = { ...(cached ?? ({} as User)), ...updates, id: userId };
+    await setJSON(CACHED_PROFILE_KEY, merged);
+    return merged;
+  }
+
   const users = await getAllUsers();
   const idx = users.findIndex((u) => u.id === userId);
   if (idx === -1) throw new Error('User not found.');
