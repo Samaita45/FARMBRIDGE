@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Premium } from '@/constants/premium-home';
+import { DS } from '@/constants/design-system';
+import type { IconName } from '@/types/icons';
 
-interface PremiumSectionHeaderProps {
+interface SectionHeaderProps {
   title: string;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: IconName;
   actionLabel?: string;
   onPress?: () => void;
 }
@@ -15,23 +16,27 @@ export function PremiumSectionHeader({
   icon,
   actionLabel = 'View all',
   onPress,
-}: PremiumSectionHeaderProps) {
+}: SectionHeaderProps) {
   return (
     <View style={styles.row}>
       <View style={styles.left}>
-        {icon ? (
-          <View style={styles.iconWrap}>
-            <Ionicons name={icon} size={18} color={Premium.primary} />
-          </View>
-        ) : null}
-        <Text style={styles.title}>{title}</Text>
+        {icon ? <Ionicons name={icon} size={18} color={DS.colors.primary} /> : null}
+        <Text
+          style={styles.title}
+          numberOfLines={1}
+          maxFontSizeMultiplier={DS.layout.maxFontScale}>
+          {title}
+        </Text>
       </View>
       {onPress ? (
         <Pressable
           onPress={onPress}
-          style={({ pressed }) => [styles.btn, pressed && { opacity: 0.75 }]}>
-          <Text style={styles.btnText}>{actionLabel}</Text>
-          <Ionicons name="chevron-forward" size={14} color={Premium.primary} />
+          accessibilityRole="button"
+          accessibilityLabel={`${actionLabel}: ${title}`}
+          hitSlop={8}
+          style={({ pressed }) => [styles.action, pressed && styles.pressed]}>
+          <Text style={styles.actionText}>{actionLabel}</Text>
+          <Ionicons name="chevron-forward" size={13} color={DS.colors.primary} />
         </Pressable>
       ) : null}
     </View>
@@ -43,36 +48,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    gap: DS.spacing.sm,
+    marginBottom: DS.spacing.sm + 4,
   },
-  left: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#EFF6FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
-  },
+  left: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm, flex: 1 },
   title: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: Premium.text,
-    letterSpacing: -0.3,
     flex: 1,
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
   },
-  btn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: '#EFF6FF',
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
+  action: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: 4 },
+  pressed: { opacity: 0.7 },
+  actionText: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.primary,
   },
-  btnText: { fontSize: 13, fontWeight: '700', color: Premium.primary },
 });

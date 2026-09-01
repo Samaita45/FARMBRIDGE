@@ -1,3 +1,5 @@
+import type { IconName } from '@/types/icons';
+
 import { CACHE_TTL, getCached, getStaleCached, setCached } from './cacheService';
 
 const BASE_URL = 'https://api.open-meteo.com/v1/forecast';
@@ -8,7 +10,7 @@ export interface CurrentWeather {
   humidity: number;
   windSpeed: number;
   condition: string;
-  icon: string;
+  icon: IconName;
   precipitation: number;
 }
 
@@ -19,7 +21,7 @@ export interface DailyForecast {
   rainProbability: number;
   rainAmount: number;
   condition: string;
-  icon: string;
+  icon: IconName;
 }
 
 export interface RainForecast {
@@ -41,17 +43,24 @@ export interface WeatherBundle {
   agricultural: AgriculturalWeather;
 }
 
-function mapWeatherCode(code: number): { condition: string; icon: string } {
-  if (code === 0) return { condition: 'Clear sky', icon: '☀️' };
-  if (code <= 3) return { condition: 'Partly cloudy', icon: '⛅' };
-  if (code <= 48) return { condition: 'Foggy', icon: '🌫️' };
-  if (code <= 57) return { condition: 'Drizzle', icon: '🌦️' };
-  if (code <= 67) return { condition: 'Rain', icon: '🌧️' };
-  if (code <= 77) return { condition: 'Snow', icon: '❄️' };
-  if (code <= 82) return { condition: 'Showers', icon: '🌧️' };
-  if (code <= 86) return { condition: 'Snow showers', icon: '🌨️' };
-  if (code >= 95) return { condition: 'Thunderstorm', icon: '⛈️' };
-  return { condition: 'Cloudy', icon: '☁️' };
+/**
+ * WMO weather code to a condition label and an Ionicons name.
+ *
+ * These were emoji until the icon sweep. Emoji rendered as text cannot be
+ * recoloured, size inconsistently against surrounding type, and vary by Android
+ * OEM font, so the same forecast looked different on different phones.
+ */
+function mapWeatherCode(code: number): { condition: string; icon: IconName } {
+  if (code === 0) return { condition: 'Clear sky', icon: 'sunny-outline' };
+  if (code <= 3) return { condition: 'Partly cloudy', icon: 'partly-sunny-outline' };
+  if (code <= 48) return { condition: 'Foggy', icon: 'cloudy-outline' };
+  if (code <= 57) return { condition: 'Drizzle', icon: 'rainy-outline' };
+  if (code <= 67) return { condition: 'Rain', icon: 'rainy-outline' };
+  if (code <= 77) return { condition: 'Snow', icon: 'snow-outline' };
+  if (code <= 82) return { condition: 'Showers', icon: 'rainy-outline' };
+  if (code <= 86) return { condition: 'Snow showers', icon: 'snow-outline' };
+  if (code >= 95) return { condition: 'Thunderstorm', icon: 'thunderstorm-outline' };
+  return { condition: 'Cloudy', icon: 'cloudy-outline' };
 }
 
 function getFarmingInsight(
@@ -191,7 +200,7 @@ function getOfflineFallback(): WeatherBundle {
         rainProbability: i === 2 ? 65 : 20,
         rainAmount: i === 2 ? 8 : 0,
         condition: 'Partly cloudy',
-        icon: '⛅',
+        icon: 'partly-sunny-outline',
       };
     }),
     rain: { nextRainDate: null, daysUntil: 2, amount: 8 },

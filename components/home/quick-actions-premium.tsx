@@ -1,125 +1,117 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { type Href, Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Premium } from '@/constants/premium-home';
+import { DS } from '@/constants/design-system';
+import type { IconName } from '@/types/icons';
 
-const ACTIONS: {
+interface QuickAction {
   label: string;
   sub: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   href: string;
-  colors: [string, string];
-}[] = [
+  tone: keyof typeof DS.semantic;
+}
+
+/**
+ * Two of the previous four tiles ("Find Buyers" and "Community Tips") pointed
+ * at the same /community route under different names. Those are replaced by
+ * Crop Management and Financials, which together hold eleven screens that were
+ * otherwise reachable only by scrolling past them on this dashboard.
+ */
+const ACTIONS: QuickAction[] = [
   {
-    label: 'FarmBridge Market',
-    sub: 'Buy & sell produce',
-    icon: 'storefront',
+    label: 'Marketplace',
+    sub: 'Buy and sell produce',
+    icon: 'storefront-outline',
     href: '/(tabs)/market',
-    colors: ['#3B82F6', '#2563EB'],
+    tone: 'info',
   },
   {
-    label: 'Book Transport',
+    label: 'Transport',
     sub: 'Move your harvest',
-    icon: 'bus',
+    icon: 'bus-outline',
     href: '/(tabs)/transport',
-    colors: ['#22C55E', '#16A34A'],
+    tone: 'success',
   },
   {
-    label: 'Find Buyers',
-    sub: 'Connect instantly',
-    icon: 'people',
-    href: '/(tabs)/community',
-    colors: ['#A78BFA', '#7C3AED'],
+    label: 'Crop management',
+    sub: 'Plans, tasks and health',
+    icon: 'leaf-outline',
+    href: '/crop-management',
+    tone: 'success',
   },
   {
-    label: 'Community Tips',
-    sub: 'Learn from farmers',
-    icon: 'chatbubbles',
-    href: '/(tabs)/community',
-    colors: ['#FB923C', '#F97316'],
+    label: 'Financials',
+    sub: 'Income, costs and profit',
+    icon: 'wallet-outline',
+    href: '/financials',
+    tone: 'warning',
   },
 ];
 
 export function QuickActionsPremium() {
   return (
     <View style={styles.grid}>
-      {ACTIONS.map((action) => (
-        <Link key={action.label} href={action.href as Href} asChild>
-          <Pressable
-            style={({ pressed }) => [styles.wrap, pressed && styles.wrapPressed]}>
-            <LinearGradient
-              colors={action.colors}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.card}>
-              <View style={styles.glow} />
-              <View style={styles.iconCircle}>
-                <Ionicons name={action.icon} size={24} color="#fff" />
+      {ACTIONS.map((action) => {
+        const tone = DS.semantic[action.tone];
+        return (
+          <Link key={action.label} href={action.href as Href} asChild>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={`${action.label}. ${action.sub}`}
+              style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+              <View style={[styles.iconWrap, { backgroundColor: tone.bg }]}>
+                <Ionicons name={action.icon} size={20} color={tone.fg} />
               </View>
-              <Text style={styles.label}>{action.label}</Text>
-              <Text style={styles.sub}>{action.sub}</Text>
-              <View style={styles.arrowCircle}>
-                <Ionicons name="arrow-forward" size={16} color="#fff" />
-              </View>
-            </LinearGradient>
-          </Pressable>
-        </Link>
-      ))}
+              <Text style={styles.label} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+                {action.label}
+              </Text>
+              <Text
+                style={styles.sub}
+                numberOfLines={2}
+                maxFontSizeMultiplier={DS.layout.maxFontScale}>
+                {action.sub}
+              </Text>
+            </Pressable>
+          </Link>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
-  wrap: { width: '47.5%', flexGrow: 1, minWidth: 150 },
-  wrapPressed: { transform: [{ scale: 0.97 }] },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: DS.spacing.sm + 4 },
   card: {
-    borderRadius: Premium.radiusLg,
-    padding: 20,
-    minHeight: 148,
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-    ...Premium.shadowSoft,
+    width: '47.5%',
+    flexGrow: 1,
+    minWidth: 148,
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.lg,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
+    padding: DS.spacing.md,
+    gap: 3,
   },
-  glow: {
-    position: 'absolute',
-    top: -20,
-    right: -20,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.22)',
+  pressed: { backgroundColor: DS.colors.surfaceMuted },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: DS.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+    marginBottom: 6,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: 4,
-    letterSpacing: -0.2,
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
   },
-  sub: { fontSize: 12, color: 'rgba(255,255,255,0.82)', fontWeight: '500' },
-  arrowCircle: {
-    position: 'absolute',
-    right: 16,
-    bottom: 16,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  sub: {
+    fontSize: DS.typography.caption.fontSize,
+    lineHeight: 16,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
   },
 });

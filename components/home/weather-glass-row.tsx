@@ -1,172 +1,209 @@
-import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
-import type { ReactNode } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Premium } from '@/constants/premium-home';
+import { Card } from '@/components/design-system';
+import { Skeleton } from '@/components/ui/skeleton';
+import { DS } from '@/constants/design-system';
 import type { AgriculturalWeather, CurrentWeather } from '@/services/weatherService';
 
-interface WeatherGlassRowProps {
+interface WeatherSummaryProps {
   current?: CurrentWeather;
   agricultural?: AgriculturalWeather;
   loading?: boolean;
   onPress?: () => void;
 }
 
-function GlassCard({ children, style }: { children: ReactNode; style?: object }) {
-  if (Platform.OS === 'ios') {
-    return (
-      <BlurView intensity={55} tint="light" style={[styles.glass, style]}>
-        {children}
-      </BlurView>
-    );
-  }
-  return <View style={[styles.glass, styles.glassAndroid, style]}>{children}</View>;
-}
-
-export function WeatherGlassRow({
+/**
+ * Current conditions beside the soil readings that matter for field work.
+ *
+ * Both cards were translucent "glass" panels — a BlurView on iOS and a
+ * semi-transparent white on Android, so the two platforms never matched. They
+ * are ordinary surfaces now, and the weather glyph is an icon rather than an
+ * emoji rendered as text.
+ */
+export function WeatherSummary({
   current,
   agricultural,
   loading,
   onPress,
-}: WeatherGlassRowProps) {
+}: WeatherSummaryProps) {
   if (loading || !current) {
     return (
       <View style={styles.row}>
-        <View style={[styles.glass, styles.glassAndroid, styles.skeleton]} />
-        <View style={[styles.glass, styles.glassAndroid, styles.skeleton]} />
+        <Card style={styles.card}>
+          <Skeleton height={14} width="50%" />
+          <Skeleton height={34} width="60%" style={styles.skeletonGap} />
+          <Skeleton height={12} width="80%" style={styles.skeletonGap} />
+        </Card>
+        <Card style={styles.card}>
+          <Skeleton height={14} width="70%" />
+          <Skeleton height={12} style={styles.skeletonGap} />
+          <Skeleton height={12} style={styles.skeletonGap} />
+        </Card>
       </View>
     );
   }
 
-  const moisturePct = agricultural
-    ? Math.round(agricultural.soilMoisture * 100)
-    : null;
+  const moisturePct = agricultural ? Math.round(agricultural.soilMoisture * 100) : null;
 
   return (
     <View style={styles.row}>
       <Pressable
         onPress={onPress}
-        style={({ pressed }) => [styles.cardPress, pressed && { opacity: 0.92 }]}>
-        <GlassCard>
-          <Text style={styles.cardLabel}>Weather</Text>
-          <Text style={styles.weatherIcon}>{current.icon}</Text>
-          <Text style={styles.temp}>
+        accessibilityRole="button"
+        accessibilityLabel={`Current weather: ${current.temp} degrees, ${current.condition}. Open the 7-day forecast.`}
+        style={({ pressed }) => [styles.flex, pressed && styles.pressed]}>
+        <Card style={styles.card}>
+          <Text style={styles.label}>Weather</Text>
+          <Ionicons name={current.icon} size={28} color={DS.colors.primary} />
+          <Text style={styles.temp} maxFontSizeMultiplier={DS.layout.maxFontScale}>
             {current.temp}
             <Text style={styles.tempUnit}>°C</Text>
           </Text>
           <Text style={styles.condition} numberOfLines={1}>
             {current.condition}
           </Text>
+
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
-              <Ionicons name="water-outline" size={14} color={Premium.primary} />
-              <Text style={styles.metaText}>{current.humidity}%</Text>
+              <Ionicons name="water-outline" size={14} color={DS.colors.textSoft} />
+              <Text style={styles.metaText}>{current.humidity}% humidity</Text>
             </View>
             <View style={styles.metaItem}>
-              <Ionicons name="flag-outline" size={14} color={Premium.purple} />
-              <Text style={styles.metaText}>{current.windSpeed ?? 12} km/h</Text>
+              <Ionicons name="navigate-outline" size={14} color={DS.colors.textSoft} />
+              <Text style={styles.metaText}>{current.windSpeed} km/h wind</Text>
             </View>
           </View>
-        </GlassCard>
+        </Card>
       </Pressable>
 
-      <View style={styles.cardPress}>
-        <GlassCard>
-        <Text style={styles.cardLabel}>Farm Conditions</Text>
+      <Card style={[styles.card, styles.flex]}>
+        <Text style={styles.label}>Field conditions</Text>
         {agricultural ? (
           <>
             <MetricBar
               label="Soil temp"
               value={`${agricultural.soilTemperature}°C`}
               pct={Math.min(100, (agricultural.soilTemperature / 35) * 100)}
-              color={Premium.orange}
+              tone="warning"
             />
             <MetricBar
               label="Moisture"
               value={`${moisturePct}%`}
               pct={moisturePct ?? 0}
-              color={Premium.primary}
+              tone="info"
             />
             <Text style={styles.insight} numberOfLines={3}>
               {agricultural.insight}
             </Text>
           </>
         ) : (
-          <Text style={styles.insight}>Enable location for soil insights.</Text>
+          <Text style={styles.insight}>Turn on location to see soil readings.</Text>
         )}
-        </GlassCard>
-      </View>
+      </Card>
     </View>
   );
 }
+
+/** @deprecated Use `WeatherSummary`. */
+export const WeatherGlassRow = WeatherSummary;
 
 function MetricBar({
   label,
   value,
   pct,
-  color,
+  tone,
 }: {
   label: string;
   value: string;
   pct: number;
-  color: string;
+  tone: keyof typeof DS.semantic;
 }) {
   return (
-    <View style={styles.metric}>
+    <View
+      style={styles.metric}
+      accessibilityRole="progressbar"
+      accessibilityLabel={`${label}: ${value}`}
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(pct) }}>
       <View style={styles.metricHead}>
         <Text style={styles.metricLabel}>{label}</Text>
         <Text style={styles.metricValue}>{value}</Text>
       </View>
       <View style={styles.track}>
-        <View style={[styles.fill, { width: `${pct}%`, backgroundColor: color }]} />
+        <View
+          style={[styles.fill, { width: `${pct}%`, backgroundColor: DS.semantic[tone].solid }]}
+        />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 12 },
-  cardPress: { flex: 1 },
-  glass: {
-    flex: 1,
-    borderRadius: Premium.radiusLg,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.75)',
-    overflow: 'hidden',
-    minHeight: 210,
-    ...Premium.shadow,
-  },
-  glassAndroid: {
-    backgroundColor: Premium.surfaceGlass,
-  },
-  skeleton: { backgroundColor: '#E2E8F0', minHeight: 200 },
-  cardLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: Premium.textMuted,
+  row: { flexDirection: 'row', gap: DS.spacing.sm + 4 },
+  flex: { flex: 1 },
+  pressed: { opacity: 0.9 },
+  card: { minHeight: 196, gap: 4 },
+  skeletonGap: { marginTop: DS.spacing.sm },
+
+  label: {
+    fontSize: DS.typography.label.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textSoft,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-    marginBottom: 8,
+    marginBottom: DS.spacing.sm,
   },
-  weatherIcon: { fontSize: 36, marginBottom: 4 },
-  temp: { fontSize: 36, fontWeight: '800', color: Premium.text, letterSpacing: -1 },
-  tempUnit: { fontSize: 18, fontWeight: '600', color: Premium.textMuted },
-  condition: { fontSize: 12, color: Premium.textMuted, marginBottom: 12 },
-  metaRow: { gap: 8 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  metaText: { fontSize: 12, fontWeight: '700', color: Premium.text },
-  metric: { marginBottom: 12 },
-  metricHead: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  metricLabel: { fontSize: 11, color: Premium.textMuted, fontWeight: '600' },
-  metricValue: { fontSize: 12, fontWeight: '800', color: Premium.text },
+  temp: {
+    fontSize: 32,
+    fontFamily: DS.fontFamily.bold,
+    color: DS.colors.text,
+    marginTop: 2,
+  },
+  tempUnit: {
+    fontSize: 16,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textMuted,
+  },
+  condition: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    marginBottom: DS.spacing.sm,
+  },
+
+  metaRow: { gap: 6, marginTop: 'auto' },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  metaText: {
+    fontSize: 11,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+
+  metric: { marginBottom: DS.spacing.sm + 2 },
+  metricHead: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
+  metricLabel: {
+    fontSize: 11,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+  metricValue: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
   track: {
-    height: 6,
-    backgroundColor: 'rgba(15,23,42,0.08)',
-    borderRadius: 4,
+    height: 5,
+    backgroundColor: DS.colors.surfaceMuted,
+    borderRadius: DS.radius.full,
     overflow: 'hidden',
   },
-  fill: { height: '100%', borderRadius: 4 },
-  insight: { fontSize: 11, color: Premium.textMuted, lineHeight: 16, marginTop: 4 },
+  fill: { height: '100%', borderRadius: DS.radius.full },
+
+  insight: {
+    fontSize: 11,
+    lineHeight: 16,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    marginTop: 2,
+  },
 });

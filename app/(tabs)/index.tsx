@@ -6,17 +6,18 @@ import { CropTrendCard } from '@/components/cards/crop-trend-card';
 import { FadeInView } from '@/components/design-system/FadeInView';
 import { SubscriptionBanner } from '@/components/cards/subscription-banner';
 import { CropDemandChart } from '@/components/charts/crop-demand-chart';
-import { AiInsightCard } from '@/components/home/ai-insight-card';
+import { MarketInsightCard } from '@/components/home/ai-insight-card';
 import { InsightStrip } from '@/components/home/insight-strip';
-import { PremiumHeroHeader } from '@/components/home/premium-hero-header';
+import { HomeHeader } from '@/components/home/premium-hero-header';
 import { PremiumSectionHeader } from '@/components/home/premium-section-header';
 import { PlantNowCard } from '@/components/home/plant-now-card';
 import { QuickActionsPremium } from '@/components/home/quick-actions-premium';
-import { WeatherGlassRow } from '@/components/home/weather-glass-row';
+import { WeatherSummary } from '@/components/home/weather-glass-row';
 import { CropCardSkeleton } from '@/components/ui/skeleton';
+import type { InsightItem } from '@/components/home/insight-strip';
 import { WeatherForecastModal } from '@/components/weather/weather-forecast-modal';
 import { EXCHANGE_RATE } from '@/constants/market-stats';
-import { Premium } from '@/constants/premium-home';
+import { DS } from '@/constants/design-system';
 import {
   CROPS,
   MARKET_PRODUCTS,
@@ -65,24 +66,24 @@ export default function HomeScreen() {
     () => [
       {
         id: 'fx',
-        icon: 'swap-horizontal' as const,
+        icon: 'swap-horizontal-outline',
         label: 'USD / ZWG',
         value: `1:${EXCHANGE_RATE.usdToZwg}`,
-        trend: 'Live rate',
-        colors: ['#EFF6FF', '#DBEAFE'] as [string, string],
-        accent: Premium.primary,
+        // Not a live rate. It is a build-time constant until ExchangeRateService
+        // lands, and saying otherwise on the dashboard would be a lie about money.
+        trend: 'Indicative',
+        tone: 'info',
       },
       {
         id: 'crop',
-        icon: 'leaf' as const,
+        icon: 'leaf-outline',
         label: 'Top crop',
         value: topCrops[0]?.name ?? '—',
-        colors: ['#F0FDF4', '#DCFCE7'] as [string, string],
-        accent: Premium.green,
+        tone: 'success',
       },
       {
         id: 'rain',
-        icon: 'rainy' as const,
+        icon: 'rainy-outline',
         label: 'Rain',
         value:
           weather?.rain?.daysUntil != null
@@ -90,22 +91,20 @@ export default function HomeScreen() {
               ? 'Today'
               : `${weather.rain.daysUntil}d`
             : 'Dry',
-        colors: ['#FFF7ED', '#FFEDD5'] as [string, string],
-        accent: Premium.orange,
+        tone: 'warning',
       },
       {
         id: 'temp',
-        icon: 'thermometer' as const,
+        icon: 'thermometer-outline',
         label: 'Temperature',
         value: weather?.current ? `${weather.current.temp}°C` : '—',
-        colors: ['#F5F3FF', '#EDE9FE'] as [string, string],
-        accent: Premium.purple,
+        tone: 'neutral',
       },
-    ],
+    ] satisfies InsightItem[],
     [topCrops, weather],
   );
 
-  const aiMessage = useMemo(() => {
+  const insightMessage = useMemo(() => {
     const crop = topCrops[0]?.name ?? 'Tomatoes';
     const place = location.label.split('·')[0]?.trim() ?? 'Harare';
     return `${crop} show strong market demand this week in ${place}.`;
@@ -147,11 +146,11 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={Premium.primary}
+            tintColor={DS.colors.primary}
           />
         }
         showsVerticalScrollIndicator={false}>
-        <PremiumHeroHeader
+        <HomeHeader
           locationLabel={location.label}
           greeting={GREETING}
           notificationCount={unreadCount}
@@ -165,7 +164,7 @@ export default function HomeScreen() {
           </FadeInView>
 
           <FadeInView delay={1} style={s.block}>
-            <AiInsightCard message={aiMessage} locationLabel={location.label} />
+            <MarketInsightCard message={insightMessage} locationLabel={location.label} />
           </FadeInView>
 
           <FadeInView delay={2} style={s.block}>
@@ -175,7 +174,7 @@ export default function HomeScreen() {
               actionLabel="7-day"
               onPress={() => setWeatherModalOpen(true)}
             />
-            <WeatherGlassRow
+            <WeatherSummary
               current={weather?.current}
               agricultural={weather?.agricultural}
               loading={weatherLoading || locationLoading}
@@ -245,14 +244,13 @@ export default function HomeScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Premium.background },
+  root: { flex: 1, backgroundColor: DS.colors.background },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 40 },
   body: {
-    paddingHorizontal: 20,
-    marginTop: -24,
-    gap: 0,
+    paddingHorizontal: DS.spacing.md,
+    paddingTop: DS.spacing.md,
   },
-  block: { marginTop: 28 },
+  block: { marginTop: DS.spacing.lg },
   hScroll: { paddingRight: 8, paddingLeft: 2 },
 });

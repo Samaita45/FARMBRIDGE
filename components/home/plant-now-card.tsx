@@ -1,58 +1,68 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Premium } from '@/constants/premium-home';
-import { getCropImage } from '@/utils/crop-emoji';
+import { DS } from '@/constants/design-system';
 import type { Crop } from '@/types';
+import type { IconName } from '@/types/icons';
+import { getCropImage } from '@/utils/crop-emoji';
 
 interface PlantNowCardProps {
   crop: Crop;
   onPress: () => void;
 }
 
+/**
+ * A crop whose planting window is open this month.
+ *
+ * The badge used to read "AI recommendation". The list comes from
+ * `getCropsForMonth` — a lookup against each crop's `bestPlantingMonths`. It
+ * now says what that is.
+ */
 export function PlantNowCard({ crop, onPress }: PlantNowCardProps) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+      accessibilityRole="button"
+      accessibilityLabel={`${crop.name}. In season. ${crop.harvestDays} days to harvest, ${crop.waterRequirements} water. Around $${crop.currentPriceUSD.toFixed(2)} per kilogram. Open the planner.`}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       <Image
         source={getCropImage(crop.id, crop.category)}
         style={styles.image}
-        resizeMode="cover"
+        contentFit="cover"
+        transition={150}
       />
-      <View style={styles.imageFade} />
+
       <View style={styles.body}>
-        <View style={styles.aiBadge}>
-          <Ionicons name="sparkles" size={11} color={Premium.purple} />
-          <Text style={styles.aiBadgeText}>AI recommendation</Text>
+        <View style={styles.badge}>
+          <Ionicons name="calendar-outline" size={10} color={DS.semantic.success.fg} />
+          <Text style={styles.badgeText}>In season</Text>
         </View>
-        <Text style={styles.name}>{crop.name}</Text>
+
+        <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+          {crop.name}
+        </Text>
+
         <View style={styles.metaRow}>
-          <MetaChip icon="time-outline" text={`${crop.harvestDays} days harvest`} />
+          <MetaChip icon="time-outline" text={`${crop.harvestDays} days`} />
           <MetaChip icon="water-outline" text={`${crop.waterRequirements} water`} />
         </View>
-        <Text style={styles.value}>
-          Est. ${crop.currentPriceUSD.toFixed(2)}
-          <Text style={styles.valueUnit}>/kg market value</Text>
+
+        <Text style={styles.value} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+          ${crop.currentPriceUSD.toFixed(2)}
+          <Text style={styles.valueUnit}>/kg market price</Text>
         </Text>
       </View>
-      <View style={styles.chevron}>
-        <Ionicons name="chevron-forward" size={22} color={Premium.primary} />
-      </View>
+
+      <Ionicons name="chevron-forward" size={18} color={DS.colors.textFaint} />
     </Pressable>
   );
 }
 
-function MetaChip({
-  icon,
-  text,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  text: string;
-}) {
+function MetaChip({ icon, text }: { icon: IconName; text: string }) {
   return (
     <View style={styles.chip}>
-      <Ionicons name={icon} size={12} color={Premium.textMuted} />
+      <Ionicons name={icon} size={11} color={DS.colors.textSoft} />
       <Text style={styles.chipText}>{text}</Text>
     </View>
   );
@@ -62,58 +72,58 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Premium.surface,
-    borderRadius: Premium.radiusLg,
-    marginBottom: 14,
-    overflow: 'hidden',
+    gap: DS.spacing.sm + 4,
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(226,232,240,0.85)',
-    ...Premium.shadow,
+    borderColor: DS.colors.border,
+    padding: DS.spacing.sm + 2,
+    marginBottom: DS.spacing.sm + 2,
   },
-  cardPressed: { opacity: 0.94, transform: [{ scale: 0.995 }] },
-  image: { width: 96, height: 112 },
-  imageFade: {
-    position: 'absolute',
-    left: 72,
-    top: 0,
-    bottom: 0,
-    width: 28,
-    backgroundColor: 'rgba(255,255,255,0.55)',
+  pressed: { backgroundColor: DS.colors.surfaceMuted },
+  image: {
+    width: 64,
+    height: 64,
+    borderRadius: DS.radius.md,
+    backgroundColor: DS.colors.surfaceMuted,
   },
-  body: { flex: 1, paddingVertical: 16, paddingLeft: 8, paddingRight: 8 },
-  aiBadge: {
+  body: { flex: 1, gap: 3 },
+  badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     alignSelf: 'flex-start',
-    backgroundColor: '#F5F3FF',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#EDE9FE',
+    backgroundColor: DS.semantic.success.bg,
+    borderRadius: DS.radius.xs,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
-  aiBadgeText: { fontSize: 10, fontWeight: '800', color: Premium.purple, letterSpacing: 0.2 },
+  badgeText: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.semantic.success.fg,
+  },
   name: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: Premium.text,
-    letterSpacing: -0.3,
-    marginBottom: 8,
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
   },
-  metaRow: { gap: 6, marginBottom: 10 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  chipText: { fontSize: 12, color: Premium.textMuted, fontWeight: '500' },
-  value: { fontSize: 14, fontWeight: '800', color: Premium.primary },
-  valueUnit: { fontSize: 12, fontWeight: '600', color: Premium.textMuted },
-  chevron: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Premium.primaryBg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+  metaRow: { flexDirection: 'row', gap: DS.spacing.sm + 4 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  chipText: {
+    fontSize: 11,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+  value: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.primary,
+    marginTop: 1,
+  },
+  valueUnit: {
+    fontSize: 11,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
   },
 });
