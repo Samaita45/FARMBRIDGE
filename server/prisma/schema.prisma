@@ -1,0 +1,363 @@
+// FarmBridge API data model.
+//
+// Two rules run through everything here:
+//
+//  1. TENANCY. Every business table carries `tenantId`. Isolation is enforced
+//     in the data layer (see PrismaService's tenant extension), not in each
+//     handler, because one forgotten `where` clause in one endpoint leaks
+//     another tenant's data.
+//
+//  2. AUDIT IMMUTABILITY. AuditLog is append-only. The application role is
+//     granted INSERT and SELECT but not UPDATE or DELETE on it (see the
+//     migration in prisma/sql/audit-immutability.sql), so an attacker who
+//     reaches the API cannot erase their own tracks.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Tenancy ─────────────────────────────────────────────────────────────────
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  countryCode String @default("ZW")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users        User[]
+  farmProfiles FarmProfile[]
+  products     Product[]
+  orders       Order[]
+  payments     Payment[]
+  auditLogs    AuditLog[]
+
+  @@map("tenants")
+}
+
+// ─── Identity ────────────────────────────────────────────────────────────────
+
+enum Role {
+  FARMER
+  BUYER
+  FARMER_BUYER
+  TRANSPORTER
+  MODERATOR
+  SUPPORT_AGENT
+  ADMIN
+  AUDITOR
+  SUPER_ADMIN
+}
+
+model User {
+  id       String @id @default(uuid())
+  tenantId String
+
+  email String
+  phone String
+  name  String
+
+  // Argon2id. The column is never selected into a response DTO.
+  passwordHash String
+
+  roles Role[] @default([FARMER])
+
+  /// Grants beyond the role, as action strings ("products.create").
+  extraPermissions String[] @default([])
+  /// Denials that override both role and extra grants. Deny always wins.
+  deniedPermissions String[] @default([])
+
+  province      String?
+  isActive      Boolean   @default(true)
+  emailVerified Boolean   @default(false)
+  phoneVerified Boolean   @default(false)
+
+  /// Set when a lockout is active after repeated failed logins.
+  lockedUntil        DateTime?
+  failedLoginCount   Int       @default(0)
+  lastLoginAt        DateTime?
+  /// Refresh tokens issued before this instant are rejected. Bumped on
+  /// password change, role change and "sign out everywhere".
+  tokensValidFrom    DateTime  @default(now())
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+  farmProfile   FarmProfile?
+  products      Product[]
+  orders        Order[]
+  payments      Payment[]
+
+  // Email and phone are unique per tenant, not globally: the same person may
+  // legitimately exist in two tenants.
+  @@unique([tenantId, email])
+  @@unique([tenantId, phone])
+  @@index([tenantId, isActive])
+  @@map("users")
+}
+
+/// One row per issued refresh token, so rotation can detect reuse.
+model RefreshToken {
+  id     String @id @default(uuid())
+  userId String
+
+  /// SHA-256 of the token. The raw token is never stored, so a database dump
+  /// does not hand an attacker working sessions.
+  tokenHash String @unique
+
+  /// Chains rotations together. Reusing any token in a family revokes the
+  /// whole family — the standard signal that a token was stolen.
+  familyId String
+
+  expiresAt DateTime
+  revokedAt DateTime?
+  /// Set when this token was rotated, pointing at its replacement.
+  replacedById String?
+
+  createdByIp String?
+  userAgent   String?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ─── Farm ────────────────────────────────────────────────────────────────────
+
+model FarmProfile {
+  id       String @id @default(uuid())
+  tenantId String
+  userId   String @unique
+
+  farmName   String?
+  province   String?
+  district   String?
+  hectares   Float?
+  mainCrops  String[] @default([])
+  latitude   Float?
+  longitude  Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("farm_profiles")
+}
+
+// ─── Marketplace ─────────────────────────────────────────────────────────────
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  SOLD_OUT
+  SUSPENDED
+}
+
+model Product {
+  id       String @id @default(uuid())
+  tenantId String
+  sellerId String
+
+  name        String
+  description String?
+  category    String
+  /// Money is stored in minor units as an integer. Floats lose cents.
+  priceUsdCents Int
+  unit          String  @default("kg")
+  quantity      Float   @default(0)
+  province      String?
+  imageUrls     String[] @default([])
+
+  status ProductStatus @default(DRAFT)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  seller     User        @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([tenantId, status])
+  @@index([tenantId, sellerId])
+  @@map("products")
+}
+
+enum OrderStatus {
+  PENDING
+  AWAITING_PAYMENT
+  PAID
+  CONFIRMED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model Order {
+  id       String @id @default(uuid())
+  tenantId String
+  buyerId  String
+
+  reference String @unique
+
+  status        OrderStatus @default(PENDING)
+  subtotalUsdCents Int
+  /// The USD/ZWG rate applied when the order was placed, so the ZWG figure
+  /// shown to the buyer stays reproducible after the rate moves.
+  exchangeRate     Float?
+
+  deliveryAddress String
+  deliveryMethod  String  @default("delivery")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  buyer    User        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  items    OrderItem[]
+  payments Payment[]
+
+  @@index([tenantId, buyerId])
+  @@index([tenantId, status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String
+  productId String
+
+  /// Copied, not referenced: a later price or name change must not rewrite
+  /// what the buyer actually agreed to.
+  productName   String
+  unitUsdCents  Int
+  quantity      Float
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+// ─── Payments ────────────────────────────────────────────────────────────────
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+model Payment {
+  id       String @id @default(uuid())
+  tenantId String
+  userId   String
+  orderId  String?
+
+  provider   String
+  /// The provider's own identifier, used to reconcile webhooks.
+  providerRef String?
+  /// Idempotency key so a retried request cannot charge twice.
+  idempotencyKey String @unique
+
+  amountUsdCents Int
+  currency       String @default("USD")
+  status         PaymentStatus @default(CREATED)
+
+  failureReason String?
+  /// Raw provider payloads, for reconciliation and dispute handling.
+  providerPayload Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  paidAt    DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order  Order? @relation(fields: [orderId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([providerRef])
+  @@map("payments")
+}
+
+// ─── Exchange rates ──────────────────────────────────────────────────────────
+
+model ExchangeRate {
+  id String @id @default(uuid())
+
+  base   String @default("USD")
+  quote  String @default("ZWG")
+  rate   Float
+  source String
+  effectiveAt DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([base, quote, effectiveAt])
+  @@map("exchange_rates")
+}
+
+// ─── Audit ───────────────────────────────────────────────────────────────────
+
+enum AuditResult {
+  SUCCESS
+  FAILURE
+  DENIED
+}
+
+/// Append-only. See prisma/sql/audit-immutability.sql — the application role
+/// holds no UPDATE or DELETE privilege on this table.
+model AuditLog {
+  id       String  @id @default(uuid())
+  tenantId String?
+
+  /// Null for anonymous events such as a failed login on an unknown email.
+  actorId    String?
+  actorEmail String?
+  actorRoles String[] @default([])
+
+  /// LOGIN, FAILED_LOGIN, PRODUCT_CREATED, ROLE_CHANGED, PAYMENT_CREATED, ...
+  action       String
+  resourceType String?
+  resourceId   String?
+
+  result AuditResult @default(SUCCESS)
+
+  ipAddress String?
+  userAgent String?
+  /// Ties every log line from one request together.
+  requestId String?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
