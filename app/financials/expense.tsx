@@ -89,7 +89,7 @@ export default function ExpenseScreen() {
         <View key={e.id} className="mt-2 rounded-xl bg-white p-3">
           <View className="flex-row justify-between">
             <Text className="font-sans-semibold text-dark">{EXPENSE_CATEGORY_LABELS[e.category]}</Text>
-            <Text className="font-sans text-primary">{fmt(toUSD(e.amount, e.currency))}</Text>
+            <Text className="font-sans text-primary">{fmt(toUSD(e.amount, e.currency, e.rateUsed))}</Text>
           </View>
           {e.notes ? <Text className="font-sans text-sm text-gray-500">{e.notes}</Text> : null}
           <Text className="font-sans text-xs text-gray-400">{e.date}</Text>

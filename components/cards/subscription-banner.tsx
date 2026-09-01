@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { SUBSCRIPTION_PLANS } from '@/constants/zimbabwe-data';
 
 export function SubscriptionBanner() {
@@ -12,7 +12,7 @@ export function SubscriptionBanner() {
     <View style={s.wrap}>
       <View style={s.inner}>
         <View style={s.titleRow}>
-          <Ionicons name="lock-closed" size={18} color="#fff" />
+          <Ionicons name="lock-closed" size={18} color={DS.colors.surface} />
           <Text style={s.title}>Unlock Marketplace & More</Text>
         </View>
         <Text style={s.sub}>
@@ -30,17 +30,17 @@ export function SubscriptionBanner() {
 
 const s = StyleSheet.create({
   wrap: { borderRadius: 16, overflow: 'hidden' },
-  inner: { padding: 16, backgroundColor: Colors.warning },
+  inner: { padding: 16, backgroundColor: DS.semantic.warning.solid },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  title: { fontSize: 17, fontWeight: '800', color: Colors.white },
+  title: { fontSize: 17, fontWeight: '800', color: DS.colors.surface },
   sub: { marginTop: 6, fontSize: 13, color: 'rgba(255,255,255,0.92)' },
   cta: {
     marginTop: 12,
     alignSelf: 'flex-start',
-    backgroundColor: Colors.white,
+    backgroundColor: DS.colors.surface,
     borderRadius: 50,
     paddingHorizontal: 18,
     paddingVertical: 10,
   },
-  ctaText: { fontSize: 14, fontWeight: '700', color: Colors.warning },
+  ctaText: { fontSize: 14, fontWeight: '700', color: DS.semantic.warning.solid },
 });

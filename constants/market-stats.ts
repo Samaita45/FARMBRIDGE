@@ -2,15 +2,22 @@ export interface CategoryStat {
   category: string;
   percentage: number;
   valueUSD: number;
-  color: string;
 }
 
+/**
+ * Share of market value by category, ranked.
+ *
+ * Colour is no longer stored here. Each row carried its own hex, and the five
+ * were a scrambled green ramp — 500, 600, 200, 400, 900 — so the shading
+ * implied an order the data did not have. Ranked shares are a magnitude, so the
+ * chart applies one sequential ramp by position instead.
+ */
 export const MONTHLY_CATEGORY_STATS: CategoryStat[] = [
-  { category: 'Vegetables', percentage: 32, valueUSD: 1240000, color: '#22c55e' },
-  { category: 'Grains', percentage: 28, valueUSD: 1085000, color: '#16a34a' },
-  { category: 'Fruits', percentage: 18, valueUSD: 697500, color: '#86efac' },
-  { category: 'Legumes', percentage: 12, valueUSD: 465000, color: '#4ade80' },
-  { category: 'Cash Crops', percentage: 10, valueUSD: 387500, color: '#14532d' },
+  { category: 'Vegetables', percentage: 32, valueUSD: 1240000 },
+  { category: 'Grains', percentage: 28, valueUSD: 1085000 },
+  { category: 'Fruits', percentage: 18, valueUSD: 697500 },
+  { category: 'Legumes', percentage: 12, valueUSD: 465000 },
+  { category: 'Cash Crops', percentage: 10, valueUSD: 387500 },
 ];
 
 export const MARKET_SUMMARY = {

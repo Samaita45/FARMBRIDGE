@@ -119,6 +119,35 @@ const semantic = {
   neutral: { fg: gray[700], bg: gray[100], border: gray[200], solid: gray[500] },
 };
 
+/**
+ * Chart colours.
+ *
+ * `categorical` is capped at three on purpose. It was five, and the set failed
+ * colour-vision checks badly: orange against green measured ΔE 4.8 under
+ * protanopia, and purple against blue ΔE 0.4 under deuteranopia — literally the
+ * same colour to those readers. Checked across every pair rather than only
+ * adjacent ones, three is the largest set that passes, because any two series
+ * in a filterable chart can end up side by side.
+ *
+ * Verified with the dataviz validator on the light surface: lightness band,
+ * chroma floor, CVD separation, normal-vision floor and 3:1 contrast all pass.
+ * Re-run it before changing a value; do not eyeball this.
+ *
+ * A chart needing more than three series should facet into small multiples
+ * rather than reach for a fourth hue.
+ */
+const chart = {
+  categorical: ['#2563EB', '#EA580C', '#0D9488'],
+  maxCategorical: 3,
+  /** Single hue, light to dark, for magnitude. */
+  sequential: ['#DBEAFE', '#93C5FD', '#3B82F6', '#2563EB', '#1E40AF'],
+  /** Recessive chrome — the data should be the only thing with weight. */
+  grid: gray[200],
+  axis: gray[400],
+  /** The unfilled portion of a bar track. */
+  track: gray[100],
+};
+
 // ─── Geometry ────────────────────────────────────────────────────────────────
 
 /** 4-point grid. */
@@ -221,6 +250,7 @@ const layout = {
 module.exports = {
   colors,
   semantic,
+  chart,
   spacing,
   radius,
   shadow,

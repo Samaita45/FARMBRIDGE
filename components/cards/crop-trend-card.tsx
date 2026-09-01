@@ -7,6 +7,7 @@ import { Premium } from '@/constants/premium-home';
 import { getCropImage, getDemandBadge } from '@/utils/crop-emoji';
 import { asHref } from '@/lib/href';
 import type { Crop } from '@/types';
+import { DS } from '@/constants/design-system';
 
 interface CropTrendCardProps {
   crop: Crop;
@@ -41,7 +42,7 @@ export function CropTrendCard({ crop }: CropTrendCardProps) {
           <Text style={s.perkg}>/kg</Text>
         </Text>
         <Text style={s.priceZWG}>ZWG {crop.currentPriceZWG.toLocaleString()}</Text>
-        <View style={[s.changePill, { backgroundColor: up ? '#DCFCE7' : '#FEE2E2' }]}>
+        <View style={[s.changePill, { backgroundColor: up ? DS.semantic.success.bg : DS.semantic.danger.bg }]}>
           <Ionicons
             name={up ? 'arrow-up' : 'arrow-down'}
             size={12}

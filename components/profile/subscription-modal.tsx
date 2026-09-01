@@ -5,6 +5,7 @@ import { PrimaryButton } from '@/components/ui/primary-button';
 import { useToast } from '@/components/ui/toast-provider';
 import { PAYMENT_METHODS, SUBSCRIPTION_PLANS } from '@/constants/zimbabwe-data';
 import { useAuthStore } from '@/stores/authStore';
+import { DS } from '@/constants/design-system';
 
 interface SubscriptionModalProps {
   visible: boolean;
@@ -56,7 +57,7 @@ export function SubscriptionModal({ visible, onClose }: SubscriptionModalProps) 
               <View
                 key={plan.id}
                 className={`mb-4 rounded-2xl bg-white p-4 ${isPro ? 'border-2 border-primary' : ''}`}
-                style={{ shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}>
+                style={DS.shadow.card}>
                 <Text className="font-display text-lg text-dark">
                   {plan.id === 'basic' ? '🌱' : isPro ? '🚜' : '🏢'} {plan.name}
                 </Text>

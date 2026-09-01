@@ -70,7 +70,7 @@ export default function IncomeScreen() {
     const rows = filtered
       .map(
         (e) =>
-          `${e.date},${e.cropName},${e.quantity},${e.pricePerUnit},${e.buyer},${toUSD(e.quantity * e.pricePerUnit, e.currency).toFixed(2)}`
+          `${e.date},${e.cropName},${e.quantity},${e.pricePerUnit},${e.buyer},${toUSD(e.quantity * e.pricePerUnit, e.currency, e.rateUsed).toFixed(2)}`
       )
       .join('\n');
     await Share.share({ message: header + rows, title: 'ZimFarm Income Export' });
@@ -115,7 +115,7 @@ export default function IncomeScreen() {
           <View className="flex-row justify-between">
             <Text className="font-sans-semibold text-dark">{e.cropName}</Text>
             <Text className="font-sans-semibold text-primary">
-              {fmt(toUSD(e.quantity * e.pricePerUnit, e.currency))}
+              {fmt(toUSD(e.quantity * e.pricePerUnit, e.currency, e.rateUsed))}
             </Text>
           </View>
           <Text className="font-sans text-sm text-gray-500">

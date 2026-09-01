@@ -35,6 +35,7 @@ export const DS = {
     'success' | 'warning' | 'danger' | 'info' | 'neutral',
     SemanticRole
   >,
+  chart: tokens.chart,
   spacing: tokens.spacing,
   radius: tokens.radius,
   shadow: tokens.shadow as Record<'soft' | 'card' | 'elevated', ShadowStyle>,
