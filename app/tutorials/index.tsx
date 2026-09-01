@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TutorialCard } from '@/components/cards/tutorial-card';
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { getFeaturedTutorial, TUTORIALS } from '@/constants/tutorials-data';
 import { asHref } from '@/lib/href';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
@@ -55,7 +55,7 @@ export default function TutorialsHubScreen() {
       {/* ── Header ── */}
       <View style={s.header}>
         <Pressable onPress={() => router.back()} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
+          <Ionicons name="arrow-back" size={22} color={DS.colors.surface} />
         </Pressable>
         <View style={s.headerText}>
           <Text style={s.title}>📚 Tutorials</Text>
@@ -113,7 +113,7 @@ export default function TutorialsHubScreen() {
           onPress={() => router.push(asHref(`/tutorials/${featured.id}`))}
           style={({ pressed }) => [s.featuredCard, pressed && { opacity: 0.9 }]}>
           <View style={s.featuredBadge}>
-            <Ionicons name="star" size={11} color="#fff" />
+            <Ionicons name="star" size={11} color={DS.colors.surface} />
             <Text style={s.featuredBadgeText}>Featured</Text>
           </View>
           <View style={s.featuredEmoji}><Text style={{ fontSize: 44 }}>{featured.emoji}</Text></View>
@@ -121,11 +121,11 @@ export default function TutorialsHubScreen() {
             <Text style={s.featuredTitle} numberOfLines={2}>{featured.title}</Text>
             <View style={s.featuredRow}>
               <View style={s.featuredChip}>
-                <Ionicons name="time-outline" size={11} color={Colors.primary} />
+                <Ionicons name="time-outline" size={11} color={DS.colors.primary} />
                 <Text style={s.featuredChipText}>{featured.durationMin} min read</Text>
               </View>
               <View style={s.featuredChip}>
-                <Ionicons name="arrow-forward-circle" size={11} color={Colors.primary} />
+                <Ionicons name="arrow-forward-circle" size={11} color={DS.colors.primary} />
                 <Text style={s.featuredChipText}>Start now</Text>
               </View>
             </View>
@@ -151,7 +151,7 @@ export default function TutorialsHubScreen() {
 
         {list.length === 0 && (
           <View style={s.empty}>
-            <Ionicons name="search-outline" size={40} color={Colors.gray[300]} />
+            <Ionicons name="search-outline" size={40} color={DS.colors.borderStrong} />
             <Text style={s.emptyTitle}>No tutorials found</Text>
             <Text style={s.emptyHint}>Try a different search or category</Text>
           </View>
@@ -162,73 +162,73 @@ export default function TutorialsHubScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.primaryBg },
+  root: { flex: 1, backgroundColor: DS.colors.primaryBg },
 
-  header: { backgroundColor: Colors.primary, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
+  header: { backgroundColor: DS.colors.primary, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
   backBtn: {
     width: 36, height: 36, borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center', justifyContent: 'center', marginBottom: 12,
   },
   headerText: { marginBottom: 12 },
-  title: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  title: { fontSize: 22, fontWeight: '800', color: DS.colors.surface },
   subtitle: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
 
   progressWrap: { marginBottom: 12 },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
   progressLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
-  progressPct: { fontSize: 11, fontWeight: '700', color: '#fff' },
+  progressPct: { fontSize: 11, fontWeight: '700', color: DS.colors.surface },
   progressTrack: { height: 5, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: Colors.accentLight, borderRadius: 4 },
+  progressFill: { height: '100%', backgroundColor: DS.colors.accentLight, borderRadius: 4 },
 
   searchBar: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
   },
-  searchInput: { flex: 1, fontSize: 14, color: '#fff' },
+  searchInput: { flex: 1, fontSize: 14, color: DS.colors.surface },
 
-  tabsWrap: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: Colors.gray[100] },
+  tabsWrap: { backgroundColor: DS.colors.surface, borderBottomWidth: 1, borderBottomColor: DS.colors.borderLight },
   tabs: { paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
-  tab: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: Colors.gray[100] },
-  tabActive: { backgroundColor: Colors.primary },
-  tabText: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
-  tabTextActive: { color: '#fff' },
+  tab: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, backgroundColor: DS.colors.borderLight },
+  tabActive: { backgroundColor: DS.colors.primary },
+  tabText: { fontSize: 12, fontWeight: '600', color: DS.colors.textMuted },
+  tabTextActive: { color: DS.colors.surface },
 
   body: { padding: 14, paddingBottom: 40, gap: 4 },
 
   featuredCard: {
-    backgroundColor: '#fff', borderRadius: 18, overflow: 'hidden',
+    backgroundColor: DS.colors.surface, borderRadius: 18, overflow: 'hidden',
     marginBottom: 16, flexDirection: 'row', alignItems: 'center',
-    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, elevation: 4,
-    borderWidth: 1.5, borderColor: Colors.primaryMid,
+    shadowColor: DS.colors.text, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4,
+    borderWidth: 1.5, borderColor: DS.colors.primaryMid,
     padding: 14, gap: 14,
   },
   featuredBadge: {
     position: 'absolute', top: 10, right: 10,
     flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: Colors.primary, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3,
+    backgroundColor: DS.colors.primary, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3,
   },
-  featuredBadgeText: { fontSize: 9, fontWeight: '700', color: '#fff' },
+  featuredBadgeText: { fontSize: 9, fontWeight: '700', color: DS.colors.surface },
   featuredEmoji: {
     width: 60, height: 60, borderRadius: 16,
-    backgroundColor: Colors.primaryBg,
+    backgroundColor: DS.colors.primaryBg,
     alignItems: 'center', justifyContent: 'center',
   },
   featuredMeta: { flex: 1 },
-  featuredTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, lineHeight: 20 },
+  featuredTitle: { fontSize: 14, fontWeight: '700', color: DS.colors.text, lineHeight: 20 },
   featuredRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
   featuredChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.primaryBg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
+    backgroundColor: DS.colors.primaryBg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
   },
-  featuredChipText: { fontSize: 11, fontWeight: '600', color: Colors.primary },
+  featuredChipText: { fontSize: 11, fontWeight: '600', color: DS.colors.primary },
 
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  sectionCount: { fontSize: 12, color: Colors.textSecondary },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: DS.colors.text },
+  sectionCount: { fontSize: 12, color: DS.colors.textMuted },
 
   empty: { alignItems: 'center', paddingVertical: 40, gap: 8 },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  emptyHint: { fontSize: 13, color: Colors.textSecondary },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: DS.colors.text },
+  emptyHint: { fontSize: 13, color: DS.colors.textMuted },
 });

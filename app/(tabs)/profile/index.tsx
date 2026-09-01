@@ -310,7 +310,7 @@ const s = StyleSheet.create({
   },
   statCell: { flex: 1, alignItems: 'center' },
   statDivider: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.2)' },
-  statValue: { fontSize: 20, fontWeight: '800', color: '#fff' },
+  statValue: { fontSize: 20, fontWeight: '800', color: DS.colors.surface },
   statLabel: { fontSize: 10, color: 'rgba(255,255,255,0.65)', marginTop: 1 },
 
   card: { marginHorizontal: DS.spacing.md, marginTop: DS.spacing.md },
@@ -321,7 +321,7 @@ const s = StyleSheet.create({
   subName: { fontSize: 15, fontWeight: '700', color: DS.colors.text },
   subHint: { fontSize: 12, color: DS.colors.textMuted, marginTop: 2 },
   upgradeBtn: { backgroundColor: DS.colors.primary, borderRadius: DS.radius.md, paddingHorizontal: 16, paddingVertical: 8 },
-  upgradeBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  upgradeBtnText: { fontSize: 13, fontWeight: '700', color: DS.colors.surface },
   activeChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: DS.colors.accentLight, borderRadius: DS.radius.md, paddingHorizontal: 10, paddingVertical: 6 },
   activeChipText: { fontSize: 12, fontWeight: '700', color: DS.colors.accent },
   farmName: { fontSize: 16, fontWeight: '700', color: DS.colors.text },
@@ -349,8 +349,8 @@ const s = StyleSheet.create({
   logoutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     marginHorizontal: DS.spacing.md, marginTop: DS.spacing.md,
-    backgroundColor: '#FEE2E2', borderRadius: DS.radius.lg, paddingVertical: 16,
-    borderWidth: 1, borderColor: '#FCA5A5',
+    backgroundColor: DS.semantic.danger.bg, borderRadius: DS.radius.lg, paddingVertical: 16,
+    borderWidth: 1, borderColor: DS.semantic.danger.border,
   },
   logoutText: { fontSize: 15, fontWeight: '700', color: DS.colors.red },
 });

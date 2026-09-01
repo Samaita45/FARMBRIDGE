@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AddPlanModal } from '@/components/crop-management/add-plan-modal';
 import { MonthCalendar } from '@/components/crop-management/month-calendar';
-import { Button, Card, EmptyState, IconButton } from '@/components/design-system';
+import { Card, EmptyState, IconButton } from '@/components/design-system';
 import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
 import { CROPS, getCropsForMonth, getCurrentSeason } from '@/constants/zimbabwe-data';

@@ -6,7 +6,6 @@
  * its own contrast pass rather than an inversion.
  */
 import { DS } from './design-system';
-import BaseColors from './colors';
 
 export const Colors = {
   light: {
@@ -27,27 +26,8 @@ export const Colors = {
   },
 } as const;
 
-export { BaseColors };
-
-/** @deprecated Use `DS.spacing`. */
-export const Spacing = DS.spacing;
-/** @deprecated Use `DS.radius`. */
-export const BorderRadius = {
-  sm: DS.radius.sm,
-  md: DS.radius.md,
-  lg: DS.radius.lg,
-  xl: DS.radius.xl,
-  full: DS.radius.full,
-} as const;
-/** @deprecated Use `DS.shadow`. */
-export const Shadows = { card: DS.shadow.card, elevated: DS.shadow.elevated } as const;
-/** @deprecated Use `DS.typography`. */
-export const Typography = DS.typography;
-
-export const AppTheme = {
-  colors: Colors,
-  spacing: Spacing,
-  borderRadius: BorderRadius,
-  shadows: Shadows,
-  typography: Typography,
-} as const;
+/**
+ * This module now owns exactly one thing: the light/dark map that
+ * `useThemeColor` and the themed primitives read. Everything else it used to
+ * re-export lives on `DS`.
+ */

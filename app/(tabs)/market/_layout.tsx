@@ -1,13 +1,11 @@
 import { Stack } from 'expo-router';
 
+import { stackScreenOptions } from '@/lib/navigation';
+
 export default function MarketLayout() {
   return (
     <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: '#f0fdf4' },
-        headerTintColor: '#14532d',
-        headerTitleStyle: { fontWeight: '700' },
-      }}>
+      screenOptions={stackScreenOptions}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="[id]" options={{ title: 'Product' }} />
       <Stack.Screen name="cart" options={{ title: 'Cart' }} />

@@ -50,13 +50,18 @@ export default function TripsScreen() {
   const history = trips.filter((t) => ['delivered', 'cancelled'].includes(t.status));
   const shown = tab === 'active' ? active : history;
 
-  const advanceStatus = async (trip: TransportBooking) => {
-    const next = NEXT_STATUS[trip.status];
-    if (!next) return;
-    await updateBookingStatus(trip.id, next);
-    showToast(`Trip marked ${next.replace('_', ' ')}`, 'success');
-    await load();
-  };
+  // Memoised: without this it is a new function every render, which
+  // invalidates renderTrip's useCallback and re-renders every row in the list.
+  const advanceStatus = useCallback(
+    async (trip: TransportBooking) => {
+      const next = NEXT_STATUS[trip.status];
+      if (!next) return;
+      await updateBookingStatus(trip.id, next);
+      showToast(`Trip marked ${next.replace('_', ' ')}`, 'success');
+      await load();
+    },
+    [showToast, load]
+  );
 
   const renderTrip = useCallback(
     ({ item }: { item: TransportBooking }) => {

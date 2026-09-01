@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors } from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -25,10 +25,10 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const BG: Record<ToastType, string> = {
-  success: Colors.accent,        // green
-  error:   Colors.error,         // red
-  warning: Colors.warning,       // amber
-  info:    Colors.primary,       // blue
+  success: DS.colors.accent,        // green
+  error:   DS.semantic.danger.solid,         // red
+  warning: DS.semantic.warning.solid,       // amber
+  info:    DS.colors.primary,       // blue
 };
 
 const ICON: Record<ToastType, string> = {
@@ -121,7 +121,7 @@ const t = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 18,
     paddingVertical: 13,
-    shadowColor: '#000',
+    shadowColor: DS.colors.text,
     shadowOpacity: 0.22,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -129,14 +129,14 @@ const t = StyleSheet.create({
   },
   icon: {
     fontSize: 16,
-    color: '#fff',
+    color: DS.colors.surface,
     fontWeight: '700',
   },
   msg: {
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: DS.colors.surface,
     lineHeight: 20,
   },
 });

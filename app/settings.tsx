@@ -9,7 +9,7 @@ import { Linking, Pressable, ScrollView, Switch, Text, TextInput, View, Alert } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProvincePicker } from '@/components/forms/province-picker';
-import { Colors } from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { MOCK_POSTS } from '@/constants/community-data';
 import { SUPPORT_WHATSAPP_URL } from '@/constants/support';
 import { CROPS, MARKET_PRODUCTS } from '@/constants/zimbabwe-data';
@@ -87,7 +87,7 @@ export default function SettingsScreen() {
             <TextInput
               className="mx-4 mb-2 rounded-xl bg-white px-4 py-3 font-sans"
               placeholder={user?.phone ? `Default: ${user.phone}` : '+263…'}
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={DS.colors.textSoft}
               keyboardType="phone-pad"
               value={settings.smsReminderPhone}
               onChangeText={(t) => void patch(userId, { smsReminderPhone: t })}
@@ -230,7 +230,7 @@ function SettingSwitch({
         <Text className="font-sans text-dark">{label}</Text>
         {subtitle ? <Text className="font-sans text-xs text-gray-500">{subtitle}</Text> : null}
       </View>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: Colors.primary }} />
+      <Switch value={value} onValueChange={onChange} trackColor={{ true: DS.colors.primary }} />
     </View>
   );
 }

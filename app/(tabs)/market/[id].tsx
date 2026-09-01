@@ -10,6 +10,7 @@ import { asHref } from '@/lib/href';
 import { whatsAppUrl } from '@/constants/support';
 import { useCartStore, type CartState } from '@/stores/cartStore';
 import { getProductImage } from '@/utils/product-emoji';
+import { DS } from '@/constants/design-system';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -49,12 +50,12 @@ export default function ProductDetailScreen() {
 
         <View className="mt-3 flex-row flex-wrap gap-2">
           {product.isOrganic ? (
-            <Badge text="Organic" color="#22c55e" />
+            <Badge text="Organic" color={DS.semantic.success.solid} />
           ) : null}
-          {product.isCertified ? <Badge text="Certified" color="#16a34a" /> : null}
+          {product.isCertified ? <Badge text="Certified" color={DS.colors.accent} /> : null}
           <Badge
             text={product.inStock ? 'In Stock' : 'Out of Stock'}
-            color={product.inStock ? '#22c55e' : '#ef4444'}
+            color={product.inStock ? DS.semantic.success.solid : DS.semantic.danger.solid}
           />
         </View>
 
@@ -64,7 +65,7 @@ export default function ProductDetailScreen() {
           <Text className="font-sans-bold text-dark">Seller</Text>
           <Text className="font-sans text-dark">{product.sellerName}</Text>
           <View className="mt-1 flex-row items-center gap-1">
-            <Ionicons name="location-outline" size={13} color="#6b7280" />
+            <Ionicons name="location-outline" size={13} color={DS.colors.textMuted} />
             <Text className="font-sans text-sm text-gray-500">{product.location}</Text>
           </View>
           <Text className="font-sans text-sm text-amber-500">
@@ -78,7 +79,7 @@ export default function ProductDetailScreen() {
             <Text className="font-sans-semibold text-dark">{r.author}</Text>
             <View className="mt-1 flex-row">
               {Array.from({ length: r.rating }).map((_, i) => (
-                <Ionicons key={i} name="star" size={12} color="#f59e0b" />
+                <Ionicons key={i} name="star" size={12} color={DS.semantic.warning.solid} />
               ))}
             </View>
             <Text className="mt-1 font-sans text-sm text-gray-600">{r.comment}</Text>
@@ -118,7 +119,7 @@ export default function ProductDetailScreen() {
           <Pressable
             onPress={whatsappSeller}
             className="flex-row items-center justify-center gap-2 rounded-2xl bg-[#25D366] py-3">
-            <Ionicons name="logo-whatsapp" size={22} color="#fff" />
+            <Ionicons name="logo-whatsapp" size={22} color={DS.colors.surface} />
             <Text className="font-sans-semibold text-white">Message Seller</Text>
           </Pressable>
         </View>

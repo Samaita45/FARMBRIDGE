@@ -1,21 +1,11 @@
 import { Stack } from 'expo-router';
 
-import { DS } from '@/constants/design-system';
+import { stackScreenOptions } from '@/lib/navigation';
 
 export default function TransportLayout() {
   return (
     <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: DS.colors.surface },
-        headerTintColor: DS.colors.text,
-        headerTitleStyle: {
-          fontFamily: DS.fontFamily.semibold,
-          fontSize: DS.typography.h3.fontSize,
-        },
-        headerShadowVisible: false,
-        headerBackTitle: 'Back',
-        contentStyle: { backgroundColor: DS.colors.background },
-      }}>
+      screenOptions={stackScreenOptions}>
       <Stack.Screen name="index" options={{ title: 'Transport', headerShown: false }} />
       <Stack.Screen name="request" options={{ title: 'Request transport' }} />
       <Stack.Screen name="providers" options={{ title: 'Available transporters' }} />

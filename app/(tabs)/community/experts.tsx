@@ -5,6 +5,7 @@ import { PrimaryButton } from '@/components/ui/primary-button';
 import { EXPERTS } from '@/constants/community-data';
 import { asHref } from '@/lib/href';
 import { useToast } from '@/components/ui/toast-provider';
+import { DS } from '@/constants/design-system';
 
 export default function ExpertsScreen() {
   const { showToast } = useToast();
@@ -19,7 +20,7 @@ export default function ExpertsScreen() {
         <View
           key={expert.id}
           className="mt-4 rounded-2xl bg-white p-4"
-          style={{ shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
+          style={{ shadowColor: DS.colors.text, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
           <View className="flex-row items-start justify-between">
             <View className="flex-1">
               <Text className="font-sans-semibold text-dark">{expert.name}</Text>

@@ -136,7 +136,7 @@ export default function HomeScreen() {
     setRefreshing(true);
     await Promise.all([refetch(), refreshNotifications(), refreshAvatar()]);
     setRefreshing(false);
-  }, [refetch, refreshNotifications]);
+  }, [refetch, refreshNotifications, refreshAvatar]);
 
   return (
     <View style={s.root}>

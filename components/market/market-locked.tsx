@@ -74,7 +74,7 @@ export function MarketLocked() {
 
         <Link href="/(tabs)/profile" asChild>
           <Pressable style={({ pressed }) => [s.subscribeBtn, pressed && { opacity: 0.85 }]}>
-            <Ionicons name="flash" size={18} color="#fff" />
+            <Ionicons name="flash" size={18} color={DS.colors.surface} />
             <Text style={s.subscribeBtnText}>Subscribe with EcoCash</Text>
           </Pressable>
         </Link>
@@ -157,7 +157,7 @@ const s = StyleSheet.create({
   planNameWrap: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   planName: { fontSize: 14, fontWeight: '700', color: DS.colors.text },
   popularBadge: { backgroundColor: DS.colors.accent, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 },
-  popularText: { fontSize: 10, fontWeight: '700', color: '#fff' },
+  popularText: { fontSize: 10, fontWeight: '700', color: DS.colors.surface },
   planPrice: { fontSize: 15, fontWeight: '800', color: DS.colors.primary },
   planCode: { fontSize: 11, color: DS.colors.textMuted, marginBottom: 6 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
@@ -166,7 +166,7 @@ const s = StyleSheet.create({
   payLabel: { fontSize: 11, fontWeight: '600', color: DS.colors.textMuted, marginBottom: 8, textAlign: 'center' },
   payRow: { flexDirection: 'row', justifyContent: 'center', gap: 10, marginBottom: 16 },
   payIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  payIconText: { fontSize: 11, fontWeight: '800', color: '#fff' },
+  payIconText: { fontSize: 11, fontWeight: '800', color: DS.colors.surface },
 
   subscribeBtn: {
     flexDirection: 'row',
@@ -177,6 +177,6 @@ const s = StyleSheet.create({
     borderRadius: DS.radius.lg,
     paddingVertical: 15,
   },
-  subscribeBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  subscribeBtnText: { fontSize: 15, fontWeight: '700', color: DS.colors.surface },
   trialText: { fontSize: 12, color: DS.colors.textMuted, textAlign: 'center', marginTop: 8 },
 });

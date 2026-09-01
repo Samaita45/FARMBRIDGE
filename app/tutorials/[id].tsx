@@ -9,6 +9,7 @@ import { TUTORIALS } from '@/constants/tutorials-data';
 import { whatsAppUrl } from '@/constants/support';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useTutorialsStore, type TutorialsState } from '@/stores/tutorialsStore';
+import { DS } from '@/constants/design-system';
 
 export default function TutorialDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -71,7 +72,7 @@ export default function TutorialDetailScreen() {
 
         <View className="mt-4 flex-row gap-3">
           <Pressable onPress={onShare} className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-primary py-3">
-            <Ionicons name="share-outline" size={18} color="#22c55e" />
+            <Ionicons name="share-outline" size={18} color={DS.colors.accent} />
             <Text className="font-sans-semibold text-primary">Share</Text>
           </Pressable>
         </View>

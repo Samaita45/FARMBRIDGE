@@ -1,7 +1,7 @@
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Colors } from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import type { AgriculturalWeather, DailyForecast } from '@/services/weatherService';
 
 interface WeatherForecastModalProps {
@@ -58,7 +58,7 @@ export function WeatherForecastModal({
               <View
                 key={day.date}
                 className="flex-row items-center justify-between rounded-2xl bg-white p-4"
-                style={{ shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 }}>
+                style={{ shadowColor: DS.colors.text, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 }}>
                 <View className="flex-row items-center gap-3">
                   <Text className="text-2xl">{day.icon}</Text>
                   <View>
@@ -70,7 +70,7 @@ export function WeatherForecastModal({
                   <Text className="font-sans-bold text-dark">
                     {day.maxTemp}° / {day.minTemp}°
                   </Text>
-                  <Text className="font-sans text-xs" style={{ color: Colors.primary }}>
+                  <Text className="font-sans text-xs" style={{ color: DS.colors.primary }}>
                     🌧 {day.rainProbability}% · {day.rainAmount}mm
                   </Text>
                 </View>

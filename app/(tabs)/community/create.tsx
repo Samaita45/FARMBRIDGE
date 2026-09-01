@@ -9,6 +9,7 @@ import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useCommunityStore, type CommunityState } from '@/stores/communityStore';
 import type { PostCategory, UserRoleBadge } from '@/types/community';
 import { POST_CATEGORY_LABELS } from '@/types/community';
+import { DS } from '@/constants/design-system';
 
 const CATEGORIES: PostCategory[] = ['question', 'tip', 'success', 'market', 'weather', 'general'];
 
@@ -100,7 +101,7 @@ export default function CreatePostScreen() {
 
       <View className="mt-4 flex-row items-center justify-between rounded-xl bg-white px-4 py-3">
         <Text className="font-sans text-dark">Post anonymously</Text>
-        <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ true: '#22c55e' }} />
+        <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ true: DS.colors.accent }} />
       </View>
 
       <View className="mt-6">

@@ -27,7 +27,7 @@ interface PaymentMethodIconProps {
 }
 
 export function PaymentMethodIcon({ icon, size = 40 }: PaymentMethodIconProps) {
-  const config = ICONS[icon] ?? { label: '?', bg: '#9ca3af', text: DS.colors.surface };
+  const config = ICONS[icon] ?? { label: '?', bg: DS.colors.textFaint, text: DS.colors.surface };
   return (
     <View
       className="items-center justify-center rounded-full"

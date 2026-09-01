@@ -12,7 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/design-system';
-import { Colors } from '@/constants/colors';
 import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -23,10 +22,10 @@ const TYPE_META: Record<
   NotificationType,
   { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string }
 > = {
-  task: { icon: 'checkmark-circle-outline', color: DS.colors.primary, bg: '#EFF6FF' },
-  market: { icon: 'trending-up-outline', color: '#059669', bg: '#ECFDF5' },
-  weather: { icon: 'partly-sunny-outline', color: '#7C3AED', bg: '#F5F3FF' },
-  system: { icon: 'information-circle-outline', color: '#64748B', bg: '#F1F5F9' },
+  task: { icon: 'checkmark-circle-outline', color: DS.semantic.info.fg, bg: DS.semantic.info.bg },
+  market: { icon: 'trending-up-outline', color: DS.semantic.success.fg, bg: DS.semantic.success.bg },
+  weather: { icon: 'partly-sunny-outline', color: DS.semantic.warning.fg, bg: DS.semantic.warning.bg },
+  system: { icon: 'information-circle-outline', color: DS.semantic.neutral.fg, bg: DS.semantic.neutral.bg },
 };
 
 function formatWhen(iso: string): string {
@@ -73,7 +72,7 @@ function NotificationRow({
         <Text style={styles.rowTime}>{formatWhen(item.createdAt)}</Text>
       </View>
       {item.href ? (
-        <Ionicons name="chevron-forward" size={18} color={Colors.gray[400]} />
+        <Ionicons name="chevron-forward" size={18} color={DS.colors.textFaint} />
       ) : null}
     </Pressable>
   );
@@ -148,7 +147,7 @@ export default function NotificationsScreen() {
 
         {!userId ? (
           <View style={styles.empty}>
-            <Ionicons name="person-outline" size={40} color={Colors.gray[400]} />
+            <Ionicons name="person-outline" size={40} color={DS.colors.textFaint} />
             <Text style={styles.emptyTitle}>Sign in for alerts</Text>
             <Text style={styles.emptyBody}>
               Task reminders, market insights, and daily digests sync to your account.
@@ -204,20 +203,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  subtitle: { fontSize: 14, color: Colors.gray[600], fontWeight: '500' },
+  subtitle: { fontSize: 14, color: DS.colors.textMuted, fontWeight: '500' },
   markAll: { fontSize: 14, fontWeight: '700', color: DS.colors.primary },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#fff',
+    backgroundColor: DS.colors.surface,
     borderRadius: 16,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: DS.colors.border,
   },
-  rowUnread: { borderColor: '#BFDBFE', backgroundColor: '#F8FAFC' },
+  rowUnread: { borderColor: DS.colors.primaryMid, backgroundColor: DS.colors.primaryBg },
   iconWrap: {
     width: 44,
     height: 44,
@@ -227,25 +226,25 @@ const styles = StyleSheet.create({
   },
   rowBody: { flex: 1 },
   rowTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  rowTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: Colors.gray[900] },
+  rowTitle: { flex: 1, fontSize: 15, fontWeight: '700', color: DS.colors.text },
   unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: DS.colors.primary,
   },
-  rowBodyText: { fontSize: 13, color: Colors.gray[600], marginTop: 2, lineHeight: 18 },
-  rowTime: { fontSize: 11, color: Colors.gray[400], marginTop: 6 },
+  rowBodyText: { fontSize: 13, color: DS.colors.textMuted, marginTop: 2, lineHeight: 18 },
+  rowTime: { fontSize: 11, color: DS.colors.textFaint, marginTop: 6 },
   empty: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 24 },
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.gray[900],
+    color: DS.colors.text,
     marginTop: 16,
   },
   emptyBody: {
     fontSize: 14,
-    color: Colors.gray[600],
+    color: DS.colors.textMuted,
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 20,
@@ -257,5 +256,5 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
   },
-  ctaText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  ctaText: { color: DS.colors.surface, fontWeight: '700', fontSize: 15 },
 });

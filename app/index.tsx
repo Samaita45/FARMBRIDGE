@@ -1,7 +1,7 @@
 import { Redirect } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 
-import { Colors } from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 
@@ -12,7 +12,7 @@ export default function Index() {
   if (!isHydrated) {
     return (
       <View className="flex-1 items-center justify-center bg-surface">
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <ActivityIndicator size="large" color={DS.colors.primary} />
       </View>
     );
   }

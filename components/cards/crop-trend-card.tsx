@@ -3,11 +3,10 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { Premium } from '@/constants/premium-home';
+import { DS } from '@/constants/design-system';
 import { getCropImage, getDemandBadge } from '@/utils/crop-emoji';
 import { asHref } from '@/lib/href';
 import type { Crop } from '@/types';
-import { DS } from '@/constants/design-system';
 
 interface CropTrendCardProps {
   crop: Crop;
@@ -46,9 +45,9 @@ export function CropTrendCard({ crop }: CropTrendCardProps) {
           <Ionicons
             name={up ? 'arrow-up' : 'arrow-down'}
             size={12}
-            color={up ? Premium.green : Premium.red}
+            color={up ? DS.colors.accent : DS.semantic.danger.solid}
           />
-          <Text style={[s.changeText, { color: up ? Premium.green : Premium.red }]}>
+          <Text style={[s.changeText, { color: up ? DS.colors.accent : DS.semantic.danger.solid }]}>
             {Math.abs(crop.priceChangePercent)}%
           </Text>
         </View>
@@ -61,10 +60,10 @@ const s = StyleSheet.create({
   card: {
     width: 172,
     marginRight: 16,
-    backgroundColor: Premium.surface,
-    borderRadius: Premium.radiusLg,
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.xl,
     overflow: 'hidden',
-    ...Premium.shadow,
+    ...DS.shadow.card,
     borderWidth: 1,
     borderColor: 'rgba(226,232,240,0.9)',
   },
@@ -93,18 +92,18 @@ const s = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: '800',
-    color: Premium.text,
+    color: DS.colors.text,
     marginBottom: 8,
     letterSpacing: -0.2,
   },
   priceUSD: {
     fontSize: 22,
     fontWeight: '800',
-    color: Premium.primary,
+    color: DS.colors.primary,
     letterSpacing: -0.5,
   },
-  perkg: { fontSize: 13, fontWeight: '500', color: Premium.textMuted },
-  priceZWG: { fontSize: 12, color: Premium.textMuted, marginTop: 2, marginBottom: 12 },
+  perkg: { fontSize: 13, fontWeight: '500', color: DS.colors.textMuted },
+  priceZWG: { fontSize: 12, color: DS.colors.textMuted, marginTop: 2, marginBottom: 12 },
   changePill: {
     flexDirection: 'row',
     alignItems: 'center',

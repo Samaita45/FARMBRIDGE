@@ -47,7 +47,7 @@ export function ProductCard({ product, compact }: ProductCardProps) {
 
             {/* Rating row */}
             <View style={s.ratingRow}>
-              <Ionicons name="star" size={11} color="#F9A825" />
+              <Ionicons name="star" size={11} color={DS.semantic.warning.solid} />
               <Text style={s.rating}>{product.rating}</Text>
               <Text style={s.reviewCount}>({product.reviewCount})</Text>
             </View>
@@ -88,7 +88,7 @@ export function ProductCard({ product, compact }: ProductCardProps) {
           <Ionicons
             name={inCart ? 'checkmark' : 'cart'}
             size={12}
-            color={inCart ? DS.colors.success : '#fff'}
+            color={inCart ? DS.colors.success : DS.colors.surface}
           />
           <Text style={[s.cartBtnText, inCart && { color: DS.colors.success }]}>
             {inCart ? 'Added' : '+ Cart'}
@@ -127,8 +127,8 @@ const s = StyleSheet.create({
     position: 'absolute', right: 8, bottom: 8,
     width: 28, height: 28, borderRadius: 14,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#fff',
-    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 6, elevation: 2,
+    backgroundColor: DS.colors.surface,
+    shadowColor: DS.colors.text, shadowOpacity: 0.12, shadowRadius: 6, elevation: 2,
   },
   organicBadge: {
     position: 'absolute', top: 8, left: 8,
@@ -174,5 +174,5 @@ const s = StyleSheet.create({
   },
   cartBtnDisabled: { backgroundColor: DS.colors.gray[300] },
   cartBtnInCart: { backgroundColor: DS.colors.accentLight, borderWidth: 1, borderColor: DS.colors.success },
-  cartBtnText: { fontSize: 11, fontWeight: '700', color: '#fff' },
+  cartBtnText: { fontSize: 11, fontWeight: '700', color: DS.colors.surface },
 });

@@ -4,7 +4,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useToast } from '@/components/ui/toast-provider';
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { flushSyncQueue } from '@/services/syncService';
 
 export function OfflineBanner() {
@@ -65,7 +65,7 @@ export function OfflineBanner() {
 
 const s = StyleSheet.create({
   banner: { zIndex: 50, paddingHorizontal: 16, paddingBottom: 8 },
-  online: { backgroundColor: Colors.primary },
-  offline: { backgroundColor: Colors.warning },
-  text: { textAlign: 'center', fontSize: 13, fontWeight: '700', color: Colors.white },
+  online: { backgroundColor: DS.colors.primary },
+  offline: { backgroundColor: DS.semantic.warning.solid },
+  text: { textAlign: 'center', fontSize: 13, fontWeight: '700', color: DS.colors.surface },
 });

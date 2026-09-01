@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/haptic-tab';
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { tabBarStyle } from '@/lib/platform-ui';
 import { useAuthStore, selectIsSubscribed } from '@/stores/authStore';
 
@@ -15,8 +15,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.gray[400],
+        tabBarActiveTintColor: DS.colors.primary,
+        tabBarInactiveTintColor: DS.colors.textFaint,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',

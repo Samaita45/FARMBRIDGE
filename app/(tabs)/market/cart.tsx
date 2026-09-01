@@ -1,10 +1,9 @@
+import { Button, EmptyState, GlassCard } from '@/components/design-system';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EmptyState, GlassCard } from '@/components/design-system';
-import { Button } from '@/components/design-system';
 import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
 import { useCartStore, type CartItem } from '@/stores/cartStore';

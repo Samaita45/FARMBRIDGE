@@ -5,8 +5,8 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/ui/primary-button';
-import Colors from '@/constants/colors';
-import { Typography } from '@/constants/Typography';
+import { DS } from '@/constants/design-system';
+
 import { PAYMENT_METHODS } from '@/constants/zimbabwe-data';
 import { cardShadow } from '@/lib/platform-ui';
 import { asHref } from '@/lib/href';
@@ -71,7 +71,7 @@ export default function CheckoutScreen() {
           value={address}
           onChangeText={setAddress}
           placeholder="Street, suburb, city"
-          placeholderTextColor={Colors.placeholder}
+          placeholderTextColor={DS.colors.textSoft}
           multiline
         />
 
@@ -90,7 +90,7 @@ export default function CheckoutScreen() {
           <Pressable
             onPress={() => router.push(asHref('/(tabs)/transport/request'))}
             style={({ pressed }) => [s.transportLink, pressed && { opacity: 0.85 }]}>
-            <Ionicons name="bus-outline" size={16} color={Colors.primary} />
+            <Ionicons name="bus-outline" size={16} color={DS.colors.primary} />
             <Text style={s.transportLinkText}>Book farm transport for delivery</Text>
           </Pressable>
         ) : null}
@@ -108,7 +108,7 @@ export default function CheckoutScreen() {
                   <Text style={s.payIconText}>{pm.name.slice(0, 2)}</Text>
                 </View>
                 <Text style={s.payName}>{pm.name}</Text>
-                {active ? <Ionicons name="checkmark-circle" size={20} color={Colors.primary} /> : null}
+                {active ? <Ionicons name="checkmark-circle" size={20} color={DS.colors.primary} /> : null}
               </Pressable>
             );
           })}
@@ -149,20 +149,20 @@ export default function CheckoutScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.primaryBg },
+  root: { flex: 1, backgroundColor: DS.colors.primaryBg },
   scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32 },
-  sectionLabel: { ...Typography.heading3, color: Colors.textPrimary, marginTop: 16, marginBottom: 8 },
+  sectionLabel: { ...DS.typography.h3, color: DS.colors.text, marginTop: 16, marginBottom: 8 },
   textArea: {
-    backgroundColor: Colors.white,
+    backgroundColor: DS.colors.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.inputBorder,
+    borderColor: DS.colors.border,
     paddingHorizontal: 14,
     paddingVertical: 12,
     minHeight: 88,
     fontSize: 15,
     fontFamily: 'PlusJakartaSans_400Regular',
-    color: Colors.textPrimary,
+    color: DS.colors.text,
     textAlignVertical: 'top',
   },
   methodRow: { flexDirection: 'row', gap: 10 },
@@ -171,13 +171,13 @@ const s = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
-    backgroundColor: Colors.white,
+    backgroundColor: DS.colors.surface,
     borderWidth: 1,
-    borderColor: Colors.gray[200],
+    borderColor: DS.colors.border,
   },
-  methodBtnActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  methodText: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, textTransform: 'capitalize' },
-  methodTextActive: { color: Colors.white },
+  methodBtnActive: { backgroundColor: DS.colors.primary, borderColor: DS.colors.primary },
+  methodText: { fontSize: 14, fontWeight: '700', color: DS.colors.text, textTransform: 'capitalize' },
+  methodTextActive: { color: DS.colors.surface },
   transportLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -186,9 +186,9 @@ const s = StyleSheet.create({
     marginTop: 10,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: Colors.primaryMid,
+    backgroundColor: DS.colors.primaryMid,
   },
-  transportLinkText: { fontSize: 13, fontWeight: '600', color: Colors.primary },
+  transportLinkText: { fontSize: 13, fontWeight: '600', color: DS.colors.primary },
   payList: { gap: 10 },
   payRow: {
     flexDirection: 'row',
@@ -196,35 +196,35 @@ const s = StyleSheet.create({
     gap: 12,
     padding: 14,
     borderRadius: 14,
-    backgroundColor: Colors.white,
+    backgroundColor: DS.colors.surface,
     borderWidth: 1,
-    borderColor: Colors.gray[200],
+    borderColor: DS.colors.border,
     ...cardShadow(),
   },
-  payRowActive: { borderColor: Colors.primary, borderWidth: 2, backgroundColor: Colors.primaryBg },
+  payRowActive: { borderColor: DS.colors.primary, borderWidth: 2, backgroundColor: DS.colors.primaryBg },
   payIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  payIconText: { fontSize: 11, fontWeight: '800', color: Colors.white },
-  payName: { flex: 1, fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  hint: { marginTop: 8, fontSize: 12, color: Colors.textSecondary },
+  payIconText: { fontSize: 11, fontWeight: '800', color: DS.colors.surface },
+  payName: { flex: 1, fontSize: 15, fontWeight: '700', color: DS.colors.text },
+  hint: { marginTop: 8, fontSize: 12, color: DS.colors.textMuted },
   summaryCard: {
     marginTop: 20,
-    backgroundColor: Colors.white,
+    backgroundColor: DS.colors.surface,
     borderRadius: 16,
     padding: 16,
     ...cardShadow(),
   },
-  summaryTitle: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10 },
+  summaryTitle: { fontSize: 16, fontWeight: '800', color: DS.colors.text, marginBottom: 10 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, gap: 8 },
-  summaryItem: { flex: 1, fontSize: 13, color: Colors.textSecondary },
-  summaryPrice: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
+  summaryItem: { flex: 1, fontSize: 13, color: DS.colors.textMuted },
+  summaryPrice: { fontSize: 13, fontWeight: '600', color: DS.colors.text },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 10,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: Colors.gray[100],
+    borderTopColor: DS.colors.borderLight,
   },
-  totalLabel: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
-  totalValue: { fontSize: 14, fontWeight: '800', color: Colors.primary },
+  totalLabel: { fontSize: 15, fontWeight: '800', color: DS.colors.text },
+  totalValue: { fontSize: 14, fontWeight: '800', color: DS.colors.primary },
 });

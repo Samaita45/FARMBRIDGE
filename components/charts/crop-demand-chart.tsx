@@ -5,7 +5,6 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Card } from '@/components/design-system';
 import { DS } from '@/constants/design-system';
 import { CROPS } from '@/constants/zimbabwe-data';
-import type { IconName } from '@/types/icons';
 import { getCropIcon } from '@/utils/crop-emoji';
 
 /**

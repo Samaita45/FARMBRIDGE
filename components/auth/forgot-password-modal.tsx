@@ -4,6 +4,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { SUPPORT_WHATSAPP_URL } from '@/constants/support';
+import { DS } from '@/constants/design-system';
 
 interface ForgotPasswordModalProps {
   visible: boolean;
@@ -31,7 +32,7 @@ export function ForgotPasswordModal({ visible, onClose }: ForgotPasswordModalPro
       <Pressable className="flex-1 justify-center bg-black/50 px-6" onPress={onClose}>
         <Pressable className="rounded-3xl bg-white p-6" onPress={(e) => e.stopPropagation()}>
           <View className="mb-4 h-12 w-12 items-center justify-center rounded-2xl bg-primaryMid">
-            <Ionicons name="lock-closed-outline" size={22} color="#2563EB" />
+            <Ionicons name="lock-closed-outline" size={22} color={DS.colors.primary} />
           </View>
 
           <Text className="font-display text-xl text-dark">Password reset</Text>

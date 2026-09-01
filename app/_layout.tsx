@@ -19,7 +19,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { OfflineBanner } from '@/components/ui/offline-banner';
-import { Colors } from '@/constants/colors';
 import { DS } from '@/constants/design-system';
 import { useDailyDigestScheduler } from '@/hooks/useDailyDigestScheduler';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -39,24 +38,28 @@ SplashScreen.preventAutoHideAsync();
 // re-render cannot discard the cache.
 const queryClient = createQueryClient();
 
-const ZimFarmLightTheme = {
+/**
+ * React Navigation's own theme, derived from DS so the chrome it draws (screen
+ * backgrounds during transitions, default header tints) matches the app rather
+ * than sitting a shade off it.
+ */
+const NavigationLightTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: Colors.primary,
+    primary: DS.colors.primary,
     background: DS.colors.background,
-    card: Colors.white,
-    text: Colors.gray[900],
-    border: Colors.gray[200],
+    card: DS.colors.surface,
+    text: DS.colors.text,
+    border: DS.colors.border,
   },
 };
 
-const ZimFarmDarkTheme = {
+// Placeholder until a real dark theme gets its own contrast pass; the app
+// ships light-only today.
+const NavigationDarkTheme = {
   ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: Colors.primary,
-  },
+  colors: { ...DarkTheme.colors, primary: DS.colors.primaryLight },
 };
 
 function AppBootstrap() {
@@ -125,7 +128,7 @@ export default function RootLayout() {
         <ToastProvider>
         <AppBootstrap />
         <OfflineBanner />
-        <ThemeProvider value={colorScheme === 'dark' ? ZimFarmDarkTheme : ZimFarmLightTheme}>
+        <ThemeProvider value={colorScheme === 'dark' ? NavigationDarkTheme : NavigationLightTheme}>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" />
               <Stack.Screen name="(auth)" />

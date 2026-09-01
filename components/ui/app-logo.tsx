@@ -1,6 +1,7 @@
 import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { AppImages } from '@/constants/images';
+import { DS } from '@/constants/design-system';
 
 interface AppLogoProps {
   size?: number;
@@ -39,10 +40,10 @@ export function AppLogo({ size = 64, style }: AppLogoProps) {
 const styles = StyleSheet.create({
   ring: {
     overflow: 'hidden',
-    backgroundColor: '#fff',
+    backgroundColor: DS.colors.surface,
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.9)',
-    shadowColor: '#000',
+    shadowColor: DS.colors.text,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,

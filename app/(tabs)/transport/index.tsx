@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card } from '@/components/design-system';
 import { TransportLocked } from '@/components/transport/transport-locked';
 import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
 import { DS } from '@/constants/design-system';
