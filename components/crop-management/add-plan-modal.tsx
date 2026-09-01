@@ -1,21 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { Image } from 'expo-image';
+import { useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
-  Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 
-import Colors from '@/constants/colors';
+import { Button, Card, EmptyState, IconButton, Input } from '@/components/design-system';
+import { DS } from '@/constants/design-system';
 import { CROPS } from '@/constants/zimbabwe-data';
 import type { Crop } from '@/types';
-import { getCropIcon, getCropImage } from '@/utils/crop-emoji';
+import { getCropImage } from '@/utils/crop-emoji';
 
 interface AddPlanModalProps {
   visible: boolean;
@@ -24,280 +26,409 @@ interface AddPlanModalProps {
   loading?: boolean;
 }
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function validateDate(value: string): string | undefined {
+  if (!ISO_DATE.test(value)) return 'Use the format YYYY-MM-DD';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'That is not a real date';
+  return undefined;
+}
+
+function validateHectares(value: string): string | undefined {
+  const ha = Number(value);
+  if (!value.trim()) return 'Enter your field size';
+  if (Number.isNaN(ha)) return 'Enter a number, for example 1.5';
+  if (ha <= 0) return 'Field size must be greater than zero';
+  if (ha > 10_000) return 'That looks too large — check the value';
+  return undefined;
+}
+
 export function AddPlanModal({ visible, onClose, onSubmit, loading }: AddPlanModalProps) {
   const [search, setSearch] = useState('');
   const [selectedCrop, setSelectedCrop] = useState<Crop | null>(null);
   const [plantDate, setPlantDate] = useState(new Date().toISOString().slice(0, 10));
   const [hectares, setHectares] = useState('1');
+  const [touched, setTouched] = useState(false);
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return CROPS.filter((c) => c.name.toLowerCase().includes(q) || c.localName.toLowerCase().includes(q));
+    const q = search.trim().toLowerCase();
+    if (!q) return CROPS;
+    return CROPS.filter(
+      (c) => c.name.toLowerCase().includes(q) || c.localName.toLowerCase().includes(q)
+    );
   }, [search]);
 
-  const handleSubmit = async () => {
-    if (!selectedCrop) return;
-    const ha = parseFloat(hectares);
-    if (isNaN(ha) || ha <= 0) return;
-    await onSubmit(selectedCrop.id, plantDate, ha);
+  const dateError = validateDate(plantDate);
+  const hectaresError = validateHectares(hectares);
+  const canSubmit = !dateError && !hectaresError && Boolean(selectedCrop);
+
+  const autoHarvestDate = useMemo(() => {
+    if (!selectedCrop || dateError) return '';
+    const d = new Date(plantDate);
+    d.setDate(d.getDate() + selectedCrop.harvestDays);
+    return d.toISOString().slice(0, 10);
+  }, [selectedCrop, plantDate, dateError]);
+
+  const reset = () => {
     setSelectedCrop(null);
     setSearch('');
     setHectares('1');
+    setPlantDate(new Date().toISOString().slice(0, 10));
+    setTouched(false);
+  };
+
+  const handleClose = () => {
+    reset();
     onClose();
   };
 
-  const autoHarvestDate = (() => {
-    if (!selectedCrop) return '';
-    try {
-      const d = new Date(plantDate);
-      d.setDate(d.getDate() + selectedCrop.harvestDays);
-      return d.toISOString().slice(0, 10);
-    } catch { return ''; }
-  })();
+  const handleSubmit = async () => {
+    setTouched(true);
+    if (!canSubmit || !selectedCrop) return;
+    await onSubmit(selectedCrop.id, plantDate, Number(hectares));
+    reset();
+    onClose();
+  };
+
+  const renderCrop = useCallback(
+    ({ item }: { item: Crop }) => {
+      const hot = item.demandLevel === 'very_high';
+      const tone = hot ? DS.semantic.danger : DS.semantic.info;
+      return (
+        <Pressable
+          onPress={() => setSelectedCrop(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`${item.name}, ${item.localName}. ${item.harvestDays} days to harvest. $${item.currentPriceUSD.toFixed(2)} per kilogram. ${item.demandLevel.replace('_', ' ')} demand.`}
+          style={({ pressed }) => [styles.cropRow, pressed && styles.pressed]}>
+          <Image
+            source={getCropImage(item.id, item.category)}
+            style={styles.cropImage}
+            contentFit="cover"
+            transition={150}
+          />
+          <View style={styles.flex}>
+            <Text style={styles.cropName}>{item.name}</Text>
+            <Text style={styles.cropMeta}>
+              {item.localName} · {item.harvestDays} days
+            </Text>
+          </View>
+          <View style={styles.cropPrice}>
+            <Text style={styles.cropPriceValue}>${item.currentPriceUSD.toFixed(2)}/kg</Text>
+            <View style={[styles.demandPill, { backgroundColor: tone.bg, borderColor: tone.border }]}>
+              <Text style={[styles.demandText, { color: tone.fg }]}>
+                {item.demandLevel.replace('_', ' ')}
+              </Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={DS.colors.textFaint} />
+        </Pressable>
+      );
+    },
+    []
+  );
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <View style={s.root}>
-
-        {/* ── Header ── */}
-        <View style={s.header}>
-          <Pressable onPress={onClose} style={s.closeBtn}>
-            <Ionicons name="close" size={20} color={Colors.textSecondary} />
-          </Pressable>
-          <View style={s.headerText}>
-            <Text style={s.headerTitle}>{selectedCrop ? 'Configure Plan' : 'Choose a Crop'}</Text>
-            <Text style={s.headerSub}>{selectedCrop ? selectedCrop.name : 'Search from 20+ crops'}</Text>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={handleClose}>
+      <KeyboardAvoidingView
+        style={styles.root}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.header}>
+          <IconButton
+            icon="close"
+            accessibilityLabel="Close without saving"
+            variant="outline"
+            size="sm"
+            onPress={handleClose}
+          />
+          <View style={styles.flex}>
+            <Text style={styles.headerTitle}>
+              {selectedCrop ? 'Configure the plan' : 'Choose a crop'}
+            </Text>
+            <Text style={styles.headerSub}>
+              {selectedCrop ? selectedCrop.name : `${CROPS.length} crops available`}
+            </Text>
           </View>
-          {selectedCrop && (
-            <View style={s.stepIndicator}>
-              <View style={[s.step, s.stepDone]} />
-              <View style={s.step} />
-            </View>
-          )}
+          <View style={styles.steps} accessibilityLabel={selectedCrop ? 'Step 2 of 2' : 'Step 1 of 2'}>
+            <View style={[styles.step, styles.stepDone]} />
+            <View style={[styles.step, selectedCrop ? styles.stepDone : null]} />
+          </View>
         </View>
 
-        {/* ── Step 1: Crop picker ── */}
         {!selectedCrop ? (
           <>
-            <View style={s.searchWrap}>
-              <Ionicons name="search" size={17} color={Colors.textSecondary} />
-              <TextInput
-                style={s.searchInput}
-                placeholder="Search crops... (e.g. Maize, Tomato)"
+            <View style={styles.searchWrap}>
+              <Input
+                icon="search-outline"
+                placeholder="Search crops, e.g. maize or chibage"
                 value={search}
                 onChangeText={setSearch}
-                placeholderTextColor={Colors.placeholder}
+                autoCorrect={false}
+                returnKeyType="search"
+                rightIcon={search ? 'close-circle' : undefined}
+                rightIconLabel="Clear the search"
+                onRightIconPress={() => setSearch('')}
               />
-              {search.length > 0 && (
-                <Pressable onPress={() => setSearch('')}>
-                  <Ionicons name="close-circle" size={17} color={Colors.textSecondary} />
-                </Pressable>
-              )}
             </View>
             <FlatList
               data={filtered}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={s.listContent}
-              renderItem={({ item }) => (
-                <Pressable
-                  onPress={() => setSelectedCrop(item)}
-                  style={({ pressed }) => [s.cropRow, pressed && { opacity: 0.8 }]}>
-                  <View style={s.cropEmojiWrap}>
-                    <Image source={getCropImage(item.id, item.category)} style={s.cropImage} resizeMode="cover" />
-                    <View style={s.cropImageIcon}>
-                      <Ionicons name={getCropIcon(item.category) as keyof typeof Ionicons.glyphMap} size={11} color={Colors.primary} />
-                    </View>
-                  </View>
-                  <View style={s.cropInfo}>
-                    <Text style={s.cropName}>{item.name}</Text>
-                    <Text style={s.cropMeta}>{item.localName} · {item.harvestDays} days</Text>
-                  </View>
-                  <View style={s.cropPrice}>
-                    <Text style={s.cropPriceUSD}>${item.currentPriceUSD.toFixed(2)}/kg</Text>
-                    <View style={[s.demandPill, { backgroundColor: item.demandLevel === 'very_high' ? '#FFEBEE' : Colors.primaryBg }]}>
-                      <Text style={[s.demandText, { color: item.demandLevel === 'very_high' ? Colors.error : Colors.primary }]}>
-                        {item.demandLevel.replace('_', ' ')}
-                      </Text>
-                    </View>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={Colors.gray[400]} />
-                </Pressable>
-              )}
+              renderItem={renderCrop}
+              contentContainerStyle={[
+                styles.list,
+                filtered.length === 0 && styles.listEmpty,
+              ]}
+              keyboardShouldPersistTaps="handled"
+              initialNumToRender={10}
+              windowSize={9}
+              ListEmptyComponent={
+                <EmptyState
+                  icon="search-outline"
+                  title="No crops found"
+                  description={`Nothing matches “${search.trim()}”. Try the local name.`}
+                />
+              }
             />
           </>
         ) : (
-
-          /* ── Step 2: Configure ── */
-          <View style={s.configure}>
-            {/* Selected crop card */}
-            <View style={s.selectedCropCard}>
-              <View style={s.selectedEmojiWrap}>
-                <Image source={getCropImage(selectedCrop.id, selectedCrop.category)} style={s.selectedImage} resizeMode="cover" />
-              </View>
-              <View style={s.selectedInfo}>
-                <Text style={s.selectedName}>{selectedCrop.name}</Text>
-                <Text style={s.selectedMeta}>{selectedCrop.harvestDays} days to harvest · {selectedCrop.waterRequirements} water</Text>
-                <Pressable onPress={() => setSelectedCrop(null)} style={s.changeBtn}>
-                  <Ionicons name="swap-horizontal" size={12} color={Colors.accent} />
-                  <Text style={s.changeBtnText}>Change crop</Text>
+          <ScrollView
+            contentContainerStyle={styles.configure}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}>
+            <Card style={styles.selectedCard}>
+              <Image
+                source={getCropImage(selectedCrop.id, selectedCrop.category)}
+                style={styles.selectedImage}
+                contentFit="cover"
+                transition={150}
+              />
+              <View style={styles.flex}>
+                <Text style={styles.selectedName}>{selectedCrop.name}</Text>
+                <Text style={styles.selectedMeta}>
+                  {selectedCrop.harvestDays} days to harvest · {selectedCrop.waterRequirements} water
+                </Text>
+                <Pressable
+                  onPress={() => setSelectedCrop(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose a different crop"
+                  hitSlop={8}
+                  style={styles.changeBtn}>
+                  <Ionicons name="swap-horizontal" size={12} color={DS.colors.primary} />
+                  <Text style={styles.changeBtnText}>Change crop</Text>
                 </Pressable>
               </View>
-            </View>
+            </Card>
 
-            {/* Form fields */}
-            <Text style={s.fieldLabel}>Planting Date</Text>
-            <View style={s.inputWrap}>
-              <Ionicons name="calendar-outline" size={16} color={Colors.textSecondary} />
-              <TextInput
-                style={s.fieldInput}
-                value={plantDate}
-                onChangeText={setPlantDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={Colors.placeholder}
+            <Input
+              label="Planting date"
+              icon="calendar-outline"
+              value={plantDate}
+              onChangeText={setPlantDate}
+              placeholder="YYYY-MM-DD"
+              autoCorrect={false}
+              required
+              error={touched ? dateError : undefined}
+              hint="Tasks are scheduled from this date"
+            />
+
+            <Input
+              label="Field size"
+              icon="resize-outline"
+              value={hectares}
+              onChangeText={setHectares}
+              keyboardType="decimal-pad"
+              placeholder="1.0"
+              required
+              error={touched ? hectaresError : undefined}
+              hint="In hectares"
+            />
+
+            <Card variant="flat" style={styles.forecast}>
+              <ForecastRow
+                icon="calendar-outline"
+                label="Expected harvest"
+                value={autoHarvestDate || '—'}
               />
-            </View>
-
-            <Text style={s.fieldLabel}>Field Size (hectares)</Text>
-            <View style={s.inputWrap}>
-              <Ionicons name="resize-outline" size={16} color={Colors.textSecondary} />
-              <TextInput
-                style={s.fieldInput}
-                value={hectares}
-                onChangeText={setHectares}
-                keyboardType="decimal-pad"
-                placeholder="1.0"
-                placeholderTextColor={Colors.placeholder}
+              <ForecastRow
+                icon="cash-outline"
+                label="Market price"
+                value={`$${selectedCrop.currentPriceUSD.toFixed(2)}/kg`}
+                tone="success"
               />
-            </View>
+              <ForecastRow
+                icon="leaf-outline"
+                label="Best planted"
+                value={selectedCrop.bestPlantingMonths
+                  .map((m) => new Date(2024, m - 1).toLocaleString('en', { month: 'short' }))
+                  .join(', ')}
+              />
+            </Card>
 
-            {/* Auto-calculated info */}
-            <View style={s.forecastCard}>
-              <View style={s.forecastRow}>
-                <Ionicons name="calendar" size={14} color={Colors.primary} />
-                <Text style={s.forecastLabel}>Expected harvest</Text>
-                <Text style={s.forecastValue}>{autoHarvestDate}</Text>
-              </View>
-              <View style={s.forecastRow}>
-                <Ionicons name="cash" size={14} color={Colors.success} />
-                <Text style={s.forecastLabel}>Market price</Text>
-                <Text style={[s.forecastValue, { color: Colors.success }]}>${selectedCrop.currentPriceUSD}/kg</Text>
-              </View>
-              <View style={s.forecastRow}>
-                <Ionicons name="leaf" size={14} color={Colors.accent} />
-                <Text style={s.forecastLabel}>Best planted</Text>
-                <Text style={s.forecastValue}>{selectedCrop.bestPlantingMonths.map((m) => new Date(2024, m - 1).toLocaleString('en', { month: 'short' })).join(', ')}</Text>
-              </View>
-            </View>
-
-            {/* Save button */}
-            <Pressable
+            <Button
+              title="Save crop plan"
+              icon="checkmark-circle-outline"
+              loading={loading}
+              disabled={touched && !canSubmit}
               onPress={handleSubmit}
-              disabled={loading}
-              style={({ pressed }) => [s.saveBtn, (loading || !selectedCrop) && s.saveBtnDisabled, pressed && { opacity: 0.85 }]}>
-              {loading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name="checkmark-circle" size={18} color="#fff" />
-                  <Text style={s.saveBtnText}>Save Crop Plan</Text>
-                </>
-              )}
-            </Pressable>
-          </View>
+              accessibilityHint="Creates the plan and schedules its watering, fertilising and harvest tasks"
+            />
+          </ScrollView>
         )}
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.primaryBg },
+function ForecastRow({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: 'calendar-outline' | 'cash-outline' | 'leaf-outline';
+  label: string;
+  value: string;
+  tone?: 'success';
+}) {
+  return (
+    <View style={styles.forecastRow}>
+      <Ionicons name={icon} size={14} color={DS.colors.textSoft} />
+      <Text style={styles.forecastLabel}>{label}</Text>
+      <Text
+        style={[styles.forecastValue, tone ? { color: DS.semantic[tone].fg } : null]}
+        numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
+  );
+}
 
-  // Header
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: DS.colors.background },
+  flex: { flex: 1 },
+  pressed: { opacity: 0.8 },
+
   header: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: 1, borderBottomColor: Colors.primaryMid,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DS.spacing.sm + 4,
+    paddingHorizontal: DS.spacing.md,
+    paddingVertical: DS.spacing.sm + 4,
+    backgroundColor: DS.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: DS.colors.borderLight,
   },
-  closeBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: Colors.gray[100], alignItems: 'center', justifyContent: 'center' },
-  headerText: { flex: 1 },
-  headerTitle: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
-  headerSub: { fontSize: 11, color: Colors.textSecondary, marginTop: 1 },
-  stepIndicator: { flexDirection: 'row', gap: 4 },
-  step: { width: 20, height: 4, borderRadius: 2, backgroundColor: Colors.gray[200] },
-  stepDone: { backgroundColor: Colors.primary },
-
-  // Search
-  searchWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#fff', margin: 14, borderRadius: 14,
-    paddingHorizontal: 14, paddingVertical: 12,
-    borderWidth: 1, borderColor: Colors.inputBorder,
-    shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1,
+  headerTitle: {
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
   },
-  searchInput: { flex: 1, fontSize: 14, color: Colors.textPrimary },
+  headerSub: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    marginTop: 1,
+  },
+  steps: { flexDirection: 'row', gap: 4 },
+  step: {
+    width: 18,
+    height: 3,
+    borderRadius: DS.radius.full,
+    backgroundColor: DS.colors.border,
+  },
+  stepDone: { backgroundColor: DS.colors.primary },
 
-  // Crop list
-  listContent: { paddingHorizontal: 14, paddingBottom: 40, gap: 8 },
+  searchWrap: { padding: DS.spacing.md, paddingBottom: DS.spacing.sm },
+  list: { paddingHorizontal: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.sm },
+  listEmpty: { flexGrow: 1, justifyContent: 'center' },
+
   cropRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#fff', borderRadius: 14, padding: 12,
-    borderWidth: 1, borderColor: Colors.primaryMid,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DS.spacing.sm + 4,
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.lg,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
+    padding: DS.spacing.sm + 2,
   },
-  cropEmojiWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.primaryBg, overflow: 'hidden' },
-  cropImage: { width: '100%', height: '100%' },
-  cropImageIcon: {
-    position: 'absolute', right: 3, bottom: 3,
-    width: 18, height: 18, borderRadius: 9,
-    backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
+  cropImage: {
+    width: 46,
+    height: 46,
+    borderRadius: DS.radius.md,
+    backgroundColor: DS.colors.surfaceMuted,
   },
-  cropInfo: { flex: 1 },
-  cropName: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  cropMeta: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
-  cropPrice: { alignItems: 'flex-end', gap: 4 },
-  cropPriceUSD: { fontSize: 12, fontWeight: '700', color: Colors.primary },
-  demandPill: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
-  demandText: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase' },
+  cropName: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  cropMeta: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    marginTop: 1,
+  },
+  cropPrice: { alignItems: 'flex-end', gap: 3 },
+  cropPriceValue: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  demandPill: {
+    borderRadius: DS.radius.xs,
+    borderWidth: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  demandText: {
+    fontSize: 9,
+    fontFamily: DS.fontFamily.semibold,
+    textTransform: 'capitalize',
+  },
 
-  // Configure step
-  configure: { padding: 16, gap: 0 },
-  selectedCropCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: '#fff', borderRadius: 16, padding: 14, marginBottom: 18,
-    borderWidth: 1.5, borderColor: Colors.primaryMid,
-    shadowColor: Colors.primary, shadowOpacity: 0.1, shadowRadius: 8, elevation: 2,
+  configure: { padding: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.md },
+  selectedCard: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm + 4 },
+  selectedImage: {
+    width: 64,
+    height: 64,
+    borderRadius: DS.radius.md,
+    backgroundColor: DS.colors.surfaceMuted,
   },
-  selectedEmojiWrap: { width: 60, height: 60, borderRadius: 18, backgroundColor: Colors.primaryBg, overflow: 'hidden' },
-  selectedImage: { width: '100%', height: '100%' },
-  selectedInfo: { flex: 1 },
-  selectedName: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
-  selectedMeta: { fontSize: 11, color: Colors.textSecondary, marginTop: 3, lineHeight: 16 },
+  selectedName: {
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  selectedMeta: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    marginTop: 2,
+  },
   changeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
-  changeBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
-
-  fieldLabel: { fontSize: 12, fontWeight: '700', color: Colors.textSecondary, marginBottom: 6, marginTop: 12, textTransform: 'uppercase', letterSpacing: 0.4 },
-  inputWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#fff', borderRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 2,
-    borderWidth: 1, borderColor: Colors.inputBorder,
+  changeBtnText: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.primary,
   },
-  fieldInput: { flex: 1, fontSize: 14, color: Colors.textPrimary, paddingVertical: 12 },
 
-  forecastCard: {
-    backgroundColor: Colors.primaryBg, borderRadius: 14, padding: 14,
-    marginTop: 14, marginBottom: 4,
-    borderWidth: 1, borderColor: Colors.primaryMid, gap: 8,
+  forecast: { gap: DS.spacing.sm },
+  forecastRow: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm },
+  forecastLabel: {
+    flex: 1,
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
   },
-  forecastRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  forecastLabel: { flex: 1, fontSize: 12, color: Colors.textSecondary },
-  forecastValue: { fontSize: 12, fontWeight: '700', color: Colors.textPrimary },
-
-  saveBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.primary, borderRadius: 14, paddingVertical: 15, marginTop: 16,
-    shadowColor: Colors.primaryDark, shadowOpacity: 0.3, shadowRadius: 10, elevation: 5,
+  forecastValue: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+    maxWidth: '55%',
   },
-  saveBtnDisabled: { backgroundColor: Colors.gray[300], shadowOpacity: 0 },
-  saveBtnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 });
