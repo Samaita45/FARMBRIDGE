@@ -1,13 +1,14 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
+import type { IconName } from '@/types/icons';
 import type { UserRole } from '@/types';
 
-const ROLES: { value: UserRole; label: string; icon: keyof typeof Ionicons.glyphMap; desc: string }[] = [
-  { value: 'farmer', label: 'Farmer',  icon: 'leaf',       desc: 'I grow crops' },
-  { value: 'buyer',  label: 'Buyer',   icon: 'cart',        desc: 'I buy produce' },
-  { value: 'both',   label: 'Both',    icon: 'swap-horizontal', desc: 'I do both' },
+const ROLES: { value: UserRole; label: string; icon: IconName; desc: string }[] = [
+  { value: 'farmer', label: 'Farmer', icon: 'leaf-outline', desc: 'I grow crops' },
+  { value: 'buyer', label: 'Buyer', icon: 'cart-outline', desc: 'I buy produce' },
+  { value: 'both', label: 'Both', icon: 'swap-horizontal-outline', desc: 'I do both' },
 ];
 
 interface RoleSelectorProps {
@@ -18,79 +19,112 @@ interface RoleSelectorProps {
 
 export function RoleSelector({ value, onChange, error }: RoleSelectorProps) {
   return (
-    <View style={s.container}>
-      <Text style={s.label}>I am a</Text>
-      <View style={s.row}>
+    <View style={styles.container}>
+      <Text style={styles.label} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+        I am a
+      </Text>
+
+      <View style={styles.row} accessibilityRole="radiogroup">
         {ROLES.map((role) => {
           const active = value === role.value;
           return (
             <Pressable
               key={role.value}
               onPress={() => onChange(role.value)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={`${role.label}. ${role.desc}`}
               style={({ pressed }) => [
-                s.roleBtn,
-                active ? s.roleBtnActive : s.roleBtnInactive,
-                pressed && !active && { opacity: 0.75 },
+                styles.option,
+                active && styles.optionActive,
+                pressed && !active && styles.pressed,
               ]}>
-              <View style={[s.roleIconCircle, active ? s.roleIconCircleActive : s.roleIconCircleInactive]}>
-                <Ionicons name={role.icon} size={16} color={active ? '#fff' : Colors.primary} />
+              <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
+                <Ionicons
+                  name={role.icon}
+                  size={16}
+                  color={active ? DS.colors.textInverse : DS.colors.primary}
+                />
               </View>
-              <Text style={[s.roleLabel, active ? s.roleLabelActive : s.roleLabelInactive]}>
+              <Text
+                style={[styles.optionLabel, active && styles.optionLabelActive]}
+                maxFontSizeMultiplier={DS.layout.maxFontScale}>
                 {role.label}
               </Text>
-              <Text style={[s.roleDesc, active ? s.roleDescActive : s.roleDescInactive]}>
+              <Text
+                style={[styles.optionDesc, active && styles.optionDescActive]}
+                numberOfLines={2}
+                maxFontSizeMultiplier={DS.layout.maxFontScale}>
                 {role.desc}
               </Text>
             </Pressable>
           );
         })}
       </View>
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
+
+      {error ? (
+        <Text style={styles.error} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  container: { marginBottom: 14 },
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, marginBottom: 10 },
-  row: { flexDirection: 'row', gap: 8 },
+const styles = StyleSheet.create({
+  container: { gap: DS.spacing.sm },
+  label: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  row: { flexDirection: 'row', gap: DS.spacing.sm },
 
-  roleBtn: {
+  option: {
     flex: 1,
-    borderRadius: 14,
-    padding: 12,
     alignItems: 'center',
-    gap: 6,
-    borderWidth: 1.5,
+    gap: 5,
+    minHeight: 92,
+    paddingVertical: DS.spacing.sm + 4,
+    paddingHorizontal: DS.spacing.sm,
+    borderRadius: DS.radius.md,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
+    backgroundColor: DS.colors.surface,
   },
-  roleBtnActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
+  // Selection is carried by fill and border, not by a coloured glow.
+  optionActive: { backgroundColor: DS.colors.primary, borderColor: DS.colors.primary },
+  pressed: { backgroundColor: DS.colors.surfaceMuted },
+
+  iconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: DS.radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: DS.colors.primaryBg,
   },
-  roleBtnInactive: {
-    backgroundColor: '#fff',
-    borderColor: Colors.inputBorder,
+  iconWrapActive: { backgroundColor: 'rgba(255, 255, 255, 0.22)' },
+
+  optionLabel: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
   },
+  optionLabelActive: { color: DS.colors.textInverse },
 
-  roleIconCircle: {
-    width: 32, height: 32, borderRadius: 16,
-    alignItems: 'center', justifyContent: 'center',
+  optionDesc: {
+    fontSize: 10,
+    lineHeight: 13,
+    textAlign: 'center',
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
   },
-  roleIconCircleActive: { backgroundColor: 'rgba(255,255,255,0.25)' },
-  roleIconCircleInactive: { backgroundColor: Colors.primaryBg },
+  optionDescActive: { color: 'rgba(255, 255, 255, 0.85)' },
 
-  roleLabel: { fontSize: 13, fontWeight: '700' },
-  roleLabelActive: { color: '#fff' },
-  roleLabelInactive: { color: Colors.textPrimary },
-
-  roleDesc: { fontSize: 10, textAlign: 'center' },
-  roleDescActive: { color: 'rgba(255,255,255,0.80)' },
-  roleDescInactive: { color: Colors.textSecondary },
-
-  errorText: { fontSize: 11, color: Colors.error, marginTop: 6 },
+  error: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.semantic.danger.fg,
+  },
 });

@@ -9,7 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { PROVINCES } from '@/constants/zimbabwe-data';
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 
 interface ProvincePickerProps {
   value: string;
@@ -40,7 +40,7 @@ export function ProvincePicker({ value, onChange, error }: ProvincePickerProps) 
           pressed && { opacity: 0.85 },
         ]}>
         <View style={s.triggerLeft}>
-          <Ionicons name="location-outline" size={18} color={selected ? Colors.primary : Colors.placeholder} style={s.triggerIcon} />
+          <Ionicons name="location-outline" size={18} color={selected ? DS.colors.primary : DS.colors.textSoft} style={s.triggerIcon} />
           <Text style={selected ? s.triggerSelected : s.triggerPlaceholder}>
             {selected ? selected.name : 'Select your province'}
           </Text>
@@ -48,7 +48,7 @@ export function ProvincePicker({ value, onChange, error }: ProvincePickerProps) 
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={18}
-          color={Colors.gray[400]}
+          color={DS.colors.textFaint}
         />
       </Pressable>
 
@@ -81,7 +81,7 @@ export function ProvincePicker({ value, onChange, error }: ProvincePickerProps) 
                     </Text>
                   </View>
                   {isSelected && (
-                    <Ionicons name="checkmark-circle" size={18} color={Colors.primary} />
+                    <Ionicons name="checkmark-circle" size={18} color={DS.colors.primary} />
                   )}
                 </Pressable>
               );
@@ -97,43 +97,43 @@ export function ProvincePicker({ value, onChange, error }: ProvincePickerProps) 
 
 const s = StyleSheet.create({
   wrapper: { marginBottom: 14 },
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, marginBottom: 7 },
+  label: { fontSize: 13, fontWeight: '600', color: DS.colors.text, marginBottom: 7 },
 
   // Trigger button
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.inputBg,
+    backgroundColor: DS.colors.surface,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: Colors.inputBorder,
+    borderColor: DS.colors.border,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
   triggerOpen: {
-    borderColor: Colors.primary,
+    borderColor: DS.colors.primary,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
-    backgroundColor: '#fff',
+    backgroundColor: DS.colors.surface,
   },
-  triggerError: { borderColor: Colors.error },
+  triggerError: { borderColor: DS.semantic.danger.solid },
   triggerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   triggerIcon: { marginRight: 10 },
-  triggerSelected: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, flex: 1 },
-  triggerPlaceholder: { fontSize: 14, color: Colors.placeholder, flex: 1 },
+  triggerSelected: { fontSize: 14, fontWeight: '600', color: DS.colors.text, flex: 1 },
+  triggerPlaceholder: { fontSize: 14, color: DS.colors.textSoft, flex: 1 },
 
   // Dropdown panel
   dropdown: {
-    backgroundColor: '#ffffff',
+    backgroundColor: DS.colors.surface,
     borderWidth: 1.5,
     borderTopWidth: 0,
-    borderColor: Colors.primary,
+    borderColor: DS.colors.primary,
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
     overflow: 'hidden',
     // Shadow
-    shadowColor: '#000',
+    shadowColor: DS.colors.text,
     shadowOpacity: 0.12,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
@@ -149,16 +149,16 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: DS.colors.surface,
   },
-  optionBorder: { borderBottomWidth: 1, borderBottomColor: Colors.gray[100] },
-  optionSelected: { backgroundColor: Colors.primaryBg },
-  optionPressed: { backgroundColor: Colors.primaryMid },
+  optionBorder: { borderBottomWidth: 1, borderBottomColor: DS.colors.borderLight },
+  optionSelected: { backgroundColor: DS.colors.primaryBg },
+  optionPressed: { backgroundColor: DS.colors.primaryMid },
   optionContent: { flex: 1 },
-  optionName: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
-  optionNameSelected: { color: Colors.primary },
-  optionCapital: { fontSize: 11, color: Colors.textSecondary, marginTop: 1 },
-  optionCapitalSelected: { color: Colors.primary },
+  optionName: { fontSize: 14, fontWeight: '600', color: DS.colors.text },
+  optionNameSelected: { color: DS.colors.primary },
+  optionCapital: { fontSize: 11, color: DS.colors.textMuted, marginTop: 1 },
+  optionCapitalSelected: { color: DS.colors.primary },
 
-  errorText: { fontSize: 11, color: Colors.error, marginTop: 6 },
+  errorText: { fontSize: 11, color: DS.semantic.danger.solid, marginTop: 6 },
 });
