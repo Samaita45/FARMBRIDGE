@@ -109,7 +109,7 @@ export default function RegisterScreen() {
                 <AppLogo size={68} style={s.logo} />
                 <Text style={s.title}>Create Account</Text>
                 <Text style={s.subtitle}>
-                  Join Zimbabwe's farming community
+                  Join Zimbabwe’s farming community
                 </Text>
               </View>
 

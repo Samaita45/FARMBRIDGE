@@ -1,8 +1,12 @@
+import type { SQLiteDatabase } from 'expo-sqlite';
+
 import type { User } from '@/types';
 import type { CropPlan, FarmTask, PlanStatus, TaskStatus } from '@/types/crop-management';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SQLiteDB = any;
+type SQLiteDB = SQLiteDatabase;
+
+/** A raw SQLite row before it is mapped onto a domain type. */
+type DbRow = Record<string, unknown>;
 
 let db: SQLiteDB | null = null;
 
@@ -74,8 +78,8 @@ async function runMigrations(database: SQLiteDB) {
 
 async function migrateTasksSmsColumn(database: SQLiteDB) {
   try {
-    const cols = await database.getAllAsync('PRAGMA table_info(tasks)');
-    if (!cols.some((c: { name: string }) => c.name === 'smsScheduled')) {
+    const cols = await database.getAllAsync<{ name: string }>('PRAGMA table_info(tasks)');
+    if (!cols.some((c) => c.name === 'smsScheduled')) {
       await database.execAsync(
         `ALTER TABLE tasks ADD COLUMN smsScheduled INTEGER NOT NULL DEFAULT 0`
       );
@@ -109,12 +113,12 @@ export async function insertCropPlan(plan: CropPlan): Promise<void> {
 export async function getCropPlans(userId: string, status?: PlanStatus): Promise<CropPlan[]> {
   const database = await getDatabase();
   const rows = status
-    ? await database.getAllAsync(
+    ? await database.getAllAsync<DbRow>(
         `SELECT * FROM crop_plans WHERE userId = ? AND status = ? ORDER BY plantDate ASC`,
         userId,
         status
       )
-    : await database.getAllAsync(
+    : await database.getAllAsync<DbRow>(
         `SELECT * FROM crop_plans WHERE userId = ? ORDER BY plantDate ASC`,
         userId
       );
@@ -123,7 +127,7 @@ export async function getCropPlans(userId: string, status?: PlanStatus): Promise
 
 export async function getCropPlanById(id: string): Promise<CropPlan | null> {
   const database = await getDatabase();
-  const row = await database.getFirstAsync(
+  const row = await database.getFirstAsync<DbRow>(
     `SELECT * FROM crop_plans WHERE id = ?`,
     id
   );
@@ -170,7 +174,7 @@ export async function insertTasks(tasks: FarmTask[]): Promise<void> {
 
 export async function getTasks(userId: string): Promise<FarmTask[]> {
   const database = await getDatabase();
-  const rows = await database.getAllAsync(
+  const rows = await database.getAllAsync<DbRow>(
     `SELECT t.* FROM tasks t
      INNER JOIN crop_plans p ON t.cropPlanId = p.id
      WHERE p.userId = ?
@@ -197,7 +201,7 @@ export async function deleteTask(id: string): Promise<void> {
 
 export async function getTaskById(id: string): Promise<FarmTask | null> {
   const database = await getDatabase();
-  const row = await database.getFirstAsync(
+  const row = await database.getFirstAsync<DbRow>(
     `SELECT * FROM tasks WHERE id = ?`,
     id
   );

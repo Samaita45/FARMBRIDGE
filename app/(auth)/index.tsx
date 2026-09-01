@@ -28,7 +28,7 @@ export default function OnboardingScreen() {
             <AppLogo size={56} />
             <View>
               <Text style={s.brandName}>FarmBridge</Text>
-              <Text style={s.brandSub}>Zimbabwe's Farming Platform</Text>
+              <Text style={s.brandSub}>Zimbabwe’s Farming Platform</Text>
             </View>
           </Animated.View>
 

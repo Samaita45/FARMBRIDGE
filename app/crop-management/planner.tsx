@@ -173,7 +173,7 @@ export default function CropPlannerScreen() {
           <View style={s.emptyPlans}>
             <Ionicons name="leaf-outline" size={40} color={Colors.gray[300]} />
             <Text style={s.emptyPlansTitle}>No plans yet</Text>
-            <Text style={s.emptyPlansHint}>Tap "New Plan" above to add your first crop</Text>
+            <Text style={s.emptyPlansHint}>Tap “New Plan” above to add your first crop</Text>
             <Pressable onPress={() => setModalOpen(true)} style={s.emptyBtn}>
               <Ionicons name="add" size={16} color="#fff" />
               <Text style={s.emptyBtnText}>Add First Crop</Text>

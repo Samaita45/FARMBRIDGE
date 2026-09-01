@@ -191,7 +191,7 @@ export function MonthCalendar({ plans, tasks, onDayPress, onAddTask }: MonthCale
           <View style={s.emptyDay}>
             <Ionicons name="calendar-outline" size={28} color={Colors.gray[300]} />
             <Text style={s.emptyDayText}>No tasks scheduled</Text>
-            <Text style={s.emptyDayHint}>Tap "Add Task" to schedule an activity</Text>
+            <Text style={s.emptyDayHint}>Tap “Add Task” to schedule an activity</Text>
           </View>
         ) : (
           <View style={s.taskList}>
