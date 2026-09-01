@@ -1,56 +1,45 @@
 /**
- * FarmBridge Design System — Color Tokens
+ * @deprecated Import `DS` from `@/constants/design-system`.
  *
- * Primary palette: Royal Blue (#2563EB) — unified with design-system.ts
- * Accent: Green (#16a34a) — agriculture identity kept as a highlight
+ * Compatibility alias. Every value below resolves to a `DS` token, so this file
+ * can no longer disagree with the design system. It exists only so the ~40
+ * screens still importing `Colors` keep working while they are migrated in the
+ * screen sweep; delete it once nothing imports it.
  */
+import { DS } from './design-system';
+
 const Colors = {
-  // ─── Primary Blue ─────────────────────────────────
-  primary:      '#2563EB',
-  primaryDark:  '#1D4ED8',
-  primaryLight: '#60A5FA',
-  primaryBg:    '#F8FAFC',
-  primaryMid:   '#DBEAFE',
+  primary: DS.colors.primary,
+  primaryDark: DS.colors.primaryDark,
+  primaryLight: DS.colors.primaryLight,
+  primaryBg: DS.colors.background,
+  primaryMid: DS.colors.primaryMid,
 
-  // ─── Accent Green (agriculture identity) ──────────
-  accent:       '#16a34a',   // green — crop badges, success, FAB, tags
-  accentLight:  '#dcfce7',   // light green — success backgrounds
+  accent: DS.colors.accent,
+  accentLight: DS.colors.accentLight,
 
-  // ─── Neutrals ─────────────────────────────────────
-  white:        '#ffffff',
-  black:        '#000000',
-  inputBg:      '#f8fafc',   // off-white input background
-  inputBorder:  '#e2e8f0',   // subtle border
-  placeholder:  '#94a3b8',   // placeholder text
-  textPrimary:  '#0f172a',   // main body text (near-black)
-  textSecondary:'#64748b',   // secondary / hint text
-  textLight:    '#ffffff',   // text on dark/coloured backgrounds
+  white: DS.colors.surface,
+  black: '#000000',
 
-  // ─── Status ───────────────────────────────────────
-  error:        '#ef4444',
-  success:      '#22c55e',
-  warning:      '#f59e0b',
+  inputBg: DS.colors.background,
+  inputBorder: DS.colors.border,
+  placeholder: DS.colors.textSoft,
 
-  // ─── Overlay ──────────────────────────────────────
-  overlay:      'rgba(0,0,0,0.45)',
+  textPrimary: DS.colors.text,
+  textSecondary: DS.colors.textMuted,
+  textLight: DS.colors.textInverse,
 
-  // ─── Legacy aliases (keep nativewind + older components working) ─
-  surface:      '#F8FAFC',
-  dark:         '#0F172A',
-  secondary:    '#1D4ED8',
+  error: DS.semantic.danger.solid,
+  success: DS.semantic.success.solid,
+  warning: DS.semantic.warning.solid,
 
-  // ─── Gray scale (Tailwind Slate) ──────────────────
-  gray: {
-    100: '#f1f5f9',
-    200: '#e2e8f0',
-    300: '#cbd5e1',
-    400: '#94a3b8',
-    500: '#64748b',
-    600: '#475569',
-    700: '#334155',
-    800: '#1e293b',
-    900: '#0f172a',
-  },
+  overlay: DS.colors.overlay,
+
+  surface: DS.colors.background,
+  dark: DS.colors.text,
+  secondary: DS.colors.primaryDark,
+
+  gray: DS.colors.gray,
 } as const;
 
 export default Colors;
