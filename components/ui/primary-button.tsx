@@ -1,10 +1,16 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, type PressableProps, type ViewStyle } from 'react-native';
+/**
+ * @deprecated Import `Button` from `@/components/design-system`.
+ *
+ * Compatibility wrapper. 18 screens still call this; it now delegates to the
+ * single Button so they pick up the shared sizing, pressed state, loading
+ * state, touch target and accessibility handling without being edited. Migrate
+ * call sites in the screen sweep, then delete this file.
+ */
+import type { PressableProps, ViewStyle } from 'react-native';
 
-import Colors from '@/constants/colors';
-import { Typography } from '@/constants/Typography';
-import { cardShadow } from '@/lib/platform-ui';
+import { Button } from '@/components/design-system/Button';
 
-interface PrimaryButtonProps extends Omit<PressableProps, 'style'> {
+interface PrimaryButtonProps extends Omit<PressableProps, 'style' | 'children'> {
   title: string;
   loading?: boolean;
   variant?: 'primary' | 'outline';
@@ -16,56 +22,18 @@ export function PrimaryButton({
   loading,
   variant = 'primary',
   disabled,
-  style: containerStyle,
+  style,
   ...rest
 }: PrimaryButtonProps) {
-  const { style: _ignored, ...props } = rest as PressableProps;
-  const isPrimary = variant === 'primary';
-
   return (
-    <Pressable
-      disabled={disabled || loading}
-      style={({ pressed }) => [
-        s.base,
-        isPrimary ? s.primary : s.outline,
-        (disabled || loading) && s.disabled,
-        pressed && s.pressed,
-        containerStyle,
-      ]}
-      {...props}>
-      {loading ? (
-        <ActivityIndicator color={isPrimary ? Colors.white : Colors.primary} />
-      ) : (
-        <Text style={[s.text, isPrimary ? s.textPrimary : s.textOutline]}>{title}</Text>
-      )}
-    </Pressable>
+    <Button
+      title={title}
+      variant={variant}
+      size="lg"
+      loading={loading}
+      disabled={disabled ?? undefined}
+      style={style}
+      {...rest}
+    />
   );
 }
-
-const s = StyleSheet.create({
-  base: {
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 52,
-    ...cardShadow(),
-  },
-  primary: {
-    backgroundColor: Colors.primary,
-  },
-  outline: {
-    backgroundColor: Colors.white,
-    borderWidth: 2,
-    borderColor: Colors.primary,
-  },
-  disabled: { opacity: 0.55 },
-  pressed: { opacity: 0.88 },
-  text: {
-    ...Typography.button,
-    textAlign: 'center',
-  },
-  textPrimary: { color: Colors.white },
-  textOutline: { color: Colors.primary },
-});

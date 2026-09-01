@@ -117,10 +117,6 @@ export default function RootLayout() {
                 name="notifications"
                 options={{ headerShown: true, title: 'Notifications' }}
               />
-              <Stack.Screen
-                name="modal"
-                options={{ presentation: 'modal', headerShown: true, title: 'Modal' }}
-              />
             </Stack>
             <StatusBar style="dark" />
         </ThemeProvider>

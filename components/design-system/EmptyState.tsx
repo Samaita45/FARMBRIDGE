@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/design-system/AppText';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/design-system/Button';
 import { DS } from '@/constants/design-system';
 
 interface EmptyStateProps {
