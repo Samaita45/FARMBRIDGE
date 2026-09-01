@@ -13,6 +13,7 @@ import {
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { useLocation } from '@/hooks/useLocation';
 import { estimateDistanceKm } from '@/services/transportDb';
+import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
 import {
@@ -137,7 +138,7 @@ function Field({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor={DS.colors.textSoft}
         keyboardType={keyboardType}
       />
     </View>

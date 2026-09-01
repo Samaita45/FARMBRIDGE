@@ -1,12 +1,13 @@
-import { Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Colors } from '@/constants/colors';
+import { Button, ButtonRow, Card } from '@/components/design-system';
+import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
+import { DS } from '@/constants/design-system';
 import type { TransportProvider } from '@/types';
-import { VEHICLE_ICONS } from '@/types/transport';
 
 interface TransporterCardProps {
   provider: TransportProvider;
-  distanceKm: number;
   estimatedPrice: number;
   onRequest: () => void;
   onNegotiate: () => void;
@@ -14,68 +15,165 @@ interface TransporterCardProps {
 
 export function TransporterCard({
   provider,
-  distanceKm,
   estimatedPrice,
   onRequest,
   onNegotiate,
 }: TransporterCardProps) {
-  const mockDistanceAway = Math.max(3, Math.round(distanceKm * 0.15));
+  const unavailable = !provider.isAvailable;
 
   return (
-    <View
-      className="mb-3 rounded-2xl bg-white p-4"
-      style={{ shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
-      <View className="flex-row items-start justify-between">
-        <View className="flex-row gap-3">
-          <View className="h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Text className="text-2xl">{VEHICLE_ICONS[provider.vehicleType]}</Text>
-          </View>
-          <View>
-            <Text className="font-sans-bold text-dark">{provider.name}</Text>
-            <Text className="font-sans text-sm text-gray-500">
-              {VEHICLE_ICONS[provider.vehicleType]} {provider.vehicleType} · {provider.capacity}t
-            </Text>
-            <Text className="font-sans text-xs text-primary">
-              ⭐ {provider.rating} · {provider.totalTrips} trips
+    <Card
+      style={styles.card}
+      accessibilityRole="summary"
+      accessibilityLabel={`${provider.name}, ${VEHICLE_LABELS[provider.vehicleType]}, ${provider.capacity} tonne capacity. Rated ${provider.rating} over ${provider.totalTrips} trips. Based in ${provider.location}. Estimated $${estimatedPrice}.`}>
+      <View style={styles.header}>
+        <View style={styles.avatar}>
+          <VehicleIcon type={provider.vehicleType} size={22} />
+        </View>
+
+        <View style={styles.identity}>
+          <Text style={styles.name} numberOfLines={1}>
+            {provider.name}
+          </Text>
+          <Text style={styles.meta}>
+            {VEHICLE_LABELS[provider.vehicleType]} · {provider.capacity}t
+          </Text>
+          <View style={styles.ratingRow}>
+            <Ionicons name="star" size={12} color={DS.semantic.warning.solid} />
+            <Text style={styles.rating}>
+              {provider.rating} · {provider.totalTrips} trips
             </Text>
           </View>
         </View>
-        {!provider.isAvailable ? (
-          <Text className="font-sans text-xs text-gray-400">Busy</Text>
+
+        {unavailable ? (
+          <View style={styles.busy}>
+            <Text style={styles.busyText}>Busy</Text>
+          </View>
         ) : null}
       </View>
 
-      <Text className="mt-2 font-sans text-xs text-gray-500">
-        📍 {mockDistanceAway} km away · {provider.location}
-      </Text>
-      <View className="mt-1 flex-row flex-wrap gap-1">
+      <View style={styles.locationRow}>
+        <Ionicons name="location-outline" size={13} color={DS.colors.textSoft} />
+        <Text style={styles.location} numberOfLines={1}>
+          {provider.location}
+        </Text>
+      </View>
+
+      <View style={styles.areas}>
         {provider.coverageAreas.slice(0, 3).map((area) => (
-          <View key={area} className="rounded-full bg-surface px-2 py-0.5">
-            <Text className="font-sans text-[10px] text-gray-600">{area}</Text>
+          <View key={area} style={styles.areaChip}>
+            <Text style={styles.areaText}>{area}</Text>
           </View>
         ))}
       </View>
 
-      <View className="mt-3 flex-row items-center justify-between border-t border-gray-50 pt-3">
+      <View style={styles.footer}>
         <View>
-          <Text className="font-sans text-xs text-gray-400">Est. price</Text>
-          <Text className="font-sans-bold text-lg text-dark">${estimatedPrice}</Text>
+          <Text style={styles.priceLabel}>Estimated</Text>
+          <Text style={styles.price}>${estimatedPrice}</Text>
         </View>
-        <View className="flex-row gap-2">
-          <Pressable
+
+        <ButtonRow>
+          <Button
+            title="Negotiate"
+            variant="outline"
+            size="sm"
+            disabled={unavailable}
             onPress={onNegotiate}
-            disabled={!provider.isAvailable}
-            className="rounded-xl border border-primary px-4 py-2">
-            <Text className="font-sans-semibold text-sm text-primary">Negotiate</Text>
-          </Pressable>
-          <Pressable
+            accessibilityLabel={`Negotiate the price with ${provider.name}`}
+          />
+          <Button
+            title="Request"
+            size="sm"
+            disabled={unavailable}
             onPress={onRequest}
-            disabled={!provider.isAvailable}
-            className="rounded-xl bg-primary px-4 py-2 active:opacity-90">
-            <Text className="font-sans-semibold text-sm text-white">Request</Text>
-          </Pressable>
-        </View>
+            accessibilityLabel={`Request ${provider.name} at $${estimatedPrice}`}
+          />
+        </ButtonRow>
       </View>
-    </View>
+    </Card>
   );
 }
+
+const styles = StyleSheet.create({
+  card: { marginBottom: DS.spacing.sm + 4, gap: DS.spacing.sm },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: DS.spacing.sm + 4 },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: DS.radius.md,
+    backgroundColor: DS.colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  identity: { flex: 1, gap: 1 },
+  name: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  meta: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  rating: {
+    fontSize: 11,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textMuted,
+  },
+  busy: {
+    backgroundColor: DS.semantic.neutral.bg,
+    borderRadius: DS.radius.xs,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  busyText: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.semantic.neutral.fg,
+  },
+
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  location: {
+    flex: 1,
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+
+  areas: { flexDirection: 'row', flexWrap: 'wrap', gap: 5 },
+  areaChip: {
+    backgroundColor: DS.colors.surfaceMuted,
+    borderRadius: DS.radius.xs,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  areaText: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: DS.spacing.sm,
+    paddingTop: DS.spacing.sm + 4,
+    borderTopWidth: 1,
+    borderTopColor: DS.colors.borderLight,
+  },
+  priceLabel: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textSoft,
+  },
+  price: {
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.bold,
+    color: DS.colors.text,
+  },
+});

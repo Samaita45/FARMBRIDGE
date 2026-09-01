@@ -1,17 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { PrimaryButton } from '@/components/ui/primary-button';
+import { Button, Card, EmptyState } from '@/components/design-system';
+import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
 import { useToast } from '@/components/ui/toast-provider';
+import { DS } from '@/constants/design-system';
+import { whatsAppUrl } from '@/constants/support';
 import { PAYMENT_METHODS, TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
-import { insertBooking } from '@/services/transportDb';
 import { asHref } from '@/lib/href';
+import { insertBooking } from '@/services/transportDb';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
 import type { TransportBooking } from '@/types/transport';
-import { VEHICLE_ICONS } from '@/types/transport';
+
+const PAYMENT_IDS = ['ecocash', 'onemoney', 'cash_usd', 'zwg'];
 
 export default function ConfirmScreen() {
   const { price: priceParam } = useLocalSearchParams<{ price?: string; mode?: string }>();
@@ -21,150 +25,341 @@ export default function ConfirmScreen() {
   const distanceKm = useTransportStore((s: TransportState) => s.distanceKm);
   const selectedProviderId = useTransportStore((s: TransportState) => s.selectedProviderId);
   const counterPriceUSD = useTransportStore((s: TransportState) => s.counterPriceUSD);
+  const askingPrice = useTransportStore((s: TransportState) => s.askingPriceUSD);
   const clear = useTransportStore((s: TransportState) => s.clear);
 
   const [paymentMethod, setPaymentMethod] = useState('ecocash');
-  const [booked, setBooked] = useState(false);
-  const [orderId, setOrderId] = useState('');
+  const [placing, setPlacing] = useState(false);
+  const [reference, setReference] = useState('');
 
   const provider = TRANSPORT_PROVIDERS.find((p) => p.id === selectedProviderId);
-  const askingPrice = useTransportStore((s: TransportState) => s.askingPriceUSD);
-  const agreedPrice =
-    counterPriceUSD ?? (priceParam ? parseFloat(priceParam) : askingPrice);
+  const agreedPrice = counterPriceUSD ?? (priceParam ? parseFloat(priceParam) : askingPrice);
 
   if (!request || !provider) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface p-4">
-        <Text className="font-sans text-gray-500">Booking data missing</Text>
+      <View style={styles.centre}>
+        <EmptyState
+          icon="clipboard-outline"
+          title="Booking details missing"
+          description="Start a transport request and choose a transporter to get here."
+          actionLabel="Start a request"
+          onAction={() => router.replace(asHref('/(tabs)/transport/request'))}
+        />
       </View>
     );
   }
 
   const placeBooking = async () => {
-    const id = `TRP-${Date.now().toString(36).toUpperCase()}`;
-    const booking: TransportBooking = {
-      id,
-      userId: user?.id ?? 'guest',
-      providerId: provider.id,
-      providerName: provider.name,
-      providerPhone: provider.phone,
-      vehicleType: provider.vehicleType,
-      pickup: request.pickup,
-      destination: request.destination,
-      goodsDescription: request.goodsDescription,
-      weightKg: request.weightKg,
-      category: request.category,
-      preferredDate: request.preferredDate,
-      distanceKm,
-      agreedPriceUSD: agreedPrice,
-      counterPriceUSD: counterPriceUSD ?? undefined,
-      status: 'confirmed',
-      paymentMethod,
-      createdAt: new Date().toISOString(),
-    };
-    await insertBooking(booking);
-    setOrderId(id);
-    setBooked(true);
-    showToast('Transport booked successfully!', 'success');
+    setPlacing(true);
+    try {
+      const id = `TRP-${Date.now().toString(36).toUpperCase()}`;
+      const booking: TransportBooking = {
+        id,
+        userId: user?.id ?? 'guest',
+        providerId: provider.id,
+        providerName: provider.name,
+        providerPhone: provider.phone,
+        vehicleType: provider.vehicleType,
+        pickup: request.pickup,
+        destination: request.destination,
+        goodsDescription: request.goodsDescription,
+        weightKg: request.weightKg,
+        category: request.category,
+        preferredDate: request.preferredDate,
+        distanceKm,
+        agreedPriceUSD: agreedPrice,
+        counterPriceUSD: counterPriceUSD ?? undefined,
+        // Requested, not confirmed. No payment has been taken and the
+        // transporter has not acknowledged it — they do that by phone, and the
+        // trips screen is where the status moves on.
+        status: 'pending',
+        paymentMethod,
+        createdAt: new Date().toISOString(),
+      };
+      await insertBooking(booking);
+      setReference(id);
+      showToast('Request sent — call the transporter to confirm', 'success');
+    } catch {
+      showToast('Could not save the booking. Try again.', 'error');
+    } finally {
+      setPlacing(false);
+    }
   };
 
-  const callDriver = () => Linking.openURL(`tel:${provider.phone}`);
-  const whatsappDriver = () =>
-    Linking.openURL(
-      `https://wa.me/${provider.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-        `Hi ${provider.name}, I booked transport ${orderId} from ${request.pickup} to ${request.destination}.`
-      )}`
-    );
-
-  if (booked) {
+  if (reference) {
     return (
-      <ScrollView className="flex-1 bg-surface px-4" contentContainerStyle={{ paddingVertical: 24 }}>
-        <Text className="text-center text-5xl">✅</Text>
-        <Text className="mt-4 text-center font-display text-2xl text-dark">Booking Confirmed!</Text>
-        <Text className="mt-2 text-center font-sans text-gray-500">Order #{orderId}</Text>
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <View style={styles.successIcon}>
+          <Ionicons name="checkmark-circle" size={44} color={DS.semantic.success.solid} />
+        </View>
+        <Text style={styles.successTitle}>Request sent</Text>
+        <Text style={styles.successRef}>Reference {reference}</Text>
 
-        <View className="mt-6 rounded-2xl bg-white p-4">
-          <Text className="font-sans-bold text-dark">{provider.name}</Text>
-          <Text className="font-sans text-sm text-gray-500">
-            {VEHICLE_ICONS[provider.vehicleType]} {provider.vehicleType} · ${agreedPrice}
-          </Text>
-          <Text className="mt-2 font-sans text-sm text-dark">
+        <Card style={styles.card}>
+          <View style={styles.providerRow}>
+            <View style={styles.avatar}>
+              <VehicleIcon type={provider.vehicleType} size={20} />
+            </View>
+            <View style={styles.flex}>
+              <Text style={styles.providerName}>{provider.name}</Text>
+              <Text style={styles.providerMeta}>
+                {VEHICLE_LABELS[provider.vehicleType]} · ${agreedPrice}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.route}>
             {request.pickup} → {request.destination}
           </Text>
-          <Text className="font-sans text-sm text-gray-500">{request.preferredDate}</Text>
+          <Text style={styles.routeMeta}>{request.preferredDate}</Text>
+        </Card>
+
+        <View style={styles.notice}>
+          <Ionicons name="information-circle-outline" size={15} color={DS.semantic.warning.fg} />
+          <Text style={styles.noticeText}>
+            Nothing has been paid yet. Agree the details and payment directly with the
+            transporter, then update the trip status under My trips.
+          </Text>
         </View>
 
-        <View className="mt-4 gap-3">
-          <Pressable onPress={callDriver} className="flex-row items-center justify-center gap-2 rounded-2xl bg-primary py-3">
-            <Ionicons name="call" size={20} color="#fff" />
-            <Text className="font-sans-semibold text-white">Call Transporter</Text>
-          </Pressable>
-          <Pressable onPress={whatsappDriver} className="flex-row items-center justify-center gap-2 rounded-2xl bg-[#25D366] py-3">
-            <Ionicons name="logo-whatsapp" size={20} color="#fff" />
-            <Text className="font-sans-semibold text-white">WhatsApp Transporter</Text>
-          </Pressable>
+        <View style={styles.actions}>
+          <Button
+            title="Call transporter"
+            icon="call-outline"
+            onPress={() => void Linking.openURL(`tel:${provider.phone}`)}
+            accessibilityLabel={`Call ${provider.name} on ${provider.phone}`}
+          />
+          <Button
+            title="Message on WhatsApp"
+            variant="outline"
+            icon="logo-whatsapp"
+            onPress={() =>
+              void Linking.openURL(
+                whatsAppUrl(
+                  `Hi ${provider.name}, I requested transport ${reference} from ${request.pickup} to ${request.destination}.`
+                )
+              )
+            }
+          />
+          <Button
+            title="Back to transport"
+            variant="ghost"
+            onPress={() => {
+              clear();
+              router.replace(asHref('/(tabs)/transport'));
+            }}
+          />
         </View>
-
-        <Pressable
-          onPress={() => {
-            clear();
-            router.replace(asHref('/(tabs)/transport'));
-          }}
-          className="mt-6 py-3">
-          <Text className="text-center font-sans-semibold text-primary">Back to Transport Home</Text>
-        </Pressable>
       </ScrollView>
     );
   }
 
   return (
-    <ScrollView className="flex-1 bg-surface px-4" contentContainerStyle={{ paddingBottom: 32, paddingTop: 8 }}>
-      <Text className="font-sans text-sm text-gray-500">Step 3 — Confirm booking</Text>
+    <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+      <Text style={styles.step}>Step 3 of 3 — review and send</Text>
 
-      <View className="mt-4 rounded-2xl bg-white p-4">
-        <Text className="font-sans-bold text-lg text-dark">Booking Summary</Text>
-        <Row label="Driver" value={provider.name} />
-        <Row label="Vehicle" value={`${VEHICLE_ICONS[provider.vehicleType]} ${provider.vehicleType}`} />
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Booking summary</Text>
+        <Row label="Transporter" value={provider.name} />
+        <Row label="Vehicle" value={VEHICLE_LABELS[provider.vehicleType]} />
         <Row label="Route" value={`${request.pickup} → ${request.destination}`} />
-        <Row label="Distance" value={`${distanceKm} km`} />
+        <Row label="Distance" value={`About ${distanceKm} km`} />
         <Row label="Goods" value={request.goodsDescription} />
         <Row label="Date" value={request.preferredDate} />
-        <Row label="Total" value={`$${agreedPrice} USD`} highlight />
-      </View>
+        <Row label="Agreed price" value={`$${agreedPrice}`} highlight />
+      </Card>
 
-      <Text className="mt-4 font-sans-semibold text-dark">Payment method</Text>
-      <View className="mt-2 flex-row flex-wrap gap-2">
-        {PAYMENT_METHODS.filter((p) => ['ecocash', 'onemoney', 'cash_usd', 'zwg'].includes(p.id)).map((pm) => (
-          <Pressable
-            key={pm.id}
-            onPress={() => setPaymentMethod(pm.id)}
-            className={`rounded-full px-4 py-2 ${paymentMethod === pm.id ? 'bg-primary' : 'bg-white border border-gray-200'}`}>
-            <Text className={`font-sans text-sm ${paymentMethod === pm.id ? 'text-white' : 'text-dark'}`}>
-              {pm.name}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-      {paymentMethod === 'ecocash' ? (
-        <Text className="mt-2 font-sans text-xs text-gray-500">
-          Dial *151*2*{agreedPrice}*ZimFarm# to pay via EcoCash
+      <View>
+        <Text style={styles.sectionTitle}>How you plan to pay</Text>
+        <View style={styles.payRow}>
+          {PAYMENT_METHODS.filter((p) => PAYMENT_IDS.includes(p.id)).map((pm) => {
+            const active = paymentMethod === pm.id;
+            return (
+              <Pressable
+                key={pm.id}
+                onPress={() => setPaymentMethod(pm.id)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={pm.name}
+                style={[styles.payChip, active && styles.payChipActive]}>
+                <Text style={[styles.payText, active && styles.payTextActive]}>{pm.name}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {/*
+          In-app payment does not exist yet. Rather than print a USSD string
+          that implies the app collected the money, this states who settles it.
+        */}
+        <Text style={styles.payNote}>
+          Payment is arranged directly with the transporter. FarmBridge does not take
+          payment for transport yet.
         </Text>
-      ) : null}
-
-      <View className="mt-6">
-        <PrimaryButton title="Place Order" onPress={placeBooking} />
       </View>
+
+      <Button
+        title="Send request"
+        icon="paper-plane-outline"
+        loading={placing}
+        onPress={placeBooking}
+        accessibilityHint="Saves the request and shows the transporter's contact details"
+      />
     </ScrollView>
   );
 }
 
 function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <View className="mt-2 flex-row justify-between border-b border-gray-50 py-1">
-      <Text className="font-sans text-sm text-gray-500">{label}</Text>
-      <Text className={`font-sans text-sm ${highlight ? 'font-bold text-primary' : 'text-dark'}`}>
+    <View style={styles.row}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <Text style={[styles.rowValue, highlight && styles.rowValueHighlight]} numberOfLines={2}>
         {value}
       </Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  centre: { flex: 1, justifyContent: 'center', backgroundColor: DS.colors.background },
+  body: {
+    padding: DS.spacing.md,
+    paddingBottom: DS.spacing.xl,
+    gap: DS.spacing.md,
+    backgroundColor: DS.colors.background,
+    flexGrow: 1,
+  },
+  flex: { flex: 1 },
+
+  step: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+
+  successIcon: { alignItems: 'center', marginTop: DS.spacing.md },
+  successTitle: {
+    fontSize: DS.typography.h1.fontSize,
+    fontFamily: DS.fontFamily.display,
+    color: DS.colors.text,
+    textAlign: 'center',
+  },
+  successRef: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    textAlign: 'center',
+    marginTop: -DS.spacing.sm,
+  },
+
+  card: { gap: DS.spacing.sm },
+  cardTitle: {
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+    marginBottom: DS.spacing.xs,
+  },
+  providerRow: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm + 4 },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: DS.radius.md,
+    backgroundColor: DS.colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  providerName: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  providerMeta: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+  route: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.text,
+  },
+  routeMeta: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: DS.spacing.md,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: DS.colors.borderLight,
+  },
+  rowLabel: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+  rowValue: {
+    flex: 1,
+    textAlign: 'right',
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  rowValueHighlight: {
+    fontSize: DS.typography.bodySm.fontSize,
+    color: DS.colors.primary,
+  },
+
+  sectionTitle: {
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+    marginBottom: DS.spacing.sm,
+  },
+  payRow: { flexDirection: 'row', flexWrap: 'wrap', gap: DS.spacing.sm },
+  payChip: {
+    minHeight: 38,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    borderRadius: DS.radius.sm,
+    backgroundColor: DS.colors.surface,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
+  },
+  payChipActive: { backgroundColor: DS.colors.primary, borderColor: DS.colors.primary },
+  payText: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textMuted,
+  },
+  payTextActive: { color: DS.colors.textInverse },
+  payNote: {
+    fontSize: 11,
+    lineHeight: 16,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textSoft,
+    marginTop: DS.spacing.sm,
+  },
+
+  notice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: DS.spacing.sm,
+    backgroundColor: DS.semantic.warning.bg,
+    borderRadius: DS.radius.md,
+    borderWidth: 1,
+    borderColor: DS.semantic.warning.border,
+    padding: DS.spacing.sm + 4,
+  },
+  noticeText: {
+    flex: 1,
+    fontSize: DS.typography.caption.fontSize,
+    lineHeight: 18,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.semantic.warning.fg,
+  },
+
+  actions: { gap: DS.spacing.sm },
+});

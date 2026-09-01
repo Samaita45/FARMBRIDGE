@@ -51,12 +51,10 @@ export interface TransporterProfile {
   createdAt: string;
 }
 
-export const VEHICLE_ICONS: Record<VehicleType, string> = {
-  bakkie: '🛻',
-  truck: '🚛',
-  lorry: '🏗️',
-  tractor: '🚜',
-};
+/**
+ * Vehicle glyphs live in `components/transport/vehicle-icon`, not here — they
+ * are icons, not data. Import `VehicleIcon` instead of mapping a name yourself.
+ */
 
 export const GOODS_CATEGORIES: GoodsCategory[] = [
   'Fresh Produce',

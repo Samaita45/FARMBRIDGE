@@ -8,7 +8,8 @@ import { PROVINCES } from '@/constants/zimbabwe-data';
 import { getTransporterByUser, insertTransporterProfile } from '@/services/transportDb';
 import { useAuthStore } from '@/stores/authStore';
 import type { TransporterProfile, VehicleType } from '@/types/transport';
-import { VEHICLE_ICONS } from '@/types/transport';
+import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
+import { DS } from '@/constants/design-system';
 
 const VEHICLE_TYPES: VehicleType[] = ['bakkie', 'truck', 'lorry', 'tractor'];
 
@@ -97,16 +98,25 @@ export default function RegisterTransporterScreen() {
 
       <Text className="mb-2 font-sans text-sm text-gray-600">Vehicle type</Text>
       <View className="mb-4 flex-row flex-wrap gap-2">
-        {VEHICLE_TYPES.map((vt) => (
-          <Pressable
-            key={vt}
-            onPress={() => setVehicleType(vt)}
-            className={`rounded-xl px-3 py-2 ${vehicleType === vt ? 'bg-primary' : 'bg-white'}`}>
-            <Text className={vehicleType === vt ? 'text-white' : 'text-dark'}>
-              {VEHICLE_ICONS[vt]} {vt}
-            </Text>
-          </Pressable>
-        ))}
+        {VEHICLE_TYPES.map((vt) => {
+          const active = vehicleType === vt;
+          return (
+            <Pressable
+              key={vt}
+              onPress={() => setVehicleType(vt)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={VEHICLE_LABELS[vt]}
+              className={`min-h-[40px] flex-row items-center gap-2 rounded-lg border px-3 ${
+                active ? 'border-primary bg-primary' : 'border-border bg-card'
+              }`}>
+              <VehicleIcon type={vt} size={16} color={active ? DS.colors.textInverse : undefined} />
+              <Text className={active ? 'font-sans-semibold text-white' : 'font-sans-semibold text-dark'}>
+                {VEHICLE_LABELS[vt]}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       <FormField label="Registration number" value={regNumber} onChangeText={setRegNumber} />

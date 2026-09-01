@@ -1,141 +1,210 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import Colors from '@/constants/colors';
+import { Button, Card } from '@/components/design-system';
+import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
+import { DS } from '@/constants/design-system';
 import { SUBSCRIPTION_PLANS, TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
+
+/**
+ * The transport paywall.
+ *
+ * The feature list previously advertised real-time GPS tracking, secure
+ * EcoCash payment and cold-chain options. None of those exist. Promising them
+ * on the screen that asks for money is the worst place in the app to be
+ * inaccurate, so the list below is what a subscriber actually gets today.
+ */
+const INCLUDED = [
+  `Contact details for ${TRANSPORT_PROVIDERS.length} transporters across Zimbabwe`,
+  'Compare estimated prices for your route',
+  'Send a price offer and agree a rate',
+  'Keep a record of every trip and its status',
+];
 
 export function TransportLocked() {
   const plan = SUBSCRIPTION_PLANS.find((p) => p.id === 'farmer');
-  const providers = TRANSPORT_PROVIDERS.slice(0, 3);
+  const preview = TRANSPORT_PROVIDERS.slice(0, 3);
 
   return (
-    <SafeAreaView style={s.root} edges={['top']}>
-
-      {/* Header */}
-      <View style={s.header}>
-        <View style={s.headerTitleRow}>
-          <Ionicons name="bus" size={24} color="#fff" />
-          <Text style={s.headerTitle}>Farm Transport</Text>
-        </View>
-        <Text style={s.headerSub}>Move your harvest safely & affordably</Text>
-      </View>
-
-      {/* Preview providers (blurred) */}
-      <View style={s.preview}>
-        {providers.map((p) => (
-          <View key={p.id} style={s.previewCard}>
-            <View style={s.previewAvatar}>
-              <Text style={s.previewInitial}>{p.name.charAt(0)}</Text>
-            </View>
-            <View style={s.previewInfo}>
-              <Text style={s.previewName}>{p.name}</Text>
-              <Text style={s.previewMeta}>{p.vehicleType} · {p.capacity}t</Text>
-            </View>
-            <Text style={s.previewRate}>${p.pricePerKm}/km</Text>
-          </View>
-        ))}
-        <View style={s.previewOverlay} />
-      </View>
-
-      {/* Lock card */}
-      <View style={s.lockCard}>
-        <View style={s.lockIconWrap}>
-          <Ionicons name="lock-closed" size={32} color={Colors.primary} />
+    <SafeAreaView style={styles.root} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Transport</Text>
+          <Text style={styles.subtitle}>Move your harvest safely and affordably</Text>
         </View>
 
-        <Text style={s.lockTitle}>Transport Booking Locked</Text>
-        <Text style={s.lockSub}>
-          Book farm transport like InDrive — subscribe to Farmer Pro
-          (${plan?.priceUSD ?? 3}/mo) for access to 15+ verified transporters across Zimbabwe.
-        </Text>
+        <View
+          style={styles.preview}
+          accessible
+          accessibilityLabel={`Preview of ${preview.length} transporters. Subscribe to see contact details.`}>
+          {preview.map((p) => (
+            <View key={p.id} style={styles.previewRow}>
+              <View style={styles.previewAvatar}>
+                <VehicleIcon type={p.vehicleType} size={18} color={DS.colors.textFaint} />
+              </View>
+              <View style={styles.flex}>
+                <Text style={styles.previewName}>{p.name}</Text>
+                <Text style={styles.previewMeta}>
+                  {VEHICLE_LABELS[p.vehicleType]} · {p.capacity}t
+                </Text>
+              </View>
+              <Text style={styles.previewRate}>${p.pricePerKm}/km</Text>
+            </View>
+          ))}
+          <View style={styles.previewFade} pointerEvents="none" />
+        </View>
 
-        {/* Feature list */}
-        {[
-          'Real-time GPS tracking',
-          'Compare quotes from drivers',
-          'Secure EcoCash payment',
-          'Cold chain & refrigerated options',
-        ].map((f) => (
-          <View key={f} style={s.featureRow}>
-            <Ionicons name="checkmark-circle" size={16} color={Colors.accent} />
-            <Text style={s.featureText}>{f}</Text>
+        <Card style={styles.lockCard}>
+          <View style={styles.lockIcon}>
+            <Ionicons name="lock-closed-outline" size={24} color={DS.colors.primary} />
           </View>
-        ))}
 
-        {plan?.ecocashCode && (
-          <View style={s.codeBox}>
-            <Text style={s.codeLabel}>EcoCash shortcode:</Text>
-            <Text style={s.codeValue}>{plan.ecocashCode}</Text>
+          <Text style={styles.lockTitle}>Transport needs a subscription</Text>
+          <Text style={styles.lockSub}>
+            {plan?.name ?? 'Farmer Pro'} costs ${plan?.priceUSD ?? 3} a month.
+          </Text>
+
+          <View style={styles.features}>
+            {INCLUDED.map((f) => (
+              <View key={f} style={styles.featureRow}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={DS.semantic.success.solid}
+                />
+                <Text style={styles.featureText}>{f}</Text>
+              </View>
+            ))}
           </View>
-        )}
 
-        <Link href="/(tabs)/profile" asChild>
-          <Pressable style={({ pressed }) => [s.btn, pressed && { opacity: 0.85 }]}>
-            <Ionicons name="flash" size={18} color="#fff" />
-            <Text style={s.btnText}>View Subscription Plans</Text>
-          </Pressable>
-        </Link>
-      </View>
+          <View style={styles.notice}>
+            <Ionicons name="information-circle-outline" size={14} color={DS.colors.textSoft} />
+            <Text style={styles.noticeText}>
+              Live tracking and in-app payment are not available yet. Payment is arranged
+              directly with the transporter.
+            </Text>
+          </View>
+
+          {/*
+            No payment provider is wired up, so this cannot take money. It says
+            so rather than presenting a Subscribe button that does nothing.
+          */}
+          <Button
+            title="Subscriptions coming soon"
+            variant="outline"
+            disabled
+            accessibilityLabel="Subscriptions are not available yet"
+          />
+        </Card>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.primaryBg },
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: DS.colors.background },
+  body: { padding: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.md },
+  flex: { flex: 1 },
 
-  header: { backgroundColor: Colors.primary, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18 },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 },
-
-  preview: { position: 'relative', padding: 16, gap: 8 },
-  previewCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: '#fff', borderRadius: 14, padding: 12,
-    borderWidth: 1, borderColor: Colors.gray[100],
-    opacity: 0.5,
+  header: { gap: 2 },
+  title: {
+    fontSize: DS.typography.h1.fontSize,
+    lineHeight: DS.typography.h1.lineHeight,
+    fontFamily: DS.fontFamily.display,
+    color: DS.colors.text,
   },
-  previewAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.primaryMid, alignItems: 'center', justifyContent: 'center' },
-  previewInitial: { fontSize: 18, fontWeight: '800', color: Colors.primary },
-  previewInfo: { flex: 1 },
-  previewName: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary },
-  previewMeta: { fontSize: 11, color: Colors.textSecondary },
-  previewRate: { fontSize: 13, fontWeight: '700', color: Colors.accent },
-  previewOverlay: {
-    position: 'absolute', inset: 0,
-    backgroundColor: 'rgba(240,253,244,0.5)',
+  subtitle: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
   },
 
-  lockCard: {
-    flex: 1, backgroundColor: '#fff',
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 22,
-    shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 20, elevation: 8,
+  preview: { position: 'relative', gap: DS.spacing.sm },
+  previewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DS.spacing.sm + 4,
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.lg,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
+    padding: DS.spacing.sm + 4,
   },
-  lockIconWrap: {
-    width: 64, height: 64, borderRadius: 20,
-    backgroundColor: Colors.primaryBg, borderWidth: 1.5, borderColor: Colors.primaryMid,
-    alignItems: 'center', justifyContent: 'center',
-    alignSelf: 'center', marginBottom: 14,
+  previewAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: DS.radius.md,
+    backgroundColor: DS.colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  lockTitle: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, textAlign: 'center', marginBottom: 8 },
-  lockSub: { fontSize: 13, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20, marginBottom: 16 },
+  previewName: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textSoft,
+  },
+  previewMeta: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textFaint,
+  },
+  previewRate: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textFaint,
+  },
+  previewFade: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: DS.colors.background,
+    opacity: 0.55,
+    borderRadius: DS.radius.lg,
+  },
 
-  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  featureText: { fontSize: 13, color: Colors.textPrimary, fontWeight: '500' },
-
-  codeBox: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: Colors.accentLight, borderRadius: 12, padding: 12, marginVertical: 12,
+  lockCard: { gap: DS.spacing.sm + 4 },
+  lockIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: DS.radius.md,
+    backgroundColor: DS.colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  codeLabel: { fontSize: 12, color: Colors.textSecondary },
-  codeValue: { fontSize: 14, fontWeight: '800', color: Colors.accent },
-
-  btn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.primary, borderRadius: 16, paddingVertical: 15, marginTop: 4,
+  lockTitle: {
+    fontSize: DS.typography.h2.fontSize,
+    fontFamily: DS.fontFamily.bold,
+    color: DS.colors.text,
   },
-  btnText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  lockSub: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    marginTop: -DS.spacing.sm,
+  },
+
+  features: { gap: DS.spacing.sm },
+  featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: DS.spacing.sm },
+  featureText: {
+    flex: 1,
+    fontSize: DS.typography.bodySm.fontSize,
+    lineHeight: 20,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.text,
+  },
+
+  notice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: DS.colors.surfaceMuted,
+    borderRadius: DS.radius.sm,
+    padding: DS.spacing.sm,
+  },
+  noticeText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
 });
