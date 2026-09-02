@@ -1,13 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card, IconButton } from '@/components/design-system';
+import { Card } from '@/components/design-system';
+import { HeroHeader } from '@/components/ui/hero-header';
 import { DS } from '@/constants/design-system';
+import { ScreenImages } from '@/constants/images';
+import { CROPS, getCropsForMonth, getCurrentSeason } from '@/constants/zimbabwe-data';
 import { useCropPlans } from '@/hooks/useCropPlans';
 import { useFarmTasks } from '@/hooks/useFarmTasks';
 import type { IconName } from '@/types/icons';
+
+const MONTH = new Date().getMonth() + 1;
 
 interface ModuleLink {
   href: '/crop-management/planner' | '/crop-management/tasks' | '/crop-management/health' | '/crop-management/soil';
@@ -53,25 +57,30 @@ export default function CropManagementHub() {
   const { allTasks, completionRate } = useFarmTasks();
   const pendingTasks = allTasks.filter((t) => t.status !== 'completed').length;
 
+  const season = getCurrentSeason(MONTH);
+
+  /*
+    The tip was a hardcoded paragraph about fall armyworm, under a heading that
+    said "Seasonal". It gave the same advice in July as in December. It now
+    comes from a crop whose planting window is actually open, using that crop's
+    own `tips` field, and names the crop and the season it belongs to.
+  */
+  const tipCrop =
+    getCropsForMonth(MONTH).find((c) => c.tips) ?? CROPS.find((c) => c.tips) ?? null;
+
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
-      <View style={styles.header}>
-        <IconButton
-          icon="arrow-back"
-          accessibilityLabel="Go back"
-          variant="ghost"
-          size="sm"
-          onPress={() => router.back()}
-        />
-        <View style={styles.headerText}>
-          <Text style={styles.title} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-            Crop Management
-          </Text>
-          <Text style={styles.subtitle} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-            Plan, track and optimise your crops
-          </Text>
-        </View>
-      </View>
+    <View style={styles.root}>
+      <HeroHeader
+        image={ScreenImages.crop}
+        title="Crop management"
+        subtitle="Plan, track and look after what is in the ground"
+        showBack
+        onBack={() => router.back()}
+        meta={[
+          { icon: 'partly-sunny-outline', label: season.name },
+          { icon: 'leaf-outline', label: `${plans.length} active plan${plans.length === 1 ? '' : 's'}` },
+        ]}
+      />
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <View style={styles.statsRow}>
@@ -139,12 +148,11 @@ export default function CropManagementHub() {
           <View style={styles.tipHeader}>
             <Ionicons name="bulb-outline" size={18} color={DS.colors.primary} />
             <Text style={styles.tipTitle} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-              Seasonal tip
+              {tipCrop ? `${tipCrop.name} · ${season.name}` : season.name}
             </Text>
           </View>
           <Text style={styles.tipBody} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-            Check maize whorls weekly during the rainy season for fall armyworm. Early detection
-            saves the crop.
+            {tipCrop?.tips ?? season.description}
           </Text>
           <Pressable
             onPress={() => router.push('/tutorials')}
@@ -157,7 +165,7 @@ export default function CropManagementHub() {
           </Pressable>
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -189,30 +197,6 @@ function Stat({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: DS.colors.background },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: DS.spacing.sm,
-    paddingHorizontal: DS.spacing.md,
-    paddingBottom: DS.spacing.md,
-    paddingTop: DS.spacing.sm,
-    backgroundColor: DS.colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: DS.colors.borderLight,
-  },
-  headerText: { flex: 1 },
-  title: {
-    fontSize: DS.typography.h2.fontSize,
-    lineHeight: DS.typography.h2.lineHeight,
-    fontFamily: DS.fontFamily.bold,
-    color: DS.colors.text,
-  },
-  subtitle: {
-    fontSize: DS.typography.caption.fontSize,
-    fontFamily: DS.fontFamily.regular,
-    color: DS.colors.textMuted,
-    marginTop: 1,
-  },
 
   body: { padding: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.md },
 
