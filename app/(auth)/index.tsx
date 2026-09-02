@@ -71,18 +71,21 @@ export default function OnboardingScreen() {
               ))}
             </View>
 
+            {/*
+              Both routes are offered as equal, explicitly labelled actions.
+              A new user should not have to infer that "sign in" implies a
+              separate place to register.
+            */}
             <View style={styles.actions}>
               <Link href="/(auth)/register" asChild>
-                <Button
-                  title="Create an account"
-                  size="lg"
-                  icon="arrow-forward"
-                  iconPosition="right"
-                />
+                <Button title="Create an account" size="lg" />
               </Link>
               <Link href="/(auth)/login" asChild>
-                <Button title="I already have an account" variant="outline" size="lg" />
+                <Button title="Sign in" variant="outline" size="lg" />
               </Link>
+              <Text style={styles.actionsHint} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+                New to FarmBridge? Create an account. Already registered? Sign in.
+              </Text>
             </View>
           </Animated.View>
         </SafeAreaView>
@@ -154,4 +157,12 @@ const styles = StyleSheet.create({
   },
 
   actions: { gap: DS.spacing.sm, marginTop: DS.spacing.xs },
+  actionsHint: {
+    fontSize: 11,
+    lineHeight: 15,
+    textAlign: 'center',
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textSoft,
+    marginTop: 2,
+  },
 });

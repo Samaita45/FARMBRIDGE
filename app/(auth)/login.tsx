@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ForgotPasswordModal } from '@/components/auth/forgot-password-modal';
-import { Button, Input } from '@/components/design-system';
+import { Button, IconButton, Input } from '@/components/design-system';
 import { AppLogo } from '@/components/ui/app-logo';
 import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
@@ -104,6 +104,21 @@ export default function LoginScreen() {
           <KeyboardAvoidingView
             style={styles.flex}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            {/*
+              The auth stack hides its header, so screens pushed onto it carry
+              their own way back. Without this, a user who taps "Sign in" from
+              the welcome screen is stuck unless they know the OS gesture.
+            */}
+            <View style={styles.backRow}>
+              <IconButton
+                icon="arrow-back"
+                accessibilityLabel="Go back"
+                variant="onImage"
+                size="sm"
+                onPress={() => (router.canGoBack() ? router.back() : router.replace('/(auth)'))}
+              />
+            </View>
+
             <ScrollView
               contentContainerStyle={styles.scroll}
               keyboardShouldPersistTaps="handled"
@@ -259,6 +274,7 @@ const styles = StyleSheet.create({
   bg: { flex: 1 },
   scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 23, 42, 0.55)' },
   safe: { flex: 1 },
+  backRow: { paddingHorizontal: DS.spacing.md, paddingTop: DS.spacing.sm },
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',

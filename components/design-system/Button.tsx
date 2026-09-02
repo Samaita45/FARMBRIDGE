@@ -33,7 +33,9 @@ export type ButtonVariant =
   | 'outline'
   | 'ghost'
   | 'danger'
-  | 'success';
+  | 'success'
+  /** Over photography — see VARIANTS.onImage. */
+  | 'onImage';
 
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
@@ -98,6 +100,17 @@ const VARIANTS: Record<ButtonVariant, VariantTokens> = {
     foreground: DS.colors.textInverse,
     pressedBackground: DS.semantic.success.fg,
   },
+  /**
+   * For controls placed over photography, where neither a light nor a dark
+   * token can be relied on to contrast with whatever is behind them. A dark
+   * scrim disc with a white glyph reads on any image.
+   */
+  onImage: {
+    background: 'rgba(15, 23, 42, 0.55)',
+    border: 'rgba(255, 255, 255, 0.35)',
+    foreground: DS.colors.textInverse,
+    pressedBackground: 'rgba(15, 23, 42, 0.75)',
+  },
 };
 
 /** Every height clears `DS.layout.touchTarget` (48). */
@@ -110,7 +123,21 @@ const SIZES: Record<
   lg: { height: 54, paddingHorizontal: 24, fontSize: 16, iconSize: 20, gap: 8 },
 };
 
-const AnimatedPressableBase = Animated.createAnimatedComponent(Pressable);
+/*
+ * The scale animation lives on a wrapping Animated.View rather than on the
+ * Pressable itself.
+ *
+ * Animated.createAnimatedComponent(Pressable) silently discards a *function*
+ * style — the `({ pressed }) => [...]` form Pressable needs for its pressed
+ * state. The result was a button with no height, no padding and no background:
+ * present in the tree, laid out as a zero-height box, and invisible on screen.
+ * Every Button in the app was affected, which meant screens appeared to be
+ * missing their primary action entirely.
+ *
+ * Keeping the two concerns in separate components means Pressable gets its
+ * function style and Reanimated gets a plain animated style, and neither has to
+ * accommodate the other.
+ */
 
 export function Button({
   title,
@@ -149,59 +176,60 @@ export function Button({
   };
 
   return (
-    <AnimatedPressableBase
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? title}
-      accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: isDisabled, busy: loading }}
-      disabled={isDisabled}
-      onPressIn={() => press(0.97)}
-      onPressOut={() => press(1)}
-      onPress={(event) => {
-        if (shouldHaptic && Platform.OS !== 'web') {
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-        onPress?.(event);
-      }}
-      style={({ pressed }) => [
-        styles.base,
-        {
-          height: dims.height,
-          paddingHorizontal: dims.paddingHorizontal,
-          gap: dims.gap,
-          backgroundColor: pressed && !isDisabled ? tokens.pressedBackground : tokens.background,
-          borderColor: tokens.border,
-        },
-        variant === 'outline' && styles.outlineBorder,
-        stretches && styles.fullWidth,
-        isDisabled && styles.disabled,
-        animatedStyle,
-        style,
-      ]}
-      {...rest}>
-      {loading ? (
-        <ActivityIndicator size="small" color={tokens.foreground} />
-      ) : (
-        <>
-          {icon && iconPosition === 'left' ? (
-            <Ionicons name={icon} size={dims.iconSize} color={tokens.foreground} />
-          ) : null}
-          <Text
-            numberOfLines={1}
-            maxFontSizeMultiplier={DS.layout.maxFontScale}
-            style={[
-              styles.label,
-              { fontSize: dims.fontSize, color: tokens.foreground },
-              textStyle,
-            ]}>
-            {title}
-          </Text>
-          {icon && iconPosition === 'right' ? (
-            <Ionicons name={icon} size={dims.iconSize} color={tokens.foreground} />
-          ) : null}
-        </>
-      )}
-    </AnimatedPressableBase>
+    <Animated.View style={[animatedStyle, stretches && styles.fullWidth, style]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel ?? title}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={{ disabled: isDisabled, busy: loading }}
+        disabled={isDisabled}
+        onPressIn={() => press(0.97)}
+        onPressOut={() => press(1)}
+        onPress={(event) => {
+          if (shouldHaptic && Platform.OS !== 'web') {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+          onPress?.(event);
+        }}
+        style={({ pressed }) => [
+          styles.base,
+          {
+            height: dims.height,
+            paddingHorizontal: dims.paddingHorizontal,
+            gap: dims.gap,
+            backgroundColor:
+              pressed && !isDisabled ? tokens.pressedBackground : tokens.background,
+            borderColor: tokens.border,
+          },
+          variant === 'outline' && styles.outlineBorder,
+          stretches && styles.fill,
+          isDisabled && styles.disabled,
+        ]}
+        {...rest}>
+        {loading ? (
+          <ActivityIndicator size="small" color={tokens.foreground} />
+        ) : (
+          <>
+            {icon && iconPosition === 'left' ? (
+              <Ionicons name={icon} size={dims.iconSize} color={tokens.foreground} />
+            ) : null}
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={DS.layout.maxFontScale}
+              style={[
+                styles.label,
+                { fontSize: dims.fontSize, color: tokens.foreground },
+                textStyle,
+              ]}>
+              {title}
+            </Text>
+            {icon && iconPosition === 'right' ? (
+              <Ionicons name={icon} size={dims.iconSize} color={tokens.foreground} />
+            ) : null}
+          </>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -212,7 +240,7 @@ export function Button({
 export interface IconButtonProps extends Omit<PressableProps, 'style' | 'children'> {
   icon: keyof typeof Ionicons.glyphMap;
   accessibilityLabel: string;
-  variant?: Extract<ButtonVariant, 'primary' | 'outline' | 'ghost' | 'danger'>;
+  variant?: Extract<ButtonVariant, 'primary' | 'outline' | 'ghost' | 'danger' | 'onImage'>;
   size?: ButtonSize;
   style?: StyleProp<ViewStyle>;
 }
@@ -246,7 +274,8 @@ export function IconButton({
           backgroundColor: pressed && !disabled ? tokens.pressedBackground : tokens.background,
           borderColor: tokens.border,
         },
-        variant === 'outline' && styles.outlineBorder,
+        (variant === 'outline' || variant === 'onImage') && styles.outlineBorder,
+        variant === 'onImage' && styles.round,
         disabled && styles.disabled,
         style,
       ]}
@@ -272,8 +301,16 @@ const styles = StyleSheet.create({
   outlineBorder: {
     borderWidth: 1,
   },
+  round: {
+    borderRadius: DS.radius.full,
+  },
   fullWidth: {
     alignSelf: 'stretch',
+  },
+  // The Pressable fills the wrapper, so a stretched wrapper yields a
+  // full-width control rather than a full-width box with a small button in it.
+  fill: {
+    width: '100%',
   },
   disabled: {
     opacity: 0.45,

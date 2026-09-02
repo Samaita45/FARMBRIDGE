@@ -12,7 +12,7 @@
  * goes wrong. A failed migration must leave a farmer with their records intact
  * under the old names, not with an empty app.
  */
-import { fastGet, fastSet } from '@/services/fastStorage';
+import { fastGet, fastSet, openNativeMmkv } from '@/services/fastStorage';
 
 import { migrateKeyPrefix } from './kv-migration';
 
@@ -66,22 +66,17 @@ async function migrateAsyncStorage(): Promise<{ moved: number; failed: number }>
  * where this is a no-op.
  */
 function migrateFastStorage(): number {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { MMKV } = require('react-native-mmkv') as typeof import('react-native-mmkv');
-    const legacy = new MMKV({ id: 'zimfarm-storage' });
-    const keys = legacy.getAllKeys();
-    let moved = 0;
-    for (const key of keys) {
-      const value = legacy.getString(key);
-      if (value === undefined) continue;
-      fastSet(key, value);
-      moved += 1;
-    }
-    return moved;
-  } catch {
-    return 0;
+  const legacy = openNativeMmkv('zimfarm-storage');
+  if (!legacy) return 0;
+  const keys = legacy.getAllKeys();
+  let moved = 0;
+  for (const key of keys) {
+    const value = legacy.getString(key);
+    if (value === undefined) continue;
+    fastSet(key, value);
+    moved += 1;
   }
+  return moved;
 }
 
 /**

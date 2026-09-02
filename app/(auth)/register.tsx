@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Input } from '@/components/design-system';
+import { Button, IconButton, Input } from '@/components/design-system';
 import { ProvincePicker } from '@/components/forms/province-picker';
 import { RoleSelector } from '@/components/forms/role-selector';
 import { AppLogo } from '@/components/ui/app-logo';
@@ -101,6 +101,16 @@ export default function RegisterScreen() {
           <KeyboardAvoidingView
             style={styles.flex}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <View style={styles.backRow}>
+              <IconButton
+                icon="arrow-back"
+                accessibilityLabel="Go back"
+                variant="onImage"
+                size="sm"
+                onPress={() => (router.canGoBack() ? router.back() : router.replace('/(auth)'))}
+              />
+            </View>
+
             <ScrollView
               contentContainerStyle={styles.scroll}
               keyboardShouldPersistTaps="handled"
@@ -310,6 +320,7 @@ const styles = StyleSheet.create({
   bg: { flex: 1 },
   scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 23, 42, 0.58)' },
   safe: { flex: 1 },
+  backRow: { paddingHorizontal: DS.spacing.md, paddingTop: DS.spacing.sm },
   scroll: { flexGrow: 1, padding: DS.spacing.md, gap: DS.spacing.md },
 
   header: { alignItems: 'center', gap: 3, marginTop: DS.spacing.sm },

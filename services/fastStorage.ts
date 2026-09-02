@@ -16,6 +16,9 @@
  * Call `hydrateFastStorage()` once at startup so the mirror is populated before
  * anything reads it.
  */
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { Platform } from 'react-native';
+
 const PREFIX = 'farmbridge:fast:';
 
 type MMKVInstance = {
@@ -25,21 +28,35 @@ type MMKVInstance = {
   getAllKeys: () => string[];
 };
 
-let mmkv: MMKVInstance | null = null;
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { MMKV } = require('react-native-mmkv') as typeof import('react-native-mmkv');
-  const instance = new MMKV({ id: 'farmbridge-storage' });
-  mmkv = {
-    getString: (k) => instance.getString(k),
-    set: (k, v) => instance.set(k, v),
-    delete: (k) => instance.delete(k),
-    getAllKeys: () => instance.getAllKeys(),
-  };
-} catch {
-  mmkv = null;
+/**
+ * Expo Go does not ship MMKV. On the New Architecture, asking TurboModuleRegistry
+ * for a missing native module can abort the JS runtime instead of throwing, which
+ * shows up as a Metro `loadModuleImplementation` crash on iOS.
+ */
+function nativeMmkvSupported(): boolean {
+  if (Platform.OS === 'web') return false;
+  return Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
 }
+
+/** Opens an MMKV instance, or null when the native module is not present. */
+export function openNativeMmkv(id: string): MMKVInstance | null {
+  if (!nativeMmkvSupported()) return null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { MMKV } = require('react-native-mmkv') as typeof import('react-native-mmkv');
+    const instance = new MMKV({ id });
+    return {
+      getString: (k) => instance.getString(k),
+      set: (k, v) => instance.set(k, v),
+      delete: (k) => instance.delete(k),
+      getAllKeys: () => instance.getAllKeys(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+let mmkv: MMKVInstance | null = openNativeMmkv('farmbridge-storage');
 
 /** Synchronous view of AsyncStorage, used only when MMKV is unavailable. */
 const mirror = new Map<string, string>();
