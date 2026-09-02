@@ -10,18 +10,27 @@ import {
   StyleSheet,
   Text,
   View,
+  type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SlideToAct } from '@/components/design-system';
 import { AppLogo } from '@/components/ui/app-logo';
 import { DS } from '@/constants/design-system';
 import { AuthImages, RemoteImages } from '@/constants/images';
 import { imageSourceFor } from '@/constants/produce-imagery';
 import type { IconName } from '@/types/icons';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+// Only the first paint uses this. Everything after comes from onLayout, which
+// is correct in split screen and after a rotation.
+const INITIAL = Dimensions.get('window');
+
+interface PageSize {
+  width: number;
+  height: number;
+}
 
 const FEATURES: { icon: IconName; label: string }[] = [
   { icon: 'leaf-outline', label: 'Crop management' },
@@ -44,6 +53,13 @@ const FEATURES: { icon: IconName; label: string }[] = [
  * somewhere else. Splitting them keeps the reference's uncluttered first
  * screen and still puts both routes in front of you, each labelled.
  *
+ * THE PAGES ARE SIZED, NOT FLEXED. A horizontal ScrollView gives its content
+ * container no height of its own, so a child with `flex: 1` collapses to
+ * nothing — which is what happened here: the hero on page one and the whole
+ * panel on page two, Create an account and Sign in with it, rendered with zero
+ * height and could not be seen. Both pages take an explicit width and height
+ * measured from the container.
+ *
  * THE HERO IS REMOTE WITH A BUNDLED FALLBACK. The Unsplash photograph is the
  * one the reference uses — a tractor working a green field — but this is the
  * screen someone opens before the app has ever had a network, on a new phone
@@ -53,16 +69,22 @@ const FEATURES: { icon: IconName; label: string }[] = [
 export default function OnboardingScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const [page, setPage] = useState(0);
+  const [size, setSize] = useState({ width: INITIAL.width, height: INITIAL.height });
+
+  const onLayout = (e: LayoutChangeEvent) => {
+    const { width, height } = e.nativeEvent.layout;
+    if (width !== size.width || height !== size.height) setSize({ width, height });
+  };
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const next = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    const next = Math.round(e.nativeEvent.contentOffset.x / size.width);
     if (next !== page) setPage(next);
   };
 
-  const goToChoice = () => scrollRef.current?.scrollTo({ x: SCREEN_WIDTH, animated: true });
+  const goToChoice = () => scrollRef.current?.scrollTo({ x: size.width, animated: true });
 
   return (
-    <View style={styles.root}>
+    <View style={styles.root} onLayout={onLayout}>
       {/*
         Page one is white at the top and page two is a dark photograph, so a
         single bar style would hide the clock on one of them.
@@ -75,9 +97,10 @@ export default function OnboardingScreen() {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onScroll}
-        scrollEventThrottle={16}>
-        <Intro width={SCREEN_WIDTH} onStart={goToChoice} />
-        <Choice width={SCREEN_WIDTH} />
+        scrollEventThrottle={16}
+        style={styles.pager}>
+        <Intro size={size} onStart={goToChoice} />
+        <Choice size={size} />
       </ScrollView>
 
       <View style={styles.dots} pointerEvents="none">
@@ -90,9 +113,9 @@ export default function OnboardingScreen() {
 }
 
 /** Page one — the reference. */
-function Intro({ width, onStart }: { width: number; onStart: () => void }) {
+function Intro({ size, onStart }: { size: PageSize; onStart: () => void }) {
   return (
-    <View style={[styles.page, { width }]}>
+    <View style={[styles.page, size]}>
       <SafeAreaView edges={['top']} style={styles.introTopSafe}>
         <View style={styles.introTop}>
           <AppLogo size={40} />
@@ -136,18 +159,11 @@ function Intro({ width, onStart }: { width: number; onStart: () => void }) {
         <View style={styles.heroScrim} />
 
         <SafeAreaView edges={['bottom']} style={styles.heroSafe}>
-          <Pressable
-            onPress={onStart}
-            accessibilityRole="button"
+          <SlideToAct
+            label="Slide to get started"
             accessibilityLabel="Get started"
-            accessibilityHint="Moves to the sign in and register options"
-            style={({ pressed }) => [styles.startBar, pressed && styles.pressed]}>
-            <View style={styles.startIcon}>
-              <Ionicons name="arrow-forward" size={20} color={DS.colors.textInverse} />
-            </View>
-            <Text style={styles.startText}>Get started</Text>
-            <Ionicons name="chevron-forward" size={16} color={DS.colors.textSoft} />
-          </Pressable>
+            onComplete={onStart}
+          />
         </SafeAreaView>
       </View>
     </View>
@@ -155,9 +171,9 @@ function Intro({ width, onStart }: { width: number; onStart: () => void }) {
 }
 
 /** Page two — the two ways in. */
-function Choice({ width }: { width: number }) {
+function Choice({ size }: { size: PageSize }) {
   return (
-    <View style={[styles.page, styles.choicePage, { width }]}>
+    <View style={[styles.page, styles.choicePage, size]}>
       <Image
         source={AuthImages.onboardingFarm}
         style={StyleSheet.absoluteFill}
@@ -226,7 +242,10 @@ function Choice({ width }: { width: number }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: DS.colors.surface },
-  page: { flex: 1 },
+  pager: { flex: 1 },
+  // No `flex: 1`. A horizontal ScrollView's content container has no height of
+  // its own, so a flexed child collapses; the width and height are given.
+  page: {},
   flex: { flex: 1 },
   pressed: { opacity: 0.9 },
 
@@ -292,41 +311,6 @@ const styles = StyleSheet.create({
   },
   heroSafe: { padding: DS.spacing.md, paddingBottom: DS.spacing.lg },
 
-  /*
-    The reference's frosted bar: light fill, dark label.
-
-    It was a 0.16-white fill with white text, which is what the bar looks like
-    at a glance — but that measured 3.07:1 over a bright frame of the
-    photograph. A heavy light fill is both closer to the reference and readable
-    over anything, because the label no longer depends on what is behind it:
-    0.88 white sits between 224 and 255 whatever the photo does, and near-black
-    on that clears 13:1.
-  */
-  startBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: DS.spacing.sm + 4,
-    minHeight: 64,
-    paddingLeft: 6,
-    paddingRight: DS.spacing.md,
-    borderRadius: DS.radius.full,
-    backgroundColor: 'rgba(255,255,255,0.88)',
-  },
-  startIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: DS.radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: DS.colors.primary,
-  },
-  startText: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: DS.typography.h3.fontSize,
-    fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.text,
-  },
 
   // ── Page two ──────────────────────────────────────────────────────────────
   choicePage: { backgroundColor: DS.colors.text },
