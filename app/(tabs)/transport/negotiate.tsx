@@ -178,6 +178,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
+    gap: DS.spacing.sm,
     paddingTop: DS.spacing.sm + 4,
     borderTopWidth: 1,
     borderTopColor: DS.colors.borderLight,

@@ -239,12 +239,17 @@ const styles = StyleSheet.create({
     gap: DS.spacing.sm,
   },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  // The label takes the pressure so the figure never does: a truncated price
+  // is worse than a truncated word.
   summaryLabel: {
+    flex: 1,
     fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
   summaryValue: {
+    flexShrink: 0,
+    textAlign: 'right',
     fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.text,
@@ -255,6 +260,7 @@ const styles = StyleSheet.create({
 
   totalRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   totalLabel: {
+    flex: 1,
     fontSize: DS.typography.h3.fontSize,
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.text,

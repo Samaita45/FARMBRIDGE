@@ -5,7 +5,7 @@ import { asHref } from '@/lib/href';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useSettingsStore, type SettingsState } from '@/stores/settingsStore';
 import { useEffect, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, Switch, Text, TextInput, View, Alert } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, TextInput, View, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProvincePicker } from '@/components/forms/province-picker';
@@ -18,6 +18,7 @@ import { upsertCachedCropData, upsertCachedProduct } from '@/services/database';
 import { buildSmsReminderBody } from '@/services/smsService';
 import type { AppCurrency, AppLanguage } from '@/types/profile';
 import type { FarmTask } from '@/types/crop-management';
+import { Toggle } from '@/components/design-system';
 
 const LANGUAGES: { id: AppLanguage; label: string }[] = [
   { id: 'en', label: 'English' },
@@ -237,7 +238,7 @@ function SettingSwitch({
         <Text className="font-sans text-dark">{label}</Text>
         {subtitle ? <Text className="font-sans text-xs text-gray-500">{subtitle}</Text> : null}
       </View>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: DS.colors.primary }} />
+      <Toggle value={value} onValueChange={onChange} accessibilityLabel={label} />
     </View>
   );
 }

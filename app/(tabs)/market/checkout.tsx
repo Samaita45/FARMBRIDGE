@@ -399,11 +399,14 @@ const styles = StyleSheet.create({
   summary: { gap: DS.spacing.sm },
   summaryRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   summaryLabel: {
+    flex: 1,
     fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
   summaryValue: {
+    flexShrink: 0,
+    textAlign: 'right',
     fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.text,

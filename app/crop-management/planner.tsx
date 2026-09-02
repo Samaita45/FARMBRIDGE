@@ -261,7 +261,7 @@ function PlanCard({
             accessibilityRole="progressbar"
             accessibilityLabel={`${plan.cropName} task progress`}
             accessibilityValue={{ min: 0, max: 100, now: donePct }}>
-            <View style={[styles.progressFill, { width: `${donePct}%` }]} />
+            <View style={[styles.progressFill, { width: `${Math.min(100, Math.max(0, donePct))}%` }]} />
           </View>
         </View>
       ) : null}
@@ -510,7 +510,8 @@ const styles = StyleSheet.create({
   },
 
   progressWrap: { gap: 5 },
-  progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  progressRow: {
+    gap: DS.spacing.sm, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   progressLabel: {
     fontSize: 11,
     fontFamily: DS.fontFamily.regular,

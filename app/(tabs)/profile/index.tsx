@@ -10,12 +10,7 @@ import {
   View,
 } from 'react-native';
 
-import {
-  FadeInView,
-  Card,
-  ProfileScreenHeader,
-  SectionHeader,
-} from '@/components/design-system';
+import { Card, FadeInView, ProfileScreenHeader, ProgressBar, SectionHeader } from '@/components/design-system';
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { ProfileMenuRow } from '@/components/profile/profile-menu-row';
 import { SubscriptionModal } from '@/components/profile/subscription-modal';
@@ -222,13 +217,12 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
 
-          <View style={s.progressRow}>
-            <Text style={s.progressLabel}>{completedTutorialIds.length}/{TUTORIALS.length} tutorials</Text>
-            <Text style={s.progressPct}>{tutorialPct}%</Text>
-          </View>
-          <View style={s.progressTrack}>
-            <View style={[s.progressFill, { width: `${tutorialPct}%` }]} />
-          </View>
+          <ProgressBar
+            value={completedTutorialIds.length / Math.max(TUTORIALS.length, 1)}
+            label={`${completedTutorialIds.length}/${TUTORIALS.length} tutorials`}
+            valueLabel={`${tutorialPct}%`}
+            accessibilityLabel={`Tutorials completed: ${completedTutorialIds.length} of ${TUTORIALS.length}`}
+          />
 
           {completedTutorialIds.length >= 5 ? (
             <View style={s.badgeEarned}>

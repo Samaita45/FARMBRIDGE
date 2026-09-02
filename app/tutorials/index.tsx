@@ -19,6 +19,7 @@ import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useTutorialsStore, type TutorialsState } from '@/stores/tutorialsStore';
 import type { TutorialCategoryFilter } from '@/types/tutorials';
 import { TUTORIAL_CATEGORIES } from '@/types/tutorials';
+import { ProgressBar } from '@/components/design-system';
 
 const CAT_MAP: Record<TutorialCategoryFilter, string | null> = {
   All: null, Planting: 'planting', Watering: 'watering',
@@ -65,12 +66,17 @@ export default function TutorialsHubScreen() {
         {/* Progress bar */}
         <View style={s.progressWrap}>
           <View style={s.progressRow}>
-            <Text style={s.progressLabel}>{completedIds.length}/{TUTORIALS.length} completed</Text>
+            <Text style={s.progressLabel}>
+              {completedIds.length}/{TUTORIALS.length} completed
+            </Text>
             <Text style={s.progressPct}>{pct}%</Text>
           </View>
-          <View style={s.progressTrack}>
-            <View style={[s.progressFill, { width: `${pct}%` }]} />
-          </View>
+          <ProgressBar
+            value={completedIds.length / Math.max(TUTORIALS.length, 1)}
+            tone="accent"
+            height={5}
+            accessibilityLabel={`${completedIds.length} of ${TUTORIALS.length} tutorials completed`}
+          />
         </View>
 
         {/* Search */}

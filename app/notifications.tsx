@@ -201,6 +201,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
     marginBottom: 16,
   },
   subtitle: { fontSize: 14, color: DS.colors.textMuted, fontWeight: '500' },
