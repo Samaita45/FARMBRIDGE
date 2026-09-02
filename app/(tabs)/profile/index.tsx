@@ -2,13 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   FadeInView,
@@ -20,6 +20,7 @@ import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { ProfileMenuRow } from '@/components/profile/profile-menu-row';
 import { SubscriptionModal } from '@/components/profile/subscription-modal';
 import { useToast } from '@/components/ui/toast-provider';
+import { whatsAppUrl } from '@/constants/support';
 import { DS } from '@/constants/design-system';
 import { t } from '@/constants/profile-i18n';
 import { TUTORIALS } from '@/constants/tutorials-data';
@@ -124,12 +125,22 @@ export default function ProfileScreen() {
   const tutorialPct = Math.round((completedTutorialIds.length / Math.max(TUTORIALS.length, 1)) * 100);
 
   return (
-    <SafeAreaView style={s.root} edges={['top']}>
+    <View style={s.root}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         <ProfileScreenHeader
           name={user?.name ?? 'Guest'}
           subtitle={`${user?.province ?? 'Zimbabwe'} · Member since ${memberSince}`}
           roleLabel={ROLE_LABELS[user?.role ?? 'farmer']}
+          action={
+            <Pressable
+              onPress={() => router.push(asHref('/settings'))}
+              accessibilityRole="button"
+              accessibilityLabel="Settings"
+              hitSlop={8}
+              style={s.headerAction}>
+              <Ionicons name="settings-outline" size={19} color={DS.colors.textInverse} />
+            </Pressable>
+          }
           avatar={
             <ProfileAvatar
               uri={farm?.avatarUri}
@@ -266,11 +277,19 @@ export default function ProfileScreen() {
             subtitle="Notifications, language, privacy"
             onPress={() => router.push(asHref('/settings'))}
           />
+          {/*
+            This pointed at /settings, which is exactly where the row above it
+            goes. Two rows to the same screen under different names is the same
+            defect the dashboard had. Support is a WhatsApp conversation, and
+            that is what it opens.
+          */}
           <ProfileMenuRow
-            icon="help-circle-outline"
-            label="Help & Support"
-            subtitle="FAQ · WhatsApp support"
-            onPress={() => router.push(asHref('/settings'))}
+            icon="logo-whatsapp"
+            label="Help and support"
+            subtitle="Message the FarmBridge team"
+            onPress={() =>
+              void Linking.openURL(whatsAppUrl('Hi, I need help with FarmBridge.'))
+            }
           />
         </Card>
         </FadeInView>
@@ -285,7 +304,7 @@ export default function ProfileScreen() {
       </ScrollView>
 
       <SubscriptionModal visible={plansOpen} onClose={() => setPlansOpen(false)} />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -303,6 +322,14 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: DS.colors.background },
   scroll: { paddingBottom: 48 },
   avatarWrap: { marginBottom: 4 },
+  headerAction: {
+    width: 36,
+    height: 36,
+    borderRadius: DS.radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+  },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',

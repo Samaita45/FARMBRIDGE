@@ -5,6 +5,8 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FadeInView } from '@/components/design-system/FadeInView';
+
 import { NearbyMap } from '@/components/transport/nearby-map';
 import { TransportLocked } from '@/components/transport/transport-locked';
 import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
@@ -105,6 +107,7 @@ export default function TransportHubScreen() {
           </Pressable>
         </Pressable>
 
+        <FadeInView delay={0}>
         <Pressable
           onPress={() => router.push(asHref('/(tabs)/transport/request'))}
           accessibilityRole="button"
@@ -129,8 +132,19 @@ export default function TransportHubScreen() {
             </View>
           </View>
         </Pressable>
+        </FadeInView>
 
-        <NearbyMap centre={location} providers={available} />
+        <FadeInView delay={1}>
+          <View style={styles.section}>
+            <View style={styles.sectionHead}>
+              <Text style={styles.sectionTitle}>Who is around</Text>
+              <Text style={styles.sectionCount}>
+                {available.length} free now
+              </Text>
+            </View>
+            <NearbyMap centre={location} providers={available} />
+          </View>
+        </FadeInView>
 
         <View style={styles.panel}>
           <Text style={styles.panelGreeting}>Hi {firstName},</Text>
@@ -405,6 +419,17 @@ const styles = StyleSheet.create({
     color: DS.colors.textMuted,
   },
 
+  section: { gap: DS.spacing.sm },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
+  sectionCount: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
