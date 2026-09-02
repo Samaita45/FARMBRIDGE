@@ -327,6 +327,7 @@ export default function HomeScreen() {
         visible={weatherModalOpen}
         onClose={() => setWeatherModalOpen(false)}
         daily={weather?.daily ?? []}
+        current={weather?.current}
         agricultural={weather?.agricultural}
         locationLabel={location.label}
       />

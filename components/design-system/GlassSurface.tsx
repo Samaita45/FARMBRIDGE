@@ -59,6 +59,12 @@ export type GlassTint = 'light' | 'dark';
 
 export interface GlassSurfaceProps extends ViewProps {
   tint?: GlassTint;
+  /**
+   * `regular` is the minimum that holds a single line of full-strength text.
+   * Use `strong` for a panel dense with type at several weights — the extra
+   * darkening is what gives secondary text somewhere to sit.
+   */
+  strength?: 'regular' | 'strong';
   /** `DS.radius` value. The material is clipped to it. */
   radius?: number;
   /** `DS.spacing` value. */
@@ -73,6 +79,7 @@ export function glassForeground(tint: GlassTint = 'light'): string {
 
 export function GlassSurface({
   tint = 'light',
+  strength = 'regular',
   radius = DS.radius.lg,
   padding = DS.spacing.md,
   style,
@@ -99,7 +106,13 @@ export function GlassSurface({
           style={[
             StyleSheet.absoluteFill,
             { borderRadius: radius },
-            tint === 'light' ? styles.floorLight : styles.floorDark,
+            tint === 'light'
+              ? strength === 'strong'
+                ? styles.floorLightStrong
+                : styles.floorLight
+              : strength === 'strong'
+                ? styles.floorDarkStrong
+                : styles.floorDark,
           ]}
         />
         {children}
@@ -124,9 +137,16 @@ const styles = StyleSheet.create({
     measured rather than chosen. 0.55 white puts near-black at 5.31:1 over a
     black backdrop and 17.85 over white. The dark floor needed 0.59, not the
     matching 0.55 — over a bright sky that left white text at 4.23:1.
+
+    The `strong` floors exist because 0.59 gives full white exactly 4.55 over a
+    bright scene, which is no headroom at all: a secondary line at 75% opacity
+    lands on 3.35. At 0.70 that same line clears 4.58 and full white sits at
+    6.61, so a panel can have more than one level of emphasis.
   */
   floorLight: { backgroundColor: 'rgba(255, 255, 255, 0.55)' },
+  floorLightStrong: { backgroundColor: 'rgba(255, 255, 255, 0.70)' },
   floorDark: { backgroundColor: 'rgba(15, 23, 42, 0.59)' },
+  floorDarkStrong: { backgroundColor: 'rgba(15, 23, 42, 0.70)' },
 
   solid: {
     backgroundColor: DS.colors.surface,

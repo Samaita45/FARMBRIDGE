@@ -138,3 +138,54 @@ function hourPhase(hour: number): SkyPhase {
   if (hour < 17.5) return 'afternoon';
   return 'dusk';
 }
+
+/**
+ * A colour for a temperature, for the range bars in the forecast.
+ *
+ * The scale runs cool blue to warm orange across the band Zimbabwe actually
+ * sees — roughly 5°C on a June night on the highveld to 40°C in the Zambezi
+ * valley in October. Anything outside is clamped to the ends rather than
+ * wrapping to a colour that means something else.
+ *
+ * BLUE TO ORANGE ON PURPOSE. It is the one warm/cool pair that survives every
+ * common form of colour blindness, which red/green does not. The bar is never
+ * the only signal in any case: the low and the high are printed either side of
+ * it, and the bar is there to make the days comparable at a glance rather than
+ * to be read on its own.
+ */
+const TEMP_SCALE: { at: number; color: string }[] = [
+  { at: 5, color: '#2563EB' },
+  { at: 14, color: '#38BDF8' },
+  { at: 20, color: '#5EEAD4' },
+  { at: 26, color: '#FACC15' },
+  { at: 32, color: '#F97316' },
+  { at: 40, color: '#DC2626' },
+];
+
+export function tempColor(celsius: number): string {
+  const t = Number.isFinite(celsius) ? celsius : 20;
+  if (t <= TEMP_SCALE[0].at) return TEMP_SCALE[0].color;
+  const last = TEMP_SCALE[TEMP_SCALE.length - 1];
+  if (t >= last.at) return last.color;
+
+  for (let i = 0; i < TEMP_SCALE.length - 1; i++) {
+    const a = TEMP_SCALE[i];
+    const b = TEMP_SCALE[i + 1];
+    if (t >= a.at && t <= b.at) {
+      return mix(a.color, b.color, (t - a.at) / (b.at - a.at));
+    }
+  }
+  return last.color;
+}
+
+function mix(from: string, to: string, ratio: number): string {
+  const a = rgb(from);
+  const b = rgb(to);
+  const out = a.map((v, i) => Math.round(v + (b[i] - v) * ratio));
+  return `#${out.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function rgb(hex: string): number[] {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
