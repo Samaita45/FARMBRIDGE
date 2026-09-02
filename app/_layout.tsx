@@ -27,6 +27,7 @@ import {
   requestNotificationPermissions,
 } from '@/services/notificationService';
 import { setSessionExpiredHandler } from '@/services/api/client';
+import { hydrateFastStorage } from '@/services/fastStorage';
 import { migrateNamespace } from '@/services/migrations/rename-namespace';
 import { createQueryClient } from '@/services/api/query-client';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
@@ -114,6 +115,10 @@ export default function RootLayout() {
     // otherwise hydrate() looks under the new prefix while the data is still
     // filed under the old one and the app appears empty.
     void (async () => {
+      // Order matters. The synchronous store's mirror has to be filled before
+      // the migration reads its completion flag, and both must finish before
+      // hydrate() looks for the session.
+      await hydrateFastStorage();
       await migrateNamespace();
       await hydrate();
     })();
