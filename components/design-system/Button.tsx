@@ -295,7 +295,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: DS.radius.md,
+    // Pill, matching the reference designs. The restrained radii elsewhere
+    // (cards, chips, inputs) still hold — a fully rounded *button* reads as
+    // the primary thing to press, which is exactly what it is.
+    borderRadius: DS.radius.full,
     borderWidth: 0,
   },
   outlineBorder: {

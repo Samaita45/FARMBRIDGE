@@ -14,6 +14,36 @@
 
 // ─── Brand ───────────────────────────────────────────────────────────────────
 
+/**
+ * Brand forest green.
+ *
+ * The written brief specified blue and white. The reference designs the client
+ * later supplied use a dark forest green for every primary action, and that
+ * decision was confirmed: green wins. It is also the more natural fit — this is
+ * an agricultural product, and green reads as agriculture without having to be
+ * explained.
+ *
+ * 600 is the action colour, sampled from the reference. White on it measures
+ * 7.7:1, comfortably past AAA, so filled buttons need no special handling.
+ */
+const forest = {
+  50: '#F1F5F1',
+  100: '#DDE7DE',
+  200: '#BCCDBE',
+  300: '#93AC96',
+  400: '#6B8A6F',
+  500: '#4E6E52',
+  600: '#3D5A40',
+  700: '#324A35',
+  800: '#283B2B',
+  900: '#1C2A1E',
+};
+
+/**
+ * Retained for data visualisation and informational states, not for chrome.
+ * The chart palette is colour-vision validated with blue in slot one; moving
+ * it would mean re-running that validation for no benefit.
+ */
 const blue = {
   50: '#EFF6FF',
   100: '#DBEAFE',
@@ -54,12 +84,15 @@ const gray = {
 // ─── Colour roles ────────────────────────────────────────────────────────────
 
 const colors = {
-  primary: blue[600],
-  primaryDark: blue[700],
-  primaryLight: blue[400],
-  primaryBg: blue[50],
-  primaryMid: blue[100],
+  primary: forest[600],
+  primaryDark: forest[700],
+  primaryLight: forest[400],
+  primaryBg: forest[50],
+  primaryMid: forest[100],
 
+  // A brighter, more saturated green than the brand forest, so "organic",
+  // "in season" and "available" badges stay distinguishable from a primary
+  // action rather than reading as the same thing.
   accent: green[600],
   accentLight: green[100],
   accentDark: green[700],
@@ -102,6 +135,7 @@ const colors = {
   danger: '#DC2626',
   red: '#DC2626',
 
+  forest,
   blue,
   green,
   gray,
@@ -115,6 +149,8 @@ const semantic = {
   success: { fg: green[800], bg: green[50], border: green[200], solid: green[600] },
   warning: { fg: '#92400E', bg: '#FFFBEB', border: '#FDE68A', solid: '#D97706' },
   danger: { fg: '#991B1B', bg: '#FEF2F2', border: '#FECACA', solid: '#DC2626' },
+  // Informational stays blue: it must not be mistaken for a primary action now
+  // that actions are green.
   info: { fg: blue[800], bg: blue[50], border: blue[200], solid: blue[600] },
   neutral: { fg: gray[700], bg: gray[100], border: gray[200], solid: gray[500] },
 };
