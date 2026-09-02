@@ -1,38 +1,83 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '@/components/ui/primary-button';
+import { Button, Card, Input } from '@/components/design-system';
+import { CheckoutSteps, StepHeading } from '@/components/market/checkout-steps';
+import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
-
-import { PAYMENT_METHODS } from '@/constants/zimbabwe-data';
-import { cardShadow } from '@/lib/platform-ui';
+import { PAYMENT_METHODS, PROVINCES } from '@/constants/zimbabwe-data';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { asHref } from '@/lib/href';
 import { insertOrder } from '@/services/orderService';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useCartStore, type CartItem } from '@/stores/cartStore';
 import type { MarketOrder } from '@/types/market';
 
+/**
+ * Checkout, in the two steps the reference lays out: delivery, then payment.
+ *
+ * WHAT THIS DOES NOT DO. No money moves. FarmBridge has no payment provider
+ * wired up, so the payment step records how the buyer intends to pay and the
+ * order is written as awaiting payment — never as paid. The screen says so
+ * rather than implying a transaction occurred.
+ */
 export default function CheckoutScreen() {
+  const { showToast } = useToast();
   const user = useAuthStore((s: AuthState) => s.user);
-  const { items, getTotalUSD, getTotalZWG, clearCart } = useCartStore();
-  const [address, setAddress] = useState(user?.province ? `${user.province}, Zimbabwe` : '');
+  const { items, getTotalUSD, clearCart } = useCartStore();
+  const { rate, isIndicative } = useExchangeRate();
+
+  const [step, setStep] = useState<1 | 2>(1);
+  const [placing, setPlacing] = useState(false);
+
+  const [firstName, setFirstName] = useState(user?.name?.split(' ')[0] ?? '');
+  const [lastName, setLastName] = useState(user?.name?.split(' ').slice(1).join(' ') ?? '');
+  const [province, setProvince] = useState(user?.province ?? '');
+  const [street, setStreet] = useState('');
+  const [city, setCity] = useState('');
+  const [phone, setPhone] = useState(user?.phone ?? '');
   const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('delivery');
   const [paymentMethod, setPaymentMethod] = useState('ecocash');
-  const [loading, setLoading] = useState(false);
+  const [touched, setTouched] = useState(false);
 
   const totalUSD = getTotalUSD();
-  const totalZWG = getTotalZWG();
+
+  const errors = {
+    firstName: firstName.trim() ? undefined : 'Field is required',
+    lastName: lastName.trim() ? undefined : 'Field is required',
+    province: province.trim() ? undefined : 'Field is required',
+    street: deliveryMethod === 'delivery' && !street.trim() ? 'Field is required' : undefined,
+    city: deliveryMethod === 'delivery' && !city.trim() ? 'Field is required' : undefined,
+    phone: phone.trim() ? undefined : 'Field is required',
+  };
+  const deliveryValid = Object.values(errors).every((e) => !e);
+
+  const goToPayment = () => {
+    setTouched(true);
+    if (!deliveryValid) {
+      showToast('Fill in the required fields', 'warning');
+      return;
+    }
+    setStep(2);
+  };
 
   const placeOrder = async () => {
-    if (!address.trim()) return;
-    setLoading(true);
+    setPlacing(true);
     try {
-      const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
+      const reference = `ORD-${Date.now().toString(36).toUpperCase()}`;
       const order: MarketOrder = {
-        id: orderId,
+        id: reference,
         userId: user?.id ?? 'guest',
         items: items.map((i: CartItem) => ({
           productId: i.product.id,
@@ -42,189 +87,351 @@ export default function CheckoutScreen() {
           priceZWG: i.product.priceZWG,
         })),
         subtotalUSD: totalUSD,
-        subtotalZWG: totalZWG,
-        deliveryAddress: address.trim(),
+        subtotalZWG: Math.round(totalUSD * rate.usdToZwg),
+        deliveryAddress:
+          deliveryMethod === 'delivery'
+            ? `${street.trim()}, ${city.trim()}, ${province}`
+            : `Collection · ${province}`,
         deliveryMethod,
         paymentMethod,
-        status: 'confirmed',
+        // Never 'confirmed': nothing has been paid and no seller has accepted.
+        status: 'pending',
         createdAt: new Date().toISOString(),
       };
+
       await insertOrder(order);
       clearCart();
       router.replace(
         asHref({
           pathname: '/(tabs)/market/success',
-          params: { orderId, total: String(totalUSD), payment: paymentMethod },
+          params: { orderId: reference, total: String(totalUSD), payment: paymentMethod },
         })
       );
+    } catch {
+      showToast('Could not place the order. Try again.', 'error');
     } finally {
-      setLoading(false);
+      setPlacing(false);
     }
   };
 
   return (
-    <SafeAreaView style={s.root} edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-        <Text style={s.sectionLabel}>Delivery address</Text>
-        <TextInput
-          style={s.textArea}
-          value={address}
-          onChangeText={setAddress}
-          placeholder="Street, suburb, city"
-          placeholderTextColor={DS.colors.textSoft}
-          multiline
-        />
+    <SafeAreaView style={styles.root} edges={['bottom']}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <CheckoutSteps current={step === 1 ? 'delivery' : 'payment'} />
 
-        <Text style={s.sectionLabel}>Delivery method</Text>
-        <View style={s.methodRow}>
-          {(['pickup', 'delivery'] as const).map((m) => (
-            <Pressable
-              key={m}
-              onPress={() => setDeliveryMethod(m)}
-              style={[s.methodBtn, deliveryMethod === m && s.methodBtnActive]}>
-              <Text style={[s.methodText, deliveryMethod === m && s.methodTextActive]}>{m}</Text>
-            </Pressable>
-          ))}
-        </View>
-        {deliveryMethod === 'delivery' ? (
-          <Pressable
-            onPress={() => router.push(asHref('/(tabs)/transport/request'))}
-            style={({ pressed }) => [s.transportLink, pressed && { opacity: 0.85 }]}>
-            <Ionicons name="bus-outline" size={16} color={DS.colors.primary} />
-            <Text style={s.transportLinkText}>Book farm transport for delivery</Text>
-          </Pressable>
-        ) : null}
+          {step === 1 ? (
+            <>
+              <StepHeading step={1} title="Delivery" />
 
-        <Text style={s.sectionLabel}>Payment method</Text>
-        <View style={s.payList}>
-          {PAYMENT_METHODS.map((pm) => {
-            const active = paymentMethod === pm.id;
-            return (
-              <Pressable
-                key={pm.id}
-                onPress={() => setPaymentMethod(pm.id)}
-                style={[s.payRow, active && s.payRowActive]}>
-                <View style={[s.payIcon, { backgroundColor: pm.color }]}>
-                  <Text style={s.payIconText}>{pm.name.slice(0, 2)}</Text>
+              <View style={styles.fields}>
+                <Input
+                  label="First name"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  autoComplete="given-name"
+                  required
+                  error={touched ? errors.firstName : undefined}
+                />
+                <Input
+                  label="Last name"
+                  value={lastName}
+                  onChangeText={setLastName}
+                  autoComplete="family-name"
+                  required
+                  error={touched ? errors.lastName : undefined}
+                />
+
+                <View>
+                  <Text style={styles.fieldLabel}>
+                    Province <Text style={styles.required}>*</Text>
+                  </Text>
+                  <View style={styles.chipWrap}>
+                    {PROVINCES.map((p) => {
+                      const active = province === p.name;
+                      return (
+                        <Pressable
+                          key={p.id}
+                          onPress={() => setProvince(p.name)}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: active }}
+                          accessibilityLabel={p.name}
+                          style={[styles.chip, active && styles.chipActive]}>
+                          <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                            {p.name}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  {touched && errors.province ? (
+                    <Text style={styles.error}>{errors.province}</Text>
+                  ) : null}
                 </View>
-                <Text style={s.payName}>{pm.name}</Text>
-                {active ? <Ionicons name="checkmark-circle" size={20} color={DS.colors.primary} /> : null}
-              </Pressable>
-            );
-          })}
+
+                <View>
+                  <Text style={styles.fieldLabel}>How you want it</Text>
+                  <View style={styles.chipWrap}>
+                    {(['delivery', 'pickup'] as const).map((m) => {
+                      const active = deliveryMethod === m;
+                      return (
+                        <Pressable
+                          key={m}
+                          onPress={() => setDeliveryMethod(m)}
+                          accessibilityRole="radio"
+                          accessibilityState={{ selected: active }}
+                          accessibilityLabel={m === 'delivery' ? 'Delivered' : 'Collect myself'}
+                          style={[styles.chip, active && styles.chipActive]}>
+                          <Ionicons
+                            name={m === 'delivery' ? 'bus-outline' : 'walk-outline'}
+                            size={13}
+                            color={active ? DS.colors.textInverse : DS.colors.textMuted}
+                          />
+                          <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                            {m === 'delivery' ? 'Delivered' : 'Collect myself'}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                {deliveryMethod === 'delivery' ? (
+                  <>
+                    <Input
+                      label="Street"
+                      value={street}
+                      onChangeText={setStreet}
+                      required
+                      error={touched ? errors.street : undefined}
+                    />
+                    <Input
+                      label="City or town"
+                      value={city}
+                      onChangeText={setCity}
+                      required
+                      error={touched ? errors.city : undefined}
+                    />
+                  </>
+                ) : null}
+
+                <Input
+                  label="Phone number"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  autoComplete="tel"
+                  required
+                  hint="The seller uses this to arrange handover"
+                  error={touched ? errors.phone : undefined}
+                />
+              </View>
+            </>
+          ) : (
+            <>
+              <StepHeading step={2} title="Payment" />
+
+              <View style={styles.fields}>
+                <Text style={styles.fieldLabel}>How you will pay</Text>
+                <View style={styles.payGrid}>
+                  {PAYMENT_METHODS.map((pm) => {
+                    const active = paymentMethod === pm.id;
+                    return (
+                      <Pressable
+                        key={pm.id}
+                        onPress={() => setPaymentMethod(pm.id)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: active }}
+                        accessibilityLabel={pm.name}
+                        style={[styles.payTile, active && styles.payTileActive]}>
+                        <Text style={[styles.payName, active && styles.payNameActive]}>
+                          {pm.name}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                {/*
+                  No provider is wired up, so this cannot take a payment. Saying
+                  so here is the difference between an order and a false
+                  receipt.
+                */}
+                <View style={styles.notice}>
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={15}
+                    color={DS.semantic.warning.fg}
+                  />
+                  <Text style={styles.noticeText}>
+                    FarmBridge does not take payment yet. Your order is sent to the seller and
+                    you settle directly with them on delivery or collection.
+                  </Text>
+                </View>
+
+                <Card variant="flat" style={styles.summary}>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Product price</Text>
+                    <Text style={styles.summaryValue}>${totalUSD.toFixed(2)}</Text>
+                  </View>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>Delivery</Text>
+                    <Text style={styles.summaryValue}>Arranged with seller</Text>
+                  </View>
+                  <View style={styles.divider} />
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.totalLabel}>Subtotal</Text>
+                    <View style={styles.totalValues}>
+                      <Text style={styles.totalUSD}>${totalUSD.toFixed(2)}</Text>
+                      <Text style={styles.totalZWG}>
+                        ZWG {Math.round(totalUSD * rate.usdToZwg).toLocaleString()}
+                        {isIndicative ? ' · indicative' : ''}
+                      </Text>
+                    </View>
+                  </View>
+                </Card>
+              </View>
+            </>
+          )}
+        </ScrollView>
+
+        <View style={styles.footer}>
+          {step === 2 ? (
+            <Button title="Back" variant="outline" size="lg" onPress={() => setStep(1)} />
+          ) : null}
+          <Button
+            title={step === 1 ? 'Continue to payment' : 'Place order'}
+            size="lg"
+            loading={placing}
+            onPress={step === 1 ? goToPayment : placeOrder}
+          />
         </View>
-
-        {paymentMethod === 'ecocash' ? (
-          <Text style={s.hint}>Dial *151*2*{totalUSD.toFixed(0)}*FarmBridge#</Text>
-        ) : null}
-        {paymentMethod === 'onemoney' ? (
-          <Text style={s.hint}>Dial *111*2*FarmBridge*{totalUSD.toFixed(0)}#</Text>
-        ) : null}
-        {paymentMethod === 'cash_usd' || paymentMethod === 'zwg' ? (
-          <Text style={s.hint}>Pay on delivery</Text>
-        ) : null}
-
-        <View style={s.summaryCard}>
-          <Text style={s.summaryTitle}>Order summary</Text>
-          {items.map((i: CartItem) => (
-            <View key={i.product.id} style={s.summaryRow}>
-              <Text style={s.summaryItem} numberOfLines={1}>
-                {i.product.name} ×{i.quantity}
-              </Text>
-              <Text style={s.summaryPrice}>${(i.product.priceUSD * i.quantity).toFixed(2)}</Text>
-            </View>
-          ))}
-          <View style={s.totalRow}>
-            <Text style={s.totalLabel}>Total</Text>
-            <Text style={s.totalValue}>
-              ${totalUSD.toFixed(2)} / ZWG {totalZWG}
-            </Text>
-          </View>
-        </View>
-
-        <PrimaryButton title="Place Order" loading={loading} onPress={placeOrder} />
-      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: DS.colors.primaryBg },
-  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32 },
-  sectionLabel: { ...DS.typography.h3, color: DS.colors.text, marginTop: 16, marginBottom: 8 },
-  textArea: {
-    backgroundColor: DS.colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: DS.colors.border,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    minHeight: 88,
-    fontSize: 15,
-    fontFamily: 'PlusJakartaSans_400Regular',
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: DS.colors.background },
+  flex: { flex: 1 },
+  body: { padding: DS.spacing.md, paddingBottom: DS.spacing.lg, gap: DS.spacing.md },
+
+  fields: { gap: DS.spacing.md },
+  fieldLabel: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
     color: DS.colors.text,
-    textAlignVertical: 'top',
+    marginBottom: DS.spacing.sm,
   },
-  methodRow: { flexDirection: 'row', gap: 10 },
-  methodBtn: {
-    flex: 1,
-    borderRadius: 14,
-    paddingVertical: 14,
+  required: { color: DS.semantic.danger.solid },
+  error: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.semantic.danger.fg,
+    marginTop: 5,
+  },
+
+  chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: DS.spacing.sm },
+  chip: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: DS.colors.surface,
+    gap: 5,
+    minHeight: 38,
+    paddingHorizontal: 14,
+    borderRadius: DS.radius.full,
     borderWidth: 1,
     borderColor: DS.colors.border,
+    backgroundColor: DS.colors.surface,
   },
-  methodBtnActive: { backgroundColor: DS.colors.primary, borderColor: DS.colors.primary },
-  methodText: { fontSize: 14, fontWeight: '700', color: DS.colors.text, textTransform: 'capitalize' },
-  methodTextActive: { color: DS.colors.surface },
-  transportLink: {
-    flexDirection: 'row',
+  chipActive: { backgroundColor: DS.colors.primary, borderColor: DS.colors.primary },
+  chipText: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textMuted,
+  },
+  chipTextActive: { color: DS.colors.textInverse },
+
+  payGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: DS.spacing.sm },
+  payTile: {
+    minWidth: '30%',
+    flexGrow: 1,
+    minHeight: 56,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    marginTop: 10,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: DS.colors.primaryMid,
-  },
-  transportLinkText: { fontSize: 13, fontWeight: '600', color: DS.colors.primary },
-  payList: { gap: 10 },
-  payRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 14,
-    backgroundColor: DS.colors.surface,
+    paddingHorizontal: DS.spacing.sm,
+    borderRadius: DS.radius.lg,
     borderWidth: 1,
     borderColor: DS.colors.border,
-    ...cardShadow(),
-  },
-  payRowActive: { borderColor: DS.colors.primary, borderWidth: 2, backgroundColor: DS.colors.primaryBg },
-  payIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  payIconText: { fontSize: 11, fontWeight: '800', color: DS.colors.surface },
-  payName: { flex: 1, fontSize: 15, fontWeight: '700', color: DS.colors.text },
-  hint: { marginTop: 8, fontSize: 12, color: DS.colors.textMuted },
-  summaryCard: {
-    marginTop: 20,
     backgroundColor: DS.colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    ...cardShadow(),
   },
-  summaryTitle: { fontSize: 16, fontWeight: '800', color: DS.colors.text, marginBottom: 10 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, gap: 8 },
-  summaryItem: { flex: 1, fontSize: 13, color: DS.colors.textMuted },
-  summaryPrice: { fontSize: 13, fontWeight: '600', color: DS.colors.text },
-  totalRow: {
+  payTileActive: { borderColor: DS.colors.primary, backgroundColor: DS.colors.primaryBg },
+  payName: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textMuted,
+    textAlign: 'center',
+  },
+  payNameActive: { color: DS.colors.primaryDark },
+
+  notice: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: DS.colors.borderLight,
+    alignItems: 'flex-start',
+    gap: DS.spacing.sm,
+    backgroundColor: DS.semantic.warning.bg,
+    borderRadius: DS.radius.md,
+    borderWidth: 1,
+    borderColor: DS.semantic.warning.border,
+    padding: DS.spacing.sm + 4,
   },
-  totalLabel: { fontSize: 15, fontWeight: '800', color: DS.colors.text },
-  totalValue: { fontSize: 14, fontWeight: '800', color: DS.colors.primary },
+  noticeText: {
+    flex: 1,
+    fontSize: DS.typography.caption.fontSize,
+    lineHeight: 18,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.semantic.warning.fg,
+  },
+
+  summary: { gap: DS.spacing.sm },
+  summaryRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  summaryLabel: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+  summaryValue: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  divider: { height: 1, backgroundColor: DS.colors.border },
+  totalLabel: {
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  totalValues: { alignItems: 'flex-end' },
+  totalUSD: {
+    fontSize: DS.typography.h1.fontSize,
+    fontFamily: DS.fontFamily.bold,
+    color: DS.colors.text,
+  },
+  totalZWG: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textSoft,
+  },
+
+  footer: {
+    flexDirection: 'row',
+    gap: DS.spacing.sm,
+    padding: DS.spacing.md,
+    backgroundColor: DS.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: DS.colors.border,
+  },
 });

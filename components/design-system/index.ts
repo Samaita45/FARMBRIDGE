@@ -11,6 +11,7 @@ export { GlassCard } from './GlassCard';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 export { ProfileScreenHeader } from './ProfileScreenHeader';
+export { RangeSlider } from './RangeSlider';
 export { SectionHeader } from './SectionHeader';
 export { TabScreenHeader } from './TabScreenHeader';
 export { ErrorState, LoadingState, OfflineState } from './StateViews';
