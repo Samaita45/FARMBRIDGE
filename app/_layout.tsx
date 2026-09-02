@@ -27,6 +27,7 @@ import {
   requestNotificationPermissions,
 } from '@/services/notificationService';
 import { setSessionExpiredHandler } from '@/services/api/client';
+import { migrateNamespace } from '@/services/migrations/rename-namespace';
 import { createQueryClient } from '@/services/api/query-client';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
@@ -109,7 +110,13 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    void hydrate();
+    // The namespace migration must finish before anything reads storage,
+    // otherwise hydrate() looks under the new prefix while the data is still
+    // filed under the old one and the app appears empty.
+    void (async () => {
+      await migrateNamespace();
+      await hydrate();
+    })();
   }, [hydrate]);
 
   useEffect(() => {

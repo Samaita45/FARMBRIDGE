@@ -115,10 +115,10 @@ export default function CheckoutScreen() {
         </View>
 
         {paymentMethod === 'ecocash' ? (
-          <Text style={s.hint}>Dial *151*2*{totalUSD.toFixed(0)}*ZimFarm#</Text>
+          <Text style={s.hint}>Dial *151*2*{totalUSD.toFixed(0)}*FarmBridge#</Text>
         ) : null}
         {paymentMethod === 'onemoney' ? (
-          <Text style={s.hint}>Dial *111*2*ZimFarm*{totalUSD.toFixed(0)}#</Text>
+          <Text style={s.hint}>Dial *111*2*FarmBridge*{totalUSD.toFixed(0)}#</Text>
         ) : null}
         {paymentMethod === 'cash_usd' || paymentMethod === 'zwg' ? (
           <Text style={s.hint}>Pay on delivery</Text>

@@ -40,7 +40,7 @@ export default function TutorialDetailScreen() {
   };
 
   const onShare = () => {
-    void Share.share({ message: `${tutorial.title} — ZimFarm Tutorials` });
+    void Share.share({ message: `${tutorial.title} — FarmBridge tutorials` });
   };
 
   return (

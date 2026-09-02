@@ -73,7 +73,7 @@ export default function IncomeScreen() {
           `${e.date},${e.cropName},${e.quantity},${e.pricePerUnit},${e.buyer},${toUSD(e.quantity * e.pricePerUnit, e.currency, e.rateUsed).toFixed(2)}`
       )
       .join('\n');
-    await Share.share({ message: header + rows, title: 'ZimFarm Income Export' });
+    await Share.share({ message: header + rows, title: 'FarmBridge income export' });
   };
 
   const filtered = entries.filter(

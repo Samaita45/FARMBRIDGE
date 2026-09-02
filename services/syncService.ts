@@ -1,6 +1,6 @@
 import { fastGet, fastSet } from './fastStorage';
 
-const QUEUE_KEY = 'zimfarm_sync_queue';
+const QUEUE_KEY = 'farmbridge_sync_queue';
 
 export type SyncOperationKind =
   | 'task_complete'

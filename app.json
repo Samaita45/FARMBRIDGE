@@ -1,25 +1,25 @@
 {
   "expo": {
-    "name": "ZimFarm",
-    "slug": "zimfarm",
+    "name": "FarmBridge",
+    "slug": "farmbridge",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "zimfarm",
+    "scheme": "farmbridge",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "co.zw.zimfarm",
+      "bundleIdentifier": "co.zw.farmbridge",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "ZimFarm uses your location to show local weather and market prices.",
-        "NSCameraUsageDescription": "ZimFarm uses the camera to diagnose crop health issues.",
-        "NSPhotoLibraryUsageDescription": "ZimFarm uses your photos for profile and community posts.",
-        "NSUserNotificationsUsageDescription": "ZimFarm sends reminders for your farming tasks."
+        "NSLocationWhenInUseUsageDescription": "FarmBridge uses your location to show local weather and market prices.",
+        "NSCameraUsageDescription": "FarmBridge uses the camera to diagnose crop health issues.",
+        "NSPhotoLibraryUsageDescription": "FarmBridge uses your photos for profile and community posts.",
+        "NSUserNotificationsUsageDescription": "FarmBridge sends reminders for your farming tasks."
       }
     },
     "android": {
-      "package": "co.zw.zimfarm",
+      "package": "co.zw.farmbridge",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

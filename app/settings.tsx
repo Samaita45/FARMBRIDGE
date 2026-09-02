@@ -181,7 +181,7 @@ export default function SettingsScreen() {
 
           <Section title="About">
             <Text className="px-4 font-sans text-sm text-gray-500">
-              ZimFarm v{Constants.expoConfig?.version ?? '1.0.0'}
+              FarmBridge v{Constants.expoConfig?.version ?? '1.0.0'}
             </Text>
             <Pressable className="mx-4 mt-2 rounded-xl bg-white px-4 py-3">
               <Text className="font-sans text-dark">Terms of Service</Text>

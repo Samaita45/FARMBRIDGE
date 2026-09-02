@@ -1,4 +1,4 @@
-const PREFIX = 'zimfarm:fast:';
+const PREFIX = 'farmbridge:fast:';
 
 type MMKVInstance = {
   getString: (k: string) => string | undefined;
@@ -11,7 +11,7 @@ let mmkv: MMKVInstance | null = null;
 try {
   // MMKV requires a dev build; falls back to AsyncStorage in Expo Go.
   const { MMKV } = require('react-native-mmkv');
-  const instance = new MMKV({ id: 'zimfarm-storage' });
+  const instance = new MMKV({ id: 'farmbridge-storage' });
   mmkv = {
     getString: (k) => instance.getString(k),
     set: (k, v) => instance.set(k, v),

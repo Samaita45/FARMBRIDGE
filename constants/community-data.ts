@@ -21,7 +21,7 @@ export const SUCCESS_STORIES: SuccessStory[] = [
     crop: 'Tomatoes',
     earningsUSD: 4200,
     province: 'Marondera',
-    quote: 'Sold 8 tonnes to Harare buyers using ZimFarm market prices.',
+    quote: 'Sold 8 tonnes to Harare buyers using FarmBridge market prices.',
   },
   {
     id: 'ss2',
@@ -211,7 +211,7 @@ export const MOCK_POSTS: CommunityPost[] = [
     authorRole: 'farmer',
     province: 'Marondera',
     title: 'Success: 4 tonnes tomatoes from 0.5 hectares!',
-    body: 'Used ZimFarm planner and sold at $0.85/kg. Total revenue over $3,400 this season.',
+    body: 'Used the FarmBridge planner and sold at $0.85/kg. Total revenue over $3,400 this season.',
     category: 'success',
     tags: ['tomatoes', 'success', 'harvest'],
     likes: 112,

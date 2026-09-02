@@ -8,7 +8,7 @@ import type { FarmTask } from '@/types/crop-management';
 
 import { fastGet, fastSet } from './fastStorage';
 
-const SMS_QUEUE_KEY = 'zimfarm_sms_queue';
+const SMS_QUEUE_KEY = 'farmbridge_sms_queue';
 
 export interface SmsQueueItem {
   id: string;
@@ -32,7 +32,7 @@ function writeSmsQueue(items: SmsQueueItem[]): void {
 }
 
 export function buildSmsReminderBody(task: FarmTask): string {
-  return `ZimFarm Reminder: ${task.title} for ${task.cropName} due ${task.dueDate}`;
+  return `FarmBridge reminder: ${task.title} for ${task.cropName}, due ${task.dueDate}`;
 }
 
 export function queueSmsReminder(phone: string, message: string): void {

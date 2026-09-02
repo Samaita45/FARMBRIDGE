@@ -1,4 +1,6 @@
-const PREFIX = 'zimfarm:';
+// Renamed from 'zimfarm:'. Existing keys are moved across on first launch by
+// services/migrations/rename-namespace.
+const PREFIX = 'farmbridge:';
 
 async function getAS() {
   try {

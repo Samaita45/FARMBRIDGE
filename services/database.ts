@@ -3,6 +3,8 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import type { User } from '@/types';
 import type { CropPlan, FarmTask, PlanStatus, TaskStatus } from '@/types/crop-management';
 
+import { resolveDatabaseName } from './migrations/rename-namespace';
+
 type SQLiteDB = SQLiteDatabase;
 
 /** A raw SQLite row before it is mapped onto a domain type. */
@@ -22,7 +24,11 @@ export async function getDatabase(): Promise<SQLiteDB> {
   if (db) return db;
   const SQLite = await getSQLite();
   if (!SQLite) throw new Error('expo-sqlite is not installed');
-  db = await SQLite.openDatabaseAsync('zimfarm.db');
+  // Resolves to farmbridge.db, copying the legacy zimfarm.db across on first
+  // launch. Falls back to the legacy file if that copy cannot be completed, so
+  // a migration failure never presents an empty app.
+  const name = await resolveDatabaseName();
+  db = await SQLite.openDatabaseAsync(name);
   await runMigrations(db);
   return db;
 }
