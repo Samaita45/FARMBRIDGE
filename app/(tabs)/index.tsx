@@ -13,7 +13,7 @@ import { PremiumSectionHeader } from '@/components/home/premium-section-header';
 import { PlantNowCard } from '@/components/home/plant-now-card';
 import { QuickActionsPremium } from '@/components/home/quick-actions-premium';
 import { CropFilterRow, type CropCategory } from '@/components/home/crop-filter-row';
-import { WeatherWeekCard } from '@/components/home/weather-week-card';
+import { WeatherTodayCard } from '@/components/home/weather-today-card';
 import { CropCardSkeleton } from '@/components/ui/skeleton';
 import type { InsightItem } from '@/components/home/insight-strip';
 import { WeatherForecastModal } from '@/components/weather/weather-forecast-modal';
@@ -201,11 +201,13 @@ export default function HomeScreen() {
           <FadeInView delay={2} style={s.block}>
             <PremiumSectionHeader
               icon="partly-sunny-outline"
-              title="Weather & Farm"
-              actionLabel="7-day"
+              // Names what is below it. The card is today only now; the rest of
+              // the week lives behind the action.
+              title="Today"
+              actionLabel="7-day forecast"
               onPress={() => setWeatherModalOpen(true)}
             />
-            <WeatherWeekCard
+            <WeatherTodayCard
               current={weather?.current}
               daily={weather?.daily}
               agricultural={weather?.agricultural}
