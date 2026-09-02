@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { LiquidSelection } from '@/components/design-system';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DS } from '@/constants/design-system';
+import { skyFor } from '@/constants/sky';
 import { MOTI_SPRING, MOTI_TRANSITION } from '@/lib/motion';
 import type {
   AgriculturalWeather,
@@ -35,6 +37,17 @@ interface WeatherWeekCardProps {
  * forecast; showing them under Friday would be presenting today's soil as
  * Friday's, which is the kind of quiet lie that gets a planting decision wrong.
  *
+ * THE PANEL IS THE SKY. Behind the temperature is a gradient of the sky at the
+ * hour you are looking at it, from the real sunrise and sunset for your own
+ * coordinates. It is the one gradient in the app: every decorative one was
+ * removed and stays removed, but this is a picture of the subject rather than
+ * chrome, in the same way the crop cards carry photographs of crops. Each phase
+ * carries a foreground proven against all three of its own stops, so the
+ * legibility does not depend on which part of the band a word lands on.
+ *
+ * Only TODAY gets a sky. A future day has no "now", and painting Friday in this
+ * evening's dusk would be describing a moment that does not exist.
+ *
  * THE SELECTION TRAVELS. A single pill springs between the days rather than
  * appearing on one and vanishing from another, so the row reads as one control
  * with a current value instead of seven separate buttons. The panel beneath
@@ -50,6 +63,25 @@ export function WeatherWeekCard({
   onOpenForecast,
 }: WeatherWeekCardProps) {
   const [selected, setSelected] = useState(0);
+  // Re-checked on the minute so the sky turns while the screen is open, rather
+  // than being fixed at whatever it was when the dashboard mounted.
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  /*
+    Computed before the loading return: hooks must run in the same order every
+    render, and this one sat after it. Only today ever uses the result — a
+    future day has no "now" to paint, and showing Friday in this evening's dusk
+    would describe a moment that does not exist.
+  */
+  const sky = useMemo(
+    () => skyFor(now, daily?.[0]?.sunrise, daily?.[0]?.sunset),
+    [now, daily]
+  );
 
   if (loading || !current || !daily || daily.length === 0) {
     return (
@@ -65,6 +97,7 @@ export function WeatherWeekCard({
   const day = daily[index];
   const isToday = index === 0;
   const moisturePct = agricultural ? Math.round(agricultural.soilMoisture * 100) : null;
+  const fg = isToday ? sky.onSky : DS.colors.text;
 
   return (
     <View style={styles.card}>
@@ -106,26 +139,51 @@ export function WeatherWeekCard({
         key={day.date}
         from={{ opacity: 0, translateY: 10 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={MOTI_SPRING}>
+        transition={MOTI_SPRING}
+        style={styles.panelWrap}>
         <Pressable
           onPress={onOpenForecast}
           disabled={!onOpenForecast}
           accessibilityRole="button"
-          accessibilityLabel={`${isToday ? 'Today' : longDate(day.date)}: ${day.condition}, high ${day.maxTemp}, low ${day.minTemp} degrees. Open the full forecast.`}
+          accessibilityLabel={`${isToday ? `Today, ${sky.label.toLowerCase()}` : longDate(day.date)}: ${day.condition}, high ${day.maxTemp}, low ${day.minTemp} degrees. Open the full forecast.`}
           style={({ pressed }) => [styles.panel, pressed && styles.pressed]}>
+          {/*
+            Crossfaded on the phase, so the sky turns rather than cutting.
+            MotiView keyed on the phase name gives a new element each time.
+          */}
+          {isToday ? (
+            <MotiView
+              key={sky.phase}
+              from={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ ...MOTI_TRANSITION, duration: 700 }}
+              style={StyleSheet.absoluteFill}>
+              <LinearGradient
+                colors={sky.colors as unknown as [string, string, string]}
+                start={{ x: 0.15, y: 0 }}
+                end={{ x: 0.85, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+            </MotiView>
+          ) : null}
+
           <View style={styles.panelMain}>
-            <Text style={styles.panelDate}>{isToday ? 'Today' : longDate(day.date)}</Text>
-            <Text style={styles.panelTemp} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+            <Text style={[styles.panelDate, { color: fg }]}>
+              {isToday ? `Today · ${sky.label}` : longDate(day.date)}
+            </Text>
+            <Text
+              style={[styles.panelTemp, { color: fg }]}
+              maxFontSizeMultiplier={DS.layout.maxFontScale}>
               {isToday ? current.temp : day.maxTemp}°C
             </Text>
-            <Text style={styles.panelCondition}>
+            <Text style={[styles.panelCondition, { color: fg }]}>
               {day.condition} · low {day.minTemp}°
             </Text>
           </View>
 
           <View style={styles.panelSide}>
-            <Ionicons name={day.icon} size={40} color={DS.colors.primary} />
-            <Ionicons name="chevron-forward" size={16} color={DS.colors.textFaint} />
+            <Ionicons name={day.icon} size={40} color={fg} />
+            <Ionicons name="chevron-forward" size={16} color={fg} />
           </View>
         </Pressable>
       </MotiView>
@@ -211,14 +269,18 @@ const styles = StyleSheet.create({
   },
   dayTextActive: { color: DS.colors.accentOn, fontFamily: DS.fontFamily.bold },
 
+  panelWrap: { borderRadius: DS.radius.lg, overflow: 'hidden' },
   panel: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: DS.spacing.sm,
+    // The fill is the sky behind it. A future day, which gets no sky, falls
+    // back to the tinted surface the panel always had.
     backgroundColor: DS.colors.primaryBg,
     borderRadius: DS.radius.lg,
     padding: DS.spacing.md,
+    overflow: 'hidden',
   },
   panelMain: { flex: 1, gap: 1 },
   panelDate: {

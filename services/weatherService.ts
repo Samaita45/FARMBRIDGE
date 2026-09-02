@@ -12,6 +12,8 @@ export interface CurrentWeather {
   condition: string;
   icon: IconName;
   precipitation: number;
+  /** Reported by the service for the user's own coordinates, not guessed from the clock. */
+  isDay: boolean;
 }
 
 export interface DailyForecast {
@@ -22,6 +24,9 @@ export interface DailyForecast {
   rainAmount: number;
   condition: string;
   icon: IconName;
+  /** ISO local time. Zimbabwe's sunrise moves by about an hour across the year. */
+  sunrise: string;
+  sunset: string;
 }
 
 export interface RainForecast {
@@ -88,6 +93,7 @@ async function fetchForecast(lat: number, lon: number): Promise<WeatherBundle> {
       'wind_speed_10m',
       'precipitation',
       'weather_code',
+      'is_day',
     ].join(','),
     daily: [
       'temperature_2m_max',
@@ -95,6 +101,8 @@ async function fetchForecast(lat: number, lon: number): Promise<WeatherBundle> {
       'precipitation_sum',
       'precipitation_probability_max',
       'weather_code',
+      'sunrise',
+      'sunset',
     ].join(','),
     hourly: 'soil_temperature_0cm,soil_moisture_0_to_1cm',
   });
@@ -114,6 +122,7 @@ async function fetchForecast(lat: number, lon: number): Promise<WeatherBundle> {
     precipitation: current.precipitation ?? 0,
     condition: mapped.condition,
     icon: mapped.icon,
+    isDay: current.is_day === 1 || current.is_day === true,
   };
 
   const dailyForecast: DailyForecast[] = daily.time.map((date: string, i: number) => {
@@ -126,6 +135,8 @@ async function fetchForecast(lat: number, lon: number): Promise<WeatherBundle> {
       rainAmount: daily.precipitation_sum[i] ?? 0,
       condition: w.condition,
       icon: w.icon,
+      sunrise: daily.sunrise?.[i] ?? `${date}T06:00`,
+      sunset: daily.sunset?.[i] ?? `${date}T18:00`,
     };
   });
 
@@ -189,6 +200,10 @@ function getOfflineFallback(): WeatherBundle {
       precipitation: 0,
       condition: mapped.condition,
       icon: mapped.icon,
+      // No network to ask, so fall back to the local hour. Zimbabwe sits at
+      // 17 degrees south, where sunrise and sunset stay within about half an
+      // hour of six o'clock all year.
+      isDay: new Date().getHours() >= 6 && new Date().getHours() < 18,
     },
     daily: Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
@@ -201,6 +216,8 @@ function getOfflineFallback(): WeatherBundle {
         rainAmount: i === 2 ? 8 : 0,
         condition: 'Partly cloudy',
         icon: 'partly-sunny-outline',
+        sunrise: `${d.toISOString().slice(0, 10)}T06:00`,
+        sunset: `${d.toISOString().slice(0, 10)}T18:00`,
       };
     }),
     rain: { nextRainDate: null, daysUntil: 2, amount: 8 },
