@@ -46,7 +46,7 @@ export default function TutorialDetailScreen() {
   return (
     <ScrollView className="flex-1 bg-surface" contentContainerStyle={{ paddingBottom: 40 }}>
       <View className="items-center bg-primary/10 py-8">
-        <Text className="text-6xl">{tutorial.emoji}</Text>
+        <Ionicons name={tutorial.icon} size={56} color={DS.colors.primary} />
       </View>
 
       <View className="p-4">
@@ -63,7 +63,10 @@ export default function TutorialDetailScreen() {
             <Text className="mt-1 font-sans text-gray-700 leading-6">{sec.body}</Text>
             {sec.tip ? (
               <View className="mt-2 rounded-xl bg-amber-50 border border-amber-100 p-3">
-                <Text className="font-sans-semibold text-sm text-amber-800">💡 Tip</Text>
+                <View className="flex-row items-center gap-1">
+                  <Ionicons name="bulb-outline" size={14} color={DS.semantic.warning.fg} />
+                  <Text className="font-sans-semibold text-sm text-amber-800">Tip</Text>
+                </View>
                 <Text className="font-sans text-sm text-amber-900">{sec.tip}</Text>
               </View>
             ) : null}
@@ -79,7 +82,7 @@ export default function TutorialDetailScreen() {
 
         <View className="mt-3">
           <PrimaryButton
-            title={isDone ? 'Completed ✓' : 'Mark as Complete'}
+            title={isDone ? 'Completed' : 'Mark as complete'}
             variant={isDone ? 'outline' : 'primary'}
             disabled={isDone}
             onPress={onComplete}
@@ -89,7 +92,7 @@ export default function TutorialDetailScreen() {
         <Pressable
           onPress={() => Linking.openURL(whatsAppUrl('Expert question from FarmBridge'))}
           className="mt-3 rounded-xl bg-surface py-3">
-          <Text className="text-center font-sans-semibold text-primary">Ask an Expert →</Text>
+          <Text className="text-center font-sans-semibold text-primary">Ask an expert</Text>
         </Pressable>
 
         {related.length > 0 ? (

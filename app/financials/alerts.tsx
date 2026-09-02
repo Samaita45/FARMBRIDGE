@@ -71,7 +71,7 @@ export default function PriceAlertsScreen() {
             <Text className="font-sans-semibold text-dark">{a.cropName}</Text>
             <Text className="font-sans text-sm text-gray-600">Notify at ${a.targetPriceUSD.toFixed(2)}/kg</Text>
             <Text className={`mt-1 font-sans text-xs ${a.triggered ? 'text-primary' : 'text-gray-400'}`}>
-              {a.triggered ? '✓ Triggered' : 'Watching…'}
+              {a.triggered ? 'Triggered' : 'Watching…'}
             </Text>
             <Text className="font-sans text-[10px] text-gray-400">
               {new Date(a.createdAt).toLocaleDateString()}

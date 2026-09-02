@@ -11,7 +11,7 @@ import type { VehicleType } from '@/types/transport';
  * from MaterialCommunityIcons, and only through this component, so the
  * exception stays contained and no screen imports a second set directly.
  *
- * These were emoji (🛻 🚛 🏗️ 🚜) rendered as text until the icon sweep.
+ * These were emoji rendered as text until the icon sweep.
  */
 const GLYPHS: Record<VehicleType, keyof typeof MaterialCommunityIcons.glyphMap> = {
   bakkie: 'truck-outline',

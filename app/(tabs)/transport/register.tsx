@@ -81,7 +81,7 @@ export default function RegisterTransporterScreen() {
         <View className="mb-4 rounded-xl bg-amber-50 p-3">
           <Text className="font-sans-semibold text-dark">Existing profile</Text>
           <Text className="font-sans text-sm text-gray-600">
-            {existing.verified ? '✓ Verified' : '⏳ Unverified'} — update below
+            {existing.verified ? 'Verified' : 'Awaiting verification'} — update below
           </Text>
         </View>
       ) : (

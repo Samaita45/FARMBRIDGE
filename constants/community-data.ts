@@ -282,7 +282,7 @@ export const MOCK_POSTS: CommunityPost[] = [
     authorName: 'Dr. Sarah Mhende',
     authorRole: 'expert',
     province: 'Marondera',
-    title: '✅ Expert: Maize topdress timing',
+    title: 'Expert: Maize topdress timing',
     body: 'Apply AN when maize is knee-high (V6-V8). Split application on sandy soils: half at knee-high, half 3 weeks later.',
     category: 'tip',
     tags: ['maize', 'fertilizer', 'expert'],

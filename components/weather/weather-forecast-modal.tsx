@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -30,12 +31,18 @@ export function WeatherForecastModal({
         </View>
 
         {locationLabel ? (
-          <Text className="px-4 py-2 font-sans text-sm text-gray-500">📍 {locationLabel}</Text>
+          <View className="flex-row items-center gap-1 px-4 py-2">
+            <Ionicons name="location-outline" size={14} color={DS.colors.textSoft} />
+            <Text className="font-sans text-sm text-gray-500">{locationLabel}</Text>
+          </View>
         ) : null}
 
         {agricultural ? (
           <View className="mx-4 mb-3 rounded-2xl bg-primary/10 p-4">
-            <Text className="font-sans-semibold text-dark">🌾 Agricultural Insight</Text>
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="leaf-outline" size={16} color={DS.colors.primary} />
+              <Text className="font-sans-semibold text-dark">Agricultural insight</Text>
+            </View>
             <Text className="mt-1 font-sans text-sm text-gray-600">{agricultural.insight}</Text>
             <View className="mt-2 flex-row gap-4">
               <Text className="font-sans text-xs text-gray-500">
@@ -60,7 +67,7 @@ export function WeatherForecastModal({
                 className="flex-row items-center justify-between rounded-2xl bg-white p-4"
                 style={{ shadowColor: DS.colors.text, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 }}>
                 <View className="flex-row items-center gap-3">
-                  <Text className="text-2xl">{day.icon}</Text>
+                  <Ionicons name={day.icon} size={26} color={DS.colors.primary} />
                   <View>
                     <Text className="font-sans-semibold text-dark">{label}</Text>
                     <Text className="font-sans text-xs text-gray-500">{day.condition}</Text>
@@ -70,9 +77,12 @@ export function WeatherForecastModal({
                   <Text className="font-sans-bold text-dark">
                     {day.maxTemp}° / {day.minTemp}°
                   </Text>
-                  <Text className="font-sans text-xs" style={{ color: DS.colors.primary }}>
-                    🌧 {day.rainProbability}% · {day.rainAmount}mm
-                  </Text>
+                  <View className="flex-row items-center gap-1">
+                    <Ionicons name="water-outline" size={12} color={DS.colors.primary} />
+                    <Text className="font-sans text-xs" style={{ color: DS.colors.primary }}>
+                      {day.rainProbability}% · {day.rainAmount}mm
+                    </Text>
+                  </View>
                 </View>
               </View>
             );

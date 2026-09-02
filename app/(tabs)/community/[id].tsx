@@ -1,9 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { useToast } from '@/components/ui/toast-provider';
+import { DS } from '@/constants/design-system';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useCommunityStore, type CommunityState } from '@/stores/communityStore';
 import type { CommunityPost, UserRoleBadge } from '@/types/community';
@@ -52,7 +54,10 @@ export default function PostDetailScreen() {
   return (
     <ScrollView className="flex-1 bg-surface" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
       {currentPost.isPinned ? (
-        <Text className="mb-2 font-sans text-xs text-primary">📌 Pinned · Agritex</Text>
+        <View className="mb-2 flex-row items-center gap-1">
+          <Ionicons name="pin" size={12} color={DS.colors.primary} />
+          <Text className="font-sans text-xs text-primary">Pinned · Agritex</Text>
+        </View>
       ) : null}
       <Text className="font-display text-xl text-dark">{currentPost.title}</Text>
       <Text className="mt-2 font-sans text-gray-600">{currentPost.body}</Text>
@@ -64,15 +69,34 @@ export default function PostDetailScreen() {
           </Text>
         ))}
         {currentPost.isSolved ? (
-          <Text className="font-sans text-xs text-primary">✓ Solved</Text>
+          <View className="flex-row items-center gap-1">
+            <Ionicons name="checkmark-circle" size={12} color={DS.colors.primary} />
+            <Text className="font-sans text-xs text-primary">Solved</Text>
+          </View>
         ) : null}
       </View>
 
       <View className="mt-4 flex-row gap-4">
-        <Pressable onPress={() => toggleLike(currentPost.id)} className="flex-row items-center gap-1">
-          <Text className={liked ? 'text-primary' : ''}>👍 {currentPost.likes}</Text>
+        <Pressable
+          onPress={() => toggleLike(currentPost.id)}
+          accessibilityRole="button"
+          accessibilityLabel={liked ? 'Remove your like' : 'Like this post'}
+          accessibilityState={{ selected: liked }}
+          hitSlop={8}
+          className="flex-row items-center gap-1">
+          <Ionicons
+            name={liked ? 'thumbs-up' : 'thumbs-up-outline'}
+            size={16}
+            color={liked ? DS.colors.primary : DS.colors.textMuted}
+          />
+          <Text className={liked ? 'font-sans text-sm text-primary' : 'font-sans text-sm text-gray-600'}>
+            {currentPost.likes}
+          </Text>
         </Pressable>
-        <Text>💬 {currentPost.commentCount}</Text>
+        <View className="flex-row items-center gap-1">
+          <Ionicons name="chatbubble-outline" size={16} color={DS.colors.textMuted} />
+          <Text className="font-sans text-sm text-gray-600">{currentPost.commentCount}</Text>
+        </View>
         {currentPost.category === 'question' && !currentPost.isSolved ? (
           <Pressable onPress={() => markSolved(currentPost.id)}>
             <Text className="font-sans text-sm text-primary">Mark solved</Text>
@@ -90,15 +114,19 @@ export default function PostDetailScreen() {
           <View className="flex-row items-center gap-2">
             <Text className="font-sans-semibold text-dark">{r.authorName}</Text>
             {r.isExpert ? (
-              <Text className="rounded-full bg-primary/10 px-2 py-0.5 font-sans text-[10px] text-primary">
-                ✓ Expert
-              </Text>
+              <View className="flex-row items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
+                <Ionicons name="checkmark-circle" size={10} color={DS.colors.primary} />
+                <Text className="font-sans text-[10px] text-primary">Expert</Text>
+              </View>
             ) : null}
           </View>
           <Text className="font-sans text-xs text-gray-400">{r.province}</Text>
           <Text className="mt-2 font-sans text-gray-700">{r.body}</Text>
           <Pressable onPress={() => upvoteReply(currentPost.id, r.id)} className="mt-2">
-            <Text className="font-sans text-sm text-gray-500">👍 {r.upvotes} helpful</Text>
+            <View className="flex-row items-center gap-1">
+              <Ionicons name="thumbs-up-outline" size={14} color={DS.colors.textSoft} />
+              <Text className="font-sans text-sm text-gray-500">{r.upvotes} helpful</Text>
+            </View>
           </Pressable>
         </View>
       ))}

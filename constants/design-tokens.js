@@ -114,6 +114,12 @@ const colors = {
   border: gray[200],
   borderLight: gray[100],
   borderStrong: gray[300],
+  // The outline of an interactive control. WCAG 1.4.11 wants 3:1 against the
+  // surface behind it when the outline is what tells you a control is there;
+  // none of the grey ramp reaches that on white, so this sits between 400 and
+  // 500. Use it for input and search field borders, not for card edges — a
+  // card is not a control, and its hairline is allowed to be quiet.
+  borderControl: '#7E8B9C',
 
   overlay: 'rgba(15, 23, 42, 0.45)',
 

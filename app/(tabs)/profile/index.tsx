@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   FadeInView,
-  GlassCard,
+  Card,
   ProfileScreenHeader,
   SectionHeader,
 } from '@/components/design-system';
@@ -151,7 +151,7 @@ export default function ProfileScreen() {
         />
 
         <FadeInView delay={0}>
-        <GlassCard elevated style={s.card}>
+        <Card style={s.card}>
           <View style={s.subRow}>
             <View style={s.subLeft}>
               <View style={[s.subIcon, isSubscribed && { backgroundColor: DS.colors.accentLight }]}>
@@ -175,12 +175,12 @@ export default function ProfileScreen() {
               </View>
             )}
           </View>
-        </GlassCard>
+        </Card>
         </FadeInView>
 
         {isFarmer && (
           <FadeInView delay={1}>
-          <GlassCard style={s.card}>
+          <Card style={s.card}>
             <View style={s.cardHeader}>
               <SectionHeader title={t('myFarm', lang)} icon="home" />
               <Pressable onPress={() => router.push(asHref('/(tabs)/profile/edit-farm'))} style={s.editBtn}>
@@ -198,12 +198,12 @@ export default function ProfileScreen() {
               <Text style={s.linkBtnText}>View crop planner</Text>
               <Ionicons name="arrow-forward" size={14} color={DS.colors.primary} />
             </Pressable>
-          </GlassCard>
+          </Card>
           </FadeInView>
         )}
 
         <FadeInView delay={2}>
-        <GlassCard style={s.card}>
+        <Card style={s.card}>
           <View style={s.cardHeader}>
             <SectionHeader title="Your learning" icon="book-outline" />
             <Pressable onPress={() => router.push(asHref('/tutorials'))} style={s.viewAllBtn}>
@@ -221,7 +221,7 @@ export default function ProfileScreen() {
 
           {completedTutorialIds.length >= 5 ? (
             <View style={s.badgeEarned}>
-              <Text style={s.badgeEarnedText}>🏆 Farm Scholar badge earned!</Text>
+              <Text style={s.badgeEarnedText}>Farm Scholar badge earned</Text>
             </View>
           ) : (
             <Text style={s.tutorialHint}>Complete 5 tutorials to earn your certificate</Text>
@@ -232,11 +232,11 @@ export default function ProfileScreen() {
             <Text style={s.linkBtnText}>Ask an Expert</Text>
             <Ionicons name="arrow-forward" size={14} color={DS.colors.primary} />
           </Pressable>
-        </GlassCard>
+        </Card>
         </FadeInView>
 
         <FadeInView delay={3}>
-        <GlassCard style={s.menuCard}>
+        <Card style={s.menuCard}>
           {(user?.role === 'buyer' || user?.role === 'both') && (
             <ProfileMenuRow
               icon="receipt-outline"
@@ -272,7 +272,7 @@ export default function ProfileScreen() {
             subtitle="FAQ · WhatsApp support"
             onPress={() => router.push(asHref('/settings'))}
           />
-        </GlassCard>
+        </Card>
         </FadeInView>
 
         <Pressable
@@ -292,7 +292,7 @@ export default function ProfileScreen() {
 function StatCell({ value, label, icon }: { value: number; label: string; icon: keyof typeof Ionicons.glyphMap }) {
   return (
     <View style={s.statCell}>
-      <Ionicons name={icon} size={16} color="rgba(255,255,255,0.7)" style={{ marginBottom: 4 }} />
+      <Ionicons name={icon} size={16} color={DS.colors.textSoft} style={{ marginBottom: 4 }} />
       <Text style={s.statValue}>{value}</Text>
       <Text style={s.statLabel}>{label}</Text>
     </View>
@@ -309,9 +309,18 @@ const s = StyleSheet.create({
     width: '100%',
   },
   statCell: { flex: 1, alignItems: 'center' },
-  statDivider: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.2)' },
-  statValue: { fontSize: 20, fontWeight: '800', color: DS.colors.surface },
-  statLabel: { fontSize: 10, color: 'rgba(255,255,255,0.65)', marginTop: 1 },
+  statDivider: { width: DS.layout.hairline, height: 36, backgroundColor: DS.colors.border },
+  statValue: {
+    fontSize: DS.typography.h2.fontSize,
+    fontFamily: DS.fontFamily.bold,
+    color: DS.colors.text,
+  },
+  statLabel: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    marginTop: 1,
+  },
 
   card: { marginHorizontal: DS.spacing.md, marginTop: DS.spacing.md },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },

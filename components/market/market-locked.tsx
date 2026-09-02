@@ -3,7 +3,7 @@ import { Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { GlassCard, TabScreenHeader } from '@/components/design-system';
+import { Card, TabScreenHeader } from '@/components/design-system';
 import { ProductCard } from '@/components/market/product-card';
 import { DS } from '@/constants/design-system';
 import {
@@ -39,7 +39,7 @@ export function MarketLocked() {
         <View style={s.previewOverlay} />
       </View>
 
-      <GlassCard elevated style={s.lockCard}>
+      <Card style={s.lockCard}>
         <View style={s.lockIcon}>
           <Ionicons name="lock-closed" size={28} color={DS.colors.primary} />
         </View>
@@ -79,7 +79,7 @@ export function MarketLocked() {
           </Pressable>
         </Link>
         <Text style={s.trialText}>Try free for 7 days on Farmer Pro</Text>
-      </GlassCard>
+      </Card>
     </SafeAreaView>
   );
 }

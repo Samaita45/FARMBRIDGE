@@ -24,9 +24,8 @@ export function TutorialCard({ tutorial, completed, bookmarked, onBookmark }: Tu
   const diff = DIFF_COLORS[tutorial.difficulty] ?? DIFF_COLORS.beginner;
   return (
     <View style={[s.card, completed && s.cardDone]}>
-      {/* Emoji column */}
-      <View style={s.emojiCol}>
-        <Text style={s.emoji}>{tutorial.emoji}</Text>
+      <View style={s.iconCol}>
+        <Ionicons name={tutorial.icon} size={26} color={DS.colors.primary} />
         {completed && (
           <View style={s.doneStamp}>
             <Ionicons name="checkmark-circle" size={16} color={DS.colors.accent} />
@@ -80,11 +79,10 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: DS.colors.borderLight,
   },
   cardDone: { borderColor: DS.colors.accentLight },
-  emojiCol: {
+  iconCol: {
     width: 70, backgroundColor: DS.colors.primaryBg,
     alignItems: 'center', justifyContent: 'center', gap: 4,
   },
-  emoji: { fontSize: 28 },
   doneStamp: {},
   content: { flex: 1, padding: 12 },
   titleRow: { flexDirection: 'row', gap: 6, alignItems: 'flex-start' },

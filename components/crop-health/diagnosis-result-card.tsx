@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/design-system/AppText';
 import { FadeInView } from '@/components/design-system/FadeInView';
-import { GlassCard } from '@/components/design-system/GlassCard';
+import { Card } from '@/components/design-system/Card';
 import { DS } from '@/constants/design-system';
 import type { CropDisease } from '@/constants/zimbabwe-data';
 
@@ -28,7 +28,7 @@ export function DiagnosisResultCard({
 
   return (
     <FadeInView>
-      <GlassCard elevated style={styles.card}>
+      <Card style={styles.card}>
         <View style={styles.header}>
           <View style={[styles.healthRing, { borderColor: risk.color }]}>
             <AppText variant="h2" color={risk.color}>
@@ -78,7 +78,7 @@ export function DiagnosisResultCard({
             Apply recommended fungicide within 48h for best results
           </AppText>
         </View>
-      </GlassCard>
+      </Card>
     </FadeInView>
   );
 }

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 import {
   Animated,
@@ -31,11 +32,11 @@ const BG: Record<ToastType, string> = {
   info:    DS.colors.primary,       // blue
 };
 
-const ICON: Record<ToastType, string> = {
-  success: '✓  ',
-  error:   '✕  ',
-  warning: '⚠  ',
-  info:    'ℹ  ',
+const ICON: Record<ToastType, keyof typeof Ionicons.glyphMap> = {
+  success: 'checkmark-circle',
+  error: 'close-circle',
+  warning: 'warning',
+  info: 'information-circle',
 };
 
 function ToastItem({
@@ -59,7 +60,7 @@ function ToastItem({
       <Pressable
         onPress={onDismiss}
         style={[t.pill, { backgroundColor: BG[toast.type] }]}>
-        <Text style={t.icon}>{ICON[toast.type]}</Text>
+        <Ionicons name={ICON[toast.type]} size={18} color={DS.colors.textInverse} />
         <Text style={t.msg} numberOfLines={3}>{toast.message}</Text>
       </Pressable>
     </Animated.View>

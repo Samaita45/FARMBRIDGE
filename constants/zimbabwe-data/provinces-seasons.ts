@@ -19,21 +19,21 @@ export const SEASONS = {
     name: 'Rainy Season',
     months: [11, 12, 1, 2, 3],
     description: 'Main planting season with high rainfall. Ideal for maize, soyabeans, and groundnuts.',
-    icon: '🌧️',
+    icon: 'rainy-outline',
   },
   coolDry: {
     id: 'cool-dry',
     name: 'Cool Dry Season',
     months: [4, 5, 6, 7],
     description: 'Cooler temperatures, lower rainfall. Good for wheat, potatoes, and irrigated horticulture.',
-    icon: '🌬️',
+    icon: 'cloudy-outline',
   },
   hotDry: {
     id: 'hot-dry',
     name: 'Hot Dry Season',
     months: [8, 9, 10],
     description: 'Hot and dry. Focus on irrigation, tobacco planting, and drought-tolerant crops.',
-    icon: '☀️',
+    icon: 'sunny-outline',
   },
 } as const;
 

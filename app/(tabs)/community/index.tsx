@@ -15,7 +15,7 @@ import {
   ChipTabs,
   EmptyState,
   FadeInView,
-  GlassCard,
+  Card,
   SectionHeader,
   TabScreenHeader,
   type ChipTabItem,
@@ -72,7 +72,6 @@ export default function CommunityHubScreen() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search posts, tags…"
-        searchTint="light"
         rightAction={newPostBtn}
       />
 
@@ -88,7 +87,7 @@ export default function CommunityHubScreen() {
         showsVerticalScrollIndicator={false}>
         <FadeInView>
           <Pressable onPress={() => router.push(asHref('/(tabs)/community/experts'))}>
-            <GlassCard elevated style={styles.expertCard}>
+            <Card style={styles.expertCard}>
               <View style={styles.expertIcon}>
                 <Ionicons name="school-outline" size={22} color={DS.colors.primary} />
               </View>
@@ -97,7 +96,7 @@ export default function CommunityHubScreen() {
                 <Text style={styles.expertSub}>Ask Agritex & verified specialists</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={DS.colors.primary} />
-            </GlassCard>
+            </Card>
           </Pressable>
         </FadeInView>
 
@@ -123,7 +122,7 @@ export default function CommunityHubScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.trendingRow}>
             {SUCCESS_STORIES.map((story) => (
-              <GlassCard key={story.id} style={styles.storyCard}>
+              <Card key={story.id} style={styles.storyCard}>
                 <Text style={styles.storyName}>{story.name}</Text>
                 <Text style={styles.storyCrop}>
                   {story.crop} ·{' '}
@@ -132,7 +131,7 @@ export default function CommunityHubScreen() {
                 <Text style={styles.storyQuote} numberOfLines={2}>
                   {story.quote}
                 </Text>
-              </GlassCard>
+              </Card>
             ))}
           </ScrollView>
         </FadeInView>
@@ -183,14 +182,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    borderRadius: DS.radius.md,
+    backgroundColor: DS.colors.primary,
+    borderRadius: DS.radius.full,
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
+    minHeight: 40,
   },
-  newPostText: { fontSize: 14, fontWeight: '700', color: DS.colors.textInverse },
+  newPostText: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textInverse,
+  },
   body: { flex: 1 },
   bodyContent: { padding: DS.spacing.md, paddingBottom: 100 },
   expertCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: DS.spacing.md },

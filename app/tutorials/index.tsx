@@ -58,7 +58,7 @@ export default function TutorialsHubScreen() {
           <Ionicons name="arrow-back" size={22} color={DS.colors.surface} />
         </Pressable>
         <View style={s.headerText}>
-          <Text style={s.title}>📚 Tutorials</Text>
+          <Text style={s.title}>Tutorials</Text>
           <Text style={s.subtitle}>Best practices for Zimbabwe farmers</Text>
         </View>
 
@@ -79,7 +79,7 @@ export default function TutorialsHubScreen() {
           <TextInput
             style={s.searchInput}
             placeholder="Search tutorials..."
-            placeholderTextColor="rgba(255,255,255,0.55)"
+            placeholderTextColor="rgba(255,255,255,0.78)"
             value={search}
             onChangeText={setSearch}
           />
@@ -116,7 +116,9 @@ export default function TutorialsHubScreen() {
             <Ionicons name="star" size={11} color={DS.colors.surface} />
             <Text style={s.featuredBadgeText}>Featured</Text>
           </View>
-          <View style={s.featuredEmoji}><Text style={{ fontSize: 44 }}>{featured.emoji}</Text></View>
+          <View style={s.featuredIcon}>
+            <Ionicons name={featured.icon} size={40} color={DS.colors.primary} />
+          </View>
           <View style={s.featuredMeta}>
             <Text style={s.featuredTitle} numberOfLines={2}>{featured.title}</Text>
             <View style={s.featuredRow}>
@@ -210,7 +212,7 @@ const s = StyleSheet.create({
     backgroundColor: DS.colors.primary, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3,
   },
   featuredBadgeText: { fontSize: 9, fontWeight: '700', color: DS.colors.surface },
-  featuredEmoji: {
+  featuredIcon: {
     width: 60, height: 60, borderRadius: 16,
     backgroundColor: DS.colors.primaryBg,
     alignItems: 'center', justifyContent: 'center',

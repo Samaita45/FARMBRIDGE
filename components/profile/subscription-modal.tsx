@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { PaymentMethodIcon } from '@/components/profile/payment-method-icon';
@@ -58,9 +59,14 @@ export function SubscriptionModal({ visible, onClose }: SubscriptionModalProps) 
                 key={plan.id}
                 className={`mb-4 rounded-2xl bg-white p-4 ${isPro ? 'border-2 border-primary' : ''}`}
                 style={DS.shadow.card}>
-                <Text className="font-display text-lg text-dark">
-                  {plan.id === 'basic' ? '🌱' : isPro ? '🚜' : '🏢'} {plan.name}
-                </Text>
+                <View className="flex-row items-center gap-2">
+                  <Ionicons
+                    name={plan.id === 'basic' ? 'leaf-outline' : isPro ? 'construct-outline' : 'business-outline'}
+                    size={18}
+                    color={DS.colors.primary}
+                  />
+                  <Text className="font-display text-lg text-dark">{plan.name}</Text>
+                </View>
                 {plan.priceUSD > 0 ? (
                   <Text className="mt-1 font-sans-semibold text-primary">
                     ${plan.priceUSD}/month · ZWG {plan.priceZWG}/month
@@ -71,9 +77,15 @@ export function SubscriptionModal({ visible, onClose }: SubscriptionModalProps) 
 
                 <View className="mt-3 gap-1">
                   {plan.features.map((f) => (
-                    <Text key={f} className="font-sans text-sm text-gray-600">
-                      ✓ {f}
-                    </Text>
+                    <View key={f} className="flex-row items-start gap-2">
+                      <Ionicons
+                        name="checkmark"
+                        size={14}
+                        color={DS.colors.primary}
+                        style={{ marginTop: 2 }}
+                      />
+                      <Text className="flex-1 font-sans text-sm text-gray-600">{f}</Text>
+                    </View>
                   ))}
                 </View>
 

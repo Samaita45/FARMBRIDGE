@@ -57,7 +57,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     ? DS.semantic.danger.solid
     : focused
       ? DS.colors.primary
-      : DS.colors.border;
+      : DS.colors.borderControl;
 
   return (
     <View style={[styles.container, containerStyle]}>
