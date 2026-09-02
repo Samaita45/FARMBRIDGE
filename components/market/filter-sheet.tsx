@@ -52,7 +52,7 @@ export function activeFilterCount(f: MarketFilters): number {
 
 interface FilterSheetProps {
   visible: boolean;
-  categories: string[];
+  categories: readonly string[];
   value: MarketFilters;
   onClose: () => void;
   onApply: (filters: MarketFilters) => void;

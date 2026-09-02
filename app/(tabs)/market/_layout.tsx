@@ -7,6 +7,7 @@ export default function MarketLayout() {
     <Stack
       screenOptions={stackScreenOptions}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="search" options={{ headerShown: false }} />
       <Stack.Screen name="[id]" options={{ title: 'Product' }} />
       <Stack.Screen name="cart" options={{ title: 'Your cart' }} />
       <Stack.Screen name="checkout" options={{ title: 'Check out' }} />

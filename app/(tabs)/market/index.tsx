@@ -5,7 +5,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { EmptyState, Input } from '@/components/design-system';
+import { EmptyState } from '@/components/design-system';
 import {
   activeFilterCount,
   DEFAULT_FILTERS,
@@ -39,7 +39,6 @@ export default function MarketplaceScreen() {
   const user = useAuthStore((s: AuthState) => s.user);
   const cartCount = useCartStore((s: CartState) => s.getItemCount());
 
-  const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<MarketFilters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -47,9 +46,7 @@ export default function MarketplaceScreen() {
   const filterCount = activeFilterCount(filters);
 
   const results = useMemo(() => {
-    const q = search.trim().toLowerCase();
     return MARKET_PRODUCTS.filter((p) => {
-      if (q && !`${p.name} ${p.category} ${p.sellerName}`.toLowerCase().includes(q)) return false;
       if (filters.category !== 'All' && p.category !== filters.category) return false;
       if (p.priceUSD < filters.minPrice || p.priceUSD > filters.maxPrice) return false;
       if (filters.minRating > 0 && p.rating < filters.minRating) return false;
@@ -57,7 +54,7 @@ export default function MarketplaceScreen() {
       if (filters.inStockOnly && !p.inStock) return false;
       return true;
     });
-  }, [search, filters]);
+  }, [filters]);
 
   const featured = useMemo(
     () => MARKET_PRODUCTS.find((p) => p.isOrganic && p.inStock) ?? MARKET_PRODUCTS[0],
@@ -135,19 +132,16 @@ export default function MarketplaceScreen() {
       </View>
 
       <View style={styles.searchRow}>
-        <View style={styles.searchField}>
-          <Input
-            icon="search-outline"
-            placeholder="Search seeds, produce, equipment"
-            value={search}
-            onChangeText={setSearch}
-            autoCorrect={false}
-            returnKeyType="search"
-            rightIcon={search ? 'close-circle' : undefined}
-            rightIconLabel="Clear search"
-            onRightIconPress={() => setSearch('')}
-          />
-        </View>
+        <Pressable
+          onPress={() => router.push(asHref('/(tabs)/market/search'))}
+          accessibilityRole="search"
+          accessibilityLabel="Search the marketplace"
+          style={styles.searchField}>
+          <Ionicons name="search" size={18} color={DS.colors.textSoft} />
+          <Text style={styles.searchPlaceholder} numberOfLines={1}>
+            Search seeds, produce, equipment
+          </Text>
+        </Pressable>
 
         <Pressable
           onPress={() => setFilterOpen(true)}
@@ -205,7 +199,7 @@ export default function MarketplaceScreen() {
               }}
             />
 
-            {featured && !search && filterCount === 0 ? (
+            {featured && filterCount === 0 ? (
               <Pressable
                 onPress={() => router.push(asHref(`/(tabs)/market/${featured.id}`))}
                 accessibilityRole="link"
@@ -231,7 +225,7 @@ export default function MarketplaceScreen() {
               </Pressable>
             ) : null}
 
-            {!search && filterCount === 0 ? (
+            {filterCount === 0 ? (
               <View>
                 <Text style={styles.sectionTitle}>Top rated sellers</Text>
                 <FlatList
@@ -242,7 +236,14 @@ export default function MarketplaceScreen() {
                   contentContainerStyle={styles.sellerRow}
                   renderItem={({ item }) => (
                     <Pressable
-                      onPress={() => setSearch(item.name)}
+                      onPress={() =>
+                        router.push(
+                          asHref({
+                            pathname: '/(tabs)/market/search',
+                            params: { q: item.name },
+                          })
+                        )
+                      }
                       accessibilityRole="button"
                       accessibilityLabel={`${item.name}, rated ${item.rating}, ${item.count} listings`}
                       style={styles.seller}>
@@ -268,7 +269,7 @@ export default function MarketplaceScreen() {
 
             <View style={styles.resultsRow}>
               <Text style={styles.sectionTitle}>
-                {search || filterCount > 0
+                {filterCount > 0
                   ? `${results.length} result${results.length === 1 ? '' : 's'}`
                   : 'All listings'}
               </Text>
@@ -288,11 +289,7 @@ export default function MarketplaceScreen() {
           <EmptyState
             icon="search-outline"
             title="Nothing matches"
-            description={
-              search
-                ? `No listings for “${search.trim()}”. Try a different word, or widen your filters.`
-                : 'No listings match these filters. Try widening them.'
-            }
+            description="No listings match these filters. Try widening them."
             actionLabel={filterCount > 0 ? 'Clear filters' : undefined}
             onAction={filterCount > 0 ? () => setFilters(DEFAULT_FILTERS) : undefined}
           />
@@ -368,7 +365,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: DS.spacing.md,
     paddingBottom: DS.spacing.sm,
   },
-  searchField: { flex: 1 },
+  searchField: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DS.spacing.sm,
+    minHeight: DS.layout.touchTarget,
+    paddingHorizontal: 14,
+    borderRadius: DS.radius.full,
+    borderWidth: DS.layout.hairline,
+    borderColor: DS.colors.borderControl,
+    backgroundColor: DS.colors.surfaceMuted,
+  },
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: DS.typography.body.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
   filterBtn: {
     width: DS.layout.touchTarget,
     height: DS.layout.touchTarget,
