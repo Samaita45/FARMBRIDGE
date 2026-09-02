@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Card, EmptyState } from '@/components/design-system';
+import { RouteMap } from '@/components/transport/route-map';
 import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
 import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
@@ -156,6 +157,12 @@ export default function ConfirmScreen() {
   return (
     <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
       <Text style={styles.step}>Step 3 of 3 — review and send</Text>
+
+      <RouteMap
+        pickup={request.pickup}
+        destination={request.destination}
+        distanceKm={distanceKm}
+      />
 
       <Card style={styles.card}>
         <Text style={styles.cardTitle}>Booking summary</Text>

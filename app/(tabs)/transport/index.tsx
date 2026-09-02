@@ -2,11 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TransportLocked } from '@/components/transport/transport-locked';
+import { HeroHeader } from '@/components/ui/hero-header';
 import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
 import { DS } from '@/constants/design-system';
+import { ScreenImages } from '@/constants/images';
 import { TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
 import { useLocation } from '@/hooks/useLocation';
 import { asHref } from '@/lib/href';
@@ -38,27 +39,16 @@ export default function TransportHubScreen() {
   const available = TRANSPORT_PROVIDERS.filter((t) => t.isAvailable);
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.title} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-          Transport
-        </Text>
-        <Text style={styles.subtitle} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-          Move your harvest safely and affordably
-        </Text>
-        <View style={styles.headerMeta}>
-          <View style={styles.metaItem}>
-            <Ionicons name="location-outline" size={13} color={DS.colors.textSoft} />
-            <Text style={styles.metaText} numberOfLines={1}>
-              {location.label}
-            </Text>
-          </View>
-          <View style={styles.metaItem}>
-            <View style={styles.availableDot} />
-            <Text style={styles.metaText}>{available.length} available</Text>
-          </View>
-        </View>
-      </View>
+    <View style={styles.root}>
+      <HeroHeader
+        image={ScreenImages.transport}
+        title="Transport"
+        subtitle="Move your harvest safely and affordably"
+        meta={[
+          { icon: 'location-outline', label: location.label },
+          { icon: 'bus-outline', label: `${available.length} available now` },
+        ]}
+      />
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         {activeTrips.length > 0 ? (
@@ -138,7 +128,7 @@ export default function TransportHubScreen() {
           </Pressable>
         ))}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -176,34 +166,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   pressed: { backgroundColor: DS.colors.surfaceMuted },
 
-  header: {
-    paddingHorizontal: DS.spacing.md,
-    paddingTop: DS.spacing.sm,
-    paddingBottom: DS.spacing.md,
-    backgroundColor: DS.colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: DS.colors.borderLight,
-    gap: 2,
-  },
-  title: {
-    fontSize: DS.typography.h1.fontSize,
-    lineHeight: DS.typography.h1.lineHeight,
-    fontFamily: DS.fontFamily.display,
-    color: DS.colors.text,
-  },
-  subtitle: {
-    fontSize: DS.typography.caption.fontSize,
-    fontFamily: DS.fontFamily.regular,
-    color: DS.colors.textMuted,
-  },
-  headerMeta: { flexDirection: 'row', gap: DS.spacing.md, marginTop: 6, flexWrap: 'wrap' },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1 },
-  metaText: {
-    fontSize: 11,
-    fontFamily: DS.fontFamily.regular,
-    color: DS.colors.textMuted,
-    flexShrink: 1,
-  },
 
   body: { padding: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.sm + 4 },
 

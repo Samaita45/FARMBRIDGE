@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ProvincePicker } from '@/components/forms/province-picker';
 import { DS } from '@/constants/design-system';
 import { MOCK_POSTS } from '@/constants/community-data';
-import { SUPPORT_WHATSAPP_URL } from '@/constants/support';
+import { PRIVACY_URL, SUPPORT_WHATSAPP_URL, TERMS_URL, whatsAppUrl } from '@/constants/support';
 import { CROPS, MARKET_PRODUCTS } from '@/constants/zimbabwe-data';
 import { cachePosts } from '@/services/communityDb';
 import { upsertCachedCropData, upsertCachedProduct } from '@/services/database';
@@ -174,8 +174,19 @@ export default function SettingsScreen() {
               <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
               <Text className="font-sans text-dark">WhatsApp Support</Text>
             </Pressable>
-            <Pressable className="mx-4 mb-2 rounded-xl bg-white px-4 py-3">
-              <Text className="font-sans text-dark">FAQ & Help Centre</Text>
+            {/*
+              These three had no onPress at all — rows that looked tappable and
+              were not. FAQ now goes to the one support channel that exists;
+              the policies open their published URLs, and say plainly when
+              nothing is published yet rather than absorbing a tap.
+            */}
+            <Pressable
+              onPress={() => Linking.openURL(whatsAppUrl('Hi FarmBridge, I have a question.'))}
+              accessibilityRole="button"
+              accessibilityLabel="Ask a question on WhatsApp"
+              className="mx-4 mb-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3">
+              <Ionicons name="help-circle-outline" size={22} color={DS.colors.primary} />
+              <Text className="font-sans text-dark">FAQ & help</Text>
             </Pressable>
           </Section>
 
@@ -183,12 +194,8 @@ export default function SettingsScreen() {
             <Text className="px-4 font-sans text-sm text-gray-500">
               FarmBridge v{Constants.expoConfig?.version ?? '1.0.0'}
             </Text>
-            <Pressable className="mx-4 mt-2 rounded-xl bg-white px-4 py-3">
-              <Text className="font-sans text-dark">Terms of Service</Text>
-            </Pressable>
-            <Pressable className="mx-4 mt-2 mb-2 rounded-xl bg-white px-4 py-3">
-              <Text className="font-sans text-dark">Privacy Policy</Text>
-            </Pressable>
+            <LegalRow label="Terms of service" url={TERMS_URL} />
+            <LegalRow label="Privacy policy" url={PRIVACY_URL} />
           </Section>
 
           <Pressable
@@ -232,5 +239,35 @@ function SettingSwitch({
       </View>
       <Switch value={value} onValueChange={onChange} trackColor={{ true: DS.colors.primary }} />
     </View>
+  );
+}
+
+/**
+ * A policy link that tells the truth about itself. When no URL is configured
+ * the row is plainly unavailable rather than a tappable no-op.
+ */
+function LegalRow({ label, url }: { label: string; url: string }) {
+  if (!url) {
+    return (
+      <View className="mx-4 mt-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3 opacity-60">
+        <Ionicons name="document-text-outline" size={20} color={DS.colors.textSoft} />
+        <View className="flex-1">
+          <Text className="font-sans text-dark">{label}</Text>
+          <Text className="font-sans text-xs text-muted">Not published yet</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={() => Linking.openURL(url)}
+      accessibilityRole="link"
+      accessibilityLabel={`Open the ${label.toLowerCase()}`}
+      className="mx-4 mt-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3">
+      <Ionicons name="document-text-outline" size={20} color={DS.colors.primary} />
+      <Text className="flex-1 font-sans text-dark">{label}</Text>
+      <Ionicons name="open-outline" size={16} color={DS.colors.textFaint} />
+    </Pressable>
   );
 }

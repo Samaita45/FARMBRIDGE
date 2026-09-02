@@ -43,3 +43,6 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Design reference photos — large HEIC source files, not app assets
+public/

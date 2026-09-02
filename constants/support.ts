@@ -17,3 +17,11 @@ export function whatsAppUrl(message: string): string {
 }
 
 export const SUPPORT_WHATSAPP_URL = whatsAppUrl('Hi FarmBridge support, I need help with my account.');
+
+/**
+ * Legal documents. Empty until they are published — the settings screen shows
+ * a row that says so rather than a link that goes nowhere. A store submission
+ * will require at least the privacy policy.
+ */
+export const TERMS_URL = process.env.EXPO_PUBLIC_TERMS_URL?.trim() ?? '';
+export const PRIVACY_URL = process.env.EXPO_PUBLIC_PRIVACY_URL?.trim() ?? '';

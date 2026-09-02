@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
@@ -5,6 +6,7 @@ import { PrimaryButton } from '@/components/ui/primary-button';
 import { useToast } from '@/components/ui/toast-provider';
 import { MARKET_CATEGORIES } from '@/constants/zimbabwe-data';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
+import { DS } from '@/constants/design-system';
 
 export default function SellerDashboardScreen() {
   const { showToast } = useToast();
@@ -100,11 +102,18 @@ export default function SellerDashboardScreen() {
                 <Text className="font-sans-bold text-primary">${s.amount}</Text>
               </View>
             ))}
-            <Pressable className="mt-4 rounded-xl bg-primary py-3">
-              <Text className="text-center font-sans-semibold text-white">
-                Withdraw to EcoCash
+            {/*
+              This was a filled primary button with no onPress — the single
+              worst kind of dead control, because it is about money. There is no
+              payouts provider, so it states that instead of inviting a tap.
+            */}
+            <View className="mt-4 flex-row items-center gap-2 rounded-xl border border-border bg-surface px-4 py-3">
+              <Ionicons name="time-outline" size={16} color={DS.colors.textSoft} />
+              <Text className="flex-1 font-sans text-xs text-muted">
+                Withdrawals arrive with payouts. Sales are settled directly with your buyer
+                for now.
               </Text>
-            </Pressable>
+            </View>
           </View>
         ) : null}
       </ScrollView>

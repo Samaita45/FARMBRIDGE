@@ -1,9 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { Card, EmptyState } from '@/components/design-system';
+import { RouteMap } from '@/components/transport/route-map';
 import { TransporterCard } from '@/components/transport/transporter-card';
 import { DS } from '@/constants/design-system';
 import { TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
@@ -79,19 +79,16 @@ export default function ProvidersScreen() {
       windowSize={7}
       ListHeaderComponent={
         <View style={styles.header}>
+          <RouteMap
+            pickup={request.pickup}
+            destination={request.destination}
+            distanceKm={distanceKm}
+          />
+
           <Card variant="flat" style={styles.route}>
-            <Text style={styles.routeLabel}>Route</Text>
-            <View style={styles.routeRow}>
-              <Text style={styles.routeText} numberOfLines={1}>
-                {request.pickup}
-              </Text>
-              <Ionicons name="arrow-forward" size={14} color={DS.colors.textSoft} />
-              <Text style={styles.routeText} numberOfLines={1}>
-                {request.destination}
-              </Text>
-            </View>
+            <Text style={styles.routeLabel}>Load</Text>
             <Text style={styles.routeMeta}>
-              About {distanceKm} km · {request.weightKg} kg · {request.category}
+              {request.weightKg} kg · {request.category}
             </Text>
             {/*
               Distance is estimated, not measured. Saying so keeps the quotes
@@ -132,13 +129,6 @@ const styles = StyleSheet.create({
     color: DS.colors.textSoft,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-  },
-  routeRow: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm },
-  routeText: {
-    flexShrink: 1,
-    fontSize: DS.typography.bodySm.fontSize,
-    fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.text,
   },
   routeMeta: {
     fontSize: DS.typography.caption.fontSize,
