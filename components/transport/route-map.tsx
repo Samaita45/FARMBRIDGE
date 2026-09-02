@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { locate, Maps, regionFor } from '@/components/transport/maps';
 import { DS } from '@/constants/design-system';
-import { PROVINCES } from '@/constants/zimbabwe-data';
 
 /**
  * A map of the trip's route.
@@ -16,9 +16,9 @@ import { PROVINCES } from '@/constants/zimbabwe-data';
  * The straight line between two points is a bearing, not a road route, and the
  * caption says so. Turn-by-turn routing needs a directions API.
  *
- * The native module is loaded defensively: if react-native-maps is unavailable
- * the component renders the same route summary without the map, so a missing
- * dependency can never take the screen down.
+ * The native module is loaded defensively in `./maps`: if react-native-maps is
+ * unavailable the component renders the same route summary without the map, so
+ * a missing dependency can never take the screen down.
  */
 
 interface RouteMapProps {
@@ -27,37 +27,6 @@ interface RouteMapProps {
   distanceKm?: number;
   height?: number;
 }
-
-interface Point {
-  latitude: number;
-  longitude: number;
-  label: string;
-}
-
-/** Matches free text against province and capital names. */
-function locate(text: string): Point | null {
-  const query = text.trim().toLowerCase();
-  if (!query) return null;
-
-  const match =
-    PROVINCES.find((p) => query.includes(p.name.toLowerCase())) ??
-    PROVINCES.find((p) => query.includes(p.capital.toLowerCase()));
-
-  if (!match) return null;
-  return { latitude: match.latitude, longitude: match.longitude, label: match.name };
-}
-
-/** Loads react-native-maps, or null when it is not present. */
-function loadMaps() {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    return require('react-native-maps') as typeof import('react-native-maps');
-  } catch {
-    return null;
-  }
-}
-
-const Maps = loadMaps();
 
 export function RouteMap({ pickup, destination, distanceKm, height = 180 }: RouteMapProps) {
   const from = locate(pickup);
@@ -136,20 +105,6 @@ export function RouteMap({ pickup, destination, distanceKm, height = 180 }: Rout
       </View>
     </View>
   );
-}
-
-/** A region that fits both points with a margin, never narrower than a town. */
-function regionFor(from: Point, to: Point) {
-  const midLat = (from.latitude + to.latitude) / 2;
-  const midLng = (from.longitude + to.longitude) / 2;
-  const latDelta = Math.max(Math.abs(from.latitude - to.latitude) * 1.6, 0.6);
-  const lngDelta = Math.max(Math.abs(from.longitude - to.longitude) * 1.6, 0.6);
-  return {
-    latitude: midLat,
-    longitude: midLng,
-    latitudeDelta: latDelta,
-    longitudeDelta: lngDelta,
-  };
 }
 
 const styles = StyleSheet.create({

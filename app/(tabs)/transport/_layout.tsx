@@ -8,7 +8,8 @@ export default function TransportLayout() {
       screenOptions={stackScreenOptions}>
       <Stack.Screen name="index" options={{ title: 'Transport', headerShown: false }} />
       <Stack.Screen name="request" options={{ title: 'Request transport' }} />
-      <Stack.Screen name="providers" options={{ title: 'Available transporters' }} />
+      <Stack.Screen name="providers" options={{ title: 'Choose a transporter' }} />
+      <Stack.Screen name="quote" options={{ title: 'Transporter details' }} />
       <Stack.Screen name="negotiate" options={{ title: 'Negotiate price' }} />
       <Stack.Screen name="confirm" options={{ title: 'Booking confirmed' }} />
       <Stack.Screen name="register" options={{ title: 'Offer transport' }} />
