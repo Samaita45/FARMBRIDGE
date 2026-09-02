@@ -1,6 +1,6 @@
 import { type Href, router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { CropTrendCard } from '@/components/cards/crop-trend-card';
 import { FadeInView } from '@/components/design-system/FadeInView';
@@ -12,7 +12,8 @@ import { HomeHeader } from '@/components/home/premium-hero-header';
 import { PremiumSectionHeader } from '@/components/home/premium-section-header';
 import { PlantNowCard } from '@/components/home/plant-now-card';
 import { QuickActionsPremium } from '@/components/home/quick-actions-premium';
-import { WeatherSummary } from '@/components/home/weather-glass-row';
+import { CropFilterRow, type CropCategory } from '@/components/home/crop-filter-row';
+import { WeatherWeekCard } from '@/components/home/weather-week-card';
 import { CropCardSkeleton } from '@/components/ui/skeleton';
 import type { InsightItem } from '@/components/home/insight-strip';
 import { WeatherForecastModal } from '@/components/weather/weather-forecast-modal';
@@ -53,6 +54,7 @@ export default function HomeScreen() {
   const { data: weather, isLoading: weatherLoading, refetch } = useWeather(location);
   const [weatherModalOpen, setWeatherModalOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [cropCategory, setCropCategory] = useState<CropCategory>(null);
 
   const topCrops = useMemo(() => {
     const demand = getTopDemandCrops(12);
@@ -63,8 +65,28 @@ export default function HomeScreen() {
     for (const c of demand) {
       if (!merged.some((m) => m.id === c.id)) merged.push(c);
     }
-    return merged.slice(0, 8);
+    return merged;
   }, []);
+
+  /** The categories the catalogue actually contains, in the order they appear. */
+  const cropCategories = useMemo(() => {
+    const seen: (typeof CROPS)[number]['category'][] = [];
+    for (const c of CROPS) if (!seen.includes(c.category)) seen.push(c.category);
+    return seen;
+  }, []);
+
+  /** A real crop name per category, so each chip shows what it is filtering to. */
+  const cropSample = useCallback(
+    (category: (typeof CROPS)[number]['category']) =>
+      CROPS.find((c) => c.category === category)?.name ?? category,
+    []
+  );
+
+  const visibleCrops = useMemo(
+    () =>
+      (cropCategory ? topCrops.filter((c) => c.category === cropCategory) : topCrops).slice(0, 8),
+    [topCrops, cropCategory]
+  );
 
   const plantNow = useMemo(() => getCropsForMonth(MONTH).slice(0, 4), []);
 
@@ -182,11 +204,12 @@ export default function HomeScreen() {
               actionLabel="7-day"
               onPress={() => setWeatherModalOpen(true)}
             />
-            <WeatherSummary
+            <WeatherWeekCard
               current={weather?.current}
+              daily={weather?.daily}
               agricultural={weather?.agricultural}
               loading={weatherLoading || locationLoading}
-              onPress={() => setWeatherModalOpen(true)}
+              onOpenForecast={() => setWeatherModalOpen(true)}
             />
           </FadeInView>
 
@@ -197,14 +220,50 @@ export default function HomeScreen() {
               actionLabel="Market"
               onPress={() => router.push('/(tabs)/market' as Href)}
             />
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={s.hScroll}>
-              {topCrops.length === 0
-                ? [1, 2, 3].map((i) => <CropCardSkeleton key={i} />)
-                : topCrops.map((crop) => <CropTrendCard key={crop.id} crop={crop} />)}
-            </ScrollView>
+            <CropFilterRow
+              categories={cropCategories}
+              value={cropCategory}
+              onChange={setCropCategory}
+              sampleFor={cropSample}
+            />
+
+            {/*
+              Three states, not two. An empty filter is not a loading state, and
+              rendering skeletons for it leaves someone waiting for crops that
+              were never coming.
+            */}
+            {topCrops.length === 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={s.hScroll}>
+                {[1, 2, 3].map((i) => (
+                  <CropCardSkeleton key={i} />
+                ))}
+              </ScrollView>
+            ) : visibleCrops.length === 0 ? (
+              <View style={s.filterEmpty}>
+                <Text style={s.filterEmptyText}>
+                  No crops in this group are showing strong demand right now.
+                </Text>
+                <Pressable
+                  onPress={() => setCropCategory(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Show all crops"
+                  hitSlop={8}>
+                  <Text style={s.filterEmptyAction}>Show all crops</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={s.hScroll}>
+                {visibleCrops.map((crop) => (
+                  <CropTrendCard key={crop.id} crop={crop} />
+                ))}
+              </ScrollView>
+            )}
           </FadeInView>
 
           <FadeInView delay={4} style={s.block}>
@@ -261,4 +320,21 @@ const s = StyleSheet.create({
   },
   block: { marginTop: DS.spacing.lg },
   hScroll: { paddingRight: 8, paddingLeft: 2 },
+  filterEmpty: {
+    gap: 6,
+    backgroundColor: DS.colors.surfaceMuted,
+    borderRadius: DS.radius.lg,
+    padding: DS.spacing.md,
+  },
+  filterEmptyText: {
+    fontSize: DS.typography.caption.fontSize,
+    lineHeight: 18,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+  filterEmptyAction: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.primary,
+  },
 });
