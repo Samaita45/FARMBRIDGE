@@ -16,7 +16,14 @@ import { asHref } from '@/lib/href';
 import { getBookings } from '@/services/transportDb';
 import { selectIsSubscribed, useAuthStore, type AuthState } from '@/stores/authStore';
 import type { IconName } from '@/types/icons';
+import type { LocationSource } from '@/hooks/useLocation';
 import type { TransportBooking } from '@/types/transport';
+
+const LOCATION_CAPTION: Record<LocationSource, string> = {
+  gps: 'YOUR LOCATION',
+  profile: 'FROM YOUR PROFILE',
+  default: 'DEFAULT LOCATION',
+};
 
 /**
  * The transport hub, laid out to the reference: where you are, the banner, a
@@ -28,7 +35,7 @@ import type { TransportBooking } from '@/types/transport';
 export default function TransportHubScreen() {
   const isSubscribed = useAuthStore(selectIsSubscribed);
   const user = useAuthStore((s: AuthState) => s.user);
-  const { location } = useLocation();
+  const { location, source, permission, refresh } = useLocation();
   const [activeTrips, setActiveTrips] = useState<TransportBooking[]>([]);
 
   const loadTrips = useCallback(async () => {
@@ -51,12 +58,29 @@ export default function TransportHubScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <View style={styles.locationRow}>
+        <Pressable
+          onPress={() => void refresh()}
+          accessibilityRole="button"
+          accessibilityLabel={`${LOCATION_CAPTION[source]}: ${location.label}. Tap to locate again.`}
+          style={styles.locationRow}>
           <View style={styles.locationIcon}>
-            <Ionicons name="location" size={16} color={DS.colors.primary} />
+            <Ionicons
+              name={source === 'gps' ? 'location' : 'location-outline'}
+              size={16}
+              color={DS.colors.primary}
+            />
           </View>
           <View style={styles.flex}>
-            <Text style={styles.locationLabel}>Your location</Text>
+            {/*
+              Says where the label came from. A saved profile province shown as
+              if it were a live fix is exactly the bug this replaced: the app
+              told people they were in Harare because that is what their profile
+              said, while they stood somewhere else.
+            */}
+            <Text style={styles.locationLabel}>
+              {LOCATION_CAPTION[source]}
+              {permission === 'denied' && source !== 'gps' ? ' · no permission' : ''}
+            </Text>
             <Text style={styles.locationValue} numberOfLines={1}>
               {location.label}
             </Text>
@@ -79,7 +103,7 @@ export default function TransportHubScreen() {
               </View>
             ) : null}
           </Pressable>
-        </View>
+        </Pressable>
 
         <Pressable
           onPress={() => router.push(asHref('/(tabs)/transport/request'))}

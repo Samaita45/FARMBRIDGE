@@ -1,20 +1,24 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '@/components/ui/primary-button';
-import { useLocation } from '@/hooks/useLocation';
-import { estimateDistanceKm } from '@/services/transportDb';
+import { Button, Input } from '@/components/design-system';
+import { matchPlace, PlaceField } from '@/components/forms/place-field';
+import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
+import { useLocation } from '@/hooks/useLocation';
 import { asHref } from '@/lib/href';
+import { estimateDistanceKm } from '@/services/transportDb';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
 import {
   GOODS_CATEGORIES,
@@ -22,8 +26,20 @@ import {
   type GoodsCategory,
 } from '@/types/transport';
 
+/**
+ * The trip details.
+ *
+ * Pickup and destination now go through a field that knows Zimbabwean towns,
+ * because everything after this screen depends on resolving them: the route
+ * map, the distance, and every quoted price. When they do not resolve the
+ * screen says so instead of quietly handing on a fabricated number.
+ *
+ * It also used to `return` silently when a required field was empty, so the
+ * button appeared broken. Errors are now shown against the fields.
+ */
 export default function TransportRequestScreen() {
   const { location } = useLocation();
+  const { showToast } = useToast();
   const setRequest = useTransportStore((s: TransportState) => s.setRequest);
 
   const [pickup, setPickup] = useState(location.label);
@@ -35,112 +51,254 @@ export default function TransportRequestScreen() {
   const [time, setTime] = useState('08:00');
   const [loads, setLoads] = useState('1');
   const [special, setSpecial] = useState<string[]>([]);
+  const [touched, setTouched] = useState(false);
+
+  const distanceKm = useMemo(
+    () => estimateDistanceKm(pickup, destination),
+    [pickup, destination]
+  );
+
+  const errors = {
+    pickup: !pickup.trim()
+      ? 'Where is the load now?'
+      : !matchPlace(pickup)
+        ? 'Include a town we know, so the distance can be worked out'
+        : undefined,
+    destination: !destination.trim()
+      ? 'Where is it going?'
+      : !matchPlace(destination)
+        ? 'Include a town we know, so the distance can be worked out'
+        : undefined,
+    goods: goods.trim() ? undefined : 'Say what is being moved',
+    weight: Number(weight) > 0 ? undefined : 'Enter a weight in kilograms',
+    date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? undefined : 'Use the format YYYY-MM-DD',
+  };
+  const valid = Object.values(errors).every((e) => !e);
 
   const toggleSpecial = (req: string) => {
-    setSpecial((prev) =>
-      prev.includes(req) ? prev.filter((r) => r !== req) : [...prev, req]
-    );
+    setSpecial((prev) => (prev.includes(req) ? prev.filter((r) => r !== req) : [...prev, req]));
   };
 
   const onContinue = () => {
-    if (!destination.trim() || !goods.trim()) return;
-    const weightKg = parseFloat(weight) || 500;
-    const request = {
-      pickup: pickup.trim(),
-      destination: destination.trim(),
-      goodsDescription: goods.trim(),
-      weightKg,
-      category,
-      preferredDate: date,
-      preferredTime: time,
-      loads: parseInt(loads, 10) || 1,
-      specialRequirements: special,
-    };
-    const distanceKm = estimateDistanceKm(request.pickup, request.destination);
-    setRequest(request, distanceKm);
+    setTouched(true);
+    if (!valid || distanceKm === null) {
+      showToast('Fill in the highlighted fields', 'warning');
+      return;
+    }
+
+    setRequest(
+      {
+        pickup: pickup.trim(),
+        destination: destination.trim(),
+        goodsDescription: goods.trim(),
+        weightKg: Number(weight),
+        category,
+        preferredDate: date,
+        preferredTime: time,
+        loads: parseInt(loads, 10) || 1,
+        specialRequirements: special,
+      },
+      distanceKm
+    );
     router.push(asHref('/(tabs)/transport/providers'));
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-surface">
-      <ScrollView className="flex-1 px-4" contentContainerStyle={{ paddingBottom: 32, paddingTop: 8 }}>
-        <Text className="font-sans text-sm text-gray-500">Step 1 of 3 — Trip details</Text>
+    <SafeAreaView style={styles.root} edges={['bottom']}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <Text style={styles.step}>Step 1 of 3 · Trip details</Text>
 
-        <Field label="Pickup location" value={pickup} onChangeText={setPickup} placeholder="Harare, Mbare Musika" />
-        <Field label="Destination" value={destination} onChangeText={setDestination} placeholder="Bulawayo, Renkini" />
-        <Field label="What are you transporting?" value={goods} onChangeText={setGoods} placeholder="Tomatoes, 20 crates" />
+          <PlaceField
+            label="Pickup"
+            value={pickup}
+            onChangeText={setPickup}
+            placeholder="Harare, Mbare Musika"
+            required
+            error={touched ? errors.pickup : undefined}
+            hint="Add the exact spot after the town, so the driver knows where to pull in."
+          />
 
-        <Text className="mb-2 font-sans text-sm text-gray-600">Goods category</Text>
-        <View className="mb-4 flex-row flex-wrap gap-2">
-          {GOODS_CATEGORIES.map((c) => (
-            <Pressable
-              key={c}
-              onPress={() => setCategory(c)}
-              className={`rounded-full px-3 py-1.5 ${category === c ? 'bg-primary' : 'bg-white'}`}>
-              <Text className={`font-sans text-sm ${category === c ? 'text-white' : 'text-gray-600'}`}>
-                {c}
+          <PlaceField
+            label="Destination"
+            value={destination}
+            onChangeText={setDestination}
+            placeholder="Bulawayo, Renkini"
+            required
+            error={touched ? errors.destination : undefined}
+          />
+
+          {distanceKm !== null ? (
+            <View style={styles.distance}>
+              <Ionicons name="navigate-outline" size={16} color={DS.colors.primary} />
+              <Text style={styles.distanceText}>
+                About {distanceKm} km by road. Quotes are built from this, and it is an estimate.
               </Text>
-            </Pressable>
-          ))}
-        </View>
+            </View>
+          ) : null}
 
-        <Field label="Weight (kg)" value={weight} onChangeText={setWeight} keyboardType="numeric" />
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <Field label="Date" value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" />
+          <Input
+            label="What are you transporting?"
+            value={goods}
+            onChangeText={setGoods}
+            placeholder="Tomatoes, 20 crates"
+            required
+            error={touched ? errors.goods : undefined}
+          />
+
+          <View>
+            <Text style={styles.fieldLabel}>Goods category</Text>
+            <View style={styles.chips}>
+              {GOODS_CATEGORIES.map((c) => {
+                const active = category === c;
+                return (
+                  <Pressable
+                    key={c}
+                    onPress={() => setCategory(c)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={c}
+                    style={[styles.chip, active && styles.chipActive]}>
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>{c}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
-          <View className="flex-1">
-            <Field label="Time" value={time} onChangeText={setTime} placeholder="08:00" />
+
+          <Input
+            label="Weight"
+            value={weight}
+            onChangeText={setWeight}
+            keyboardType="numeric"
+            placeholder="500"
+            required
+            error={touched ? errors.weight : undefined}
+          />
+
+          <View style={styles.row}>
+            <View style={styles.flex}>
+              <Input
+                label="Date"
+                value={date}
+                onChangeText={setDate}
+                placeholder="YYYY-MM-DD"
+                required
+                error={touched ? errors.date : undefined}
+              />
+            </View>
+            <View style={styles.flex}>
+              <Input label="Time" value={time} onChangeText={setTime} placeholder="08:00" />
+            </View>
           </View>
-        </View>
-        <Field label="Number of loads" value={loads} onChangeText={setLoads} keyboardType="number-pad" />
 
-        <Text className="mb-2 font-sans text-sm text-gray-600">Special requirements</Text>
-        <View className="mb-6 flex-row flex-wrap gap-2">
-          {SPECIAL_REQUIREMENTS.map((req) => (
-            <Pressable
-              key={req}
-              onPress={() => toggleSpecial(req)}
-              className={`rounded-full px-3 py-1.5 ${special.includes(req) ? 'bg-secondary' : 'bg-white border border-gray-200'}`}>
-              <Text className={`font-sans text-sm ${special.includes(req) ? 'text-white' : 'text-gray-600'}`}>
-                {req}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+          <Input
+            label="Number of loads"
+            value={loads}
+            onChangeText={setLoads}
+            keyboardType="number-pad"
+            placeholder="1"
+          />
 
-        <PrimaryButton title="Find Transporters" onPress={onContinue} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <View>
+            <Text style={styles.fieldLabel}>Special requirements</Text>
+            <View style={styles.chips}>
+              {SPECIAL_REQUIREMENTS.map((req) => {
+                const active = special.includes(req);
+                return (
+                  <Pressable
+                    key={req}
+                    onPress={() => toggleSpecial(req)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: active }}
+                    accessibilityLabel={req}
+                    style={[styles.chip, active && styles.chipActive]}>
+                    {active ? (
+                      <Ionicons name="checkmark" size={13} color={DS.colors.textInverse} />
+                    ) : null}
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>{req}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <Button title="Find transporters" size="lg" onPress={onContinue} />
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
-function Field({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  keyboardType,
-}: {
-  label: string;
-  value: string;
-  onChangeText: (t: string) => void;
-  placeholder?: string;
-  keyboardType?: 'default' | 'numeric' | 'number-pad';
-}) {
-  return (
-    <View className="mb-3">
-      <Text className="mb-1 font-sans text-sm text-gray-600">{label}</Text>
-      <TextInput
-        className="rounded-xl border border-gray-200 bg-white px-4 py-3 font-sans text-dark"
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={DS.colors.textSoft}
-        keyboardType={keyboardType}
-      />
-    </View>
-  );
-}
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: DS.colors.background },
+  flex: { flex: 1 },
+  body: {
+    padding: DS.spacing.md,
+    paddingBottom: DS.spacing.lg,
+    gap: DS.spacing.md,
+  },
+  step: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+
+  distance: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DS.spacing.sm,
+    backgroundColor: DS.colors.primaryBg,
+    borderRadius: DS.radius.md,
+    padding: DS.spacing.sm + 4,
+  },
+  distanceText: {
+    flex: 1,
+    fontSize: DS.typography.caption.fontSize,
+    lineHeight: 17,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.primaryDark,
+  },
+
+  fieldLabel: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+    marginBottom: 8,
+  },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: DS.spacing.sm },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    minHeight: 38,
+    paddingHorizontal: 14,
+    borderRadius: DS.radius.full,
+    borderWidth: DS.layout.hairline,
+    borderColor: DS.colors.borderControl,
+    backgroundColor: DS.colors.surface,
+  },
+  chipActive: { backgroundColor: DS.colors.primary, borderColor: DS.colors.primary },
+  chipText: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.text,
+  },
+  chipTextActive: { fontFamily: DS.fontFamily.semibold, color: DS.colors.textInverse },
+
+  row: { flexDirection: 'row', gap: DS.spacing.sm + 4 },
+
+  footer: {
+    backgroundColor: DS.colors.surface,
+    borderTopWidth: DS.layout.hairline,
+    borderTopColor: DS.colors.border,
+    padding: DS.spacing.md,
+  },
+});

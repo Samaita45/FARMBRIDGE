@@ -2,6 +2,7 @@ import type { TransportProvider } from '@/types';
 import type { TransportBooking, TransporterProfile, BookingStatus } from '@/types/transport';
 
 import { getDatabase } from './database';
+import { distanceKmBetween, findPlace } from '@/constants/zimbabwe-data/places';
 
 export async function initTransportTables(): Promise<void> {
   const db = await getDatabase();
@@ -43,10 +44,33 @@ export async function initTransportTables(): Promise<void> {
   `);
 }
 
-export function estimateDistanceKm(pickup: string, destination: string): number {
-  const seed = (pickup.length + destination.length) * 3.7;
-  return Math.round(Math.max(8, Math.min(150, seed + 15)));
+/**
+ * Road distance between two places, in kilometres, or null when either end
+ * cannot be resolved to a town.
+ *
+ * WHAT THIS USED TO DO. It multiplied the combined character length of the two
+ * strings by 3.7 and clamped the result. "Harare" to "Bulawayo" — 439 km by
+ * road — came out as 66, and that fabricated number was multiplied by each
+ * transporter's per-kilometre rate to produce the quotes people were choosing
+ * between. It was not an estimate; it was the length of the words.
+ *
+ * It is now a great-circle distance between the two town centres, multiplied
+ * by 1.25 because roads are not straight lines. That is still an estimate and
+ * every screen that shows it says so, but it is an estimate of the distance
+ * rather than of the spelling.
+ */
+export function estimateDistanceKm(pickup: string, destination: string): number | null {
+  const from = findPlace(pickup);
+  const to = findPlace(destination);
+  if (!from || !to) return null;
+
+  const straight = distanceKmBetween(from, to);
+  // Same town: still a real trip across it, so never quote zero.
+  return Math.max(5, Math.round(straight * ROAD_FACTOR));
 }
+
+/** Roads wander. Zimbabwe's trunk routes run about a quarter longer than the crow flies. */
+const ROAD_FACTOR = 1.25;
 
 export function estimatePrice(provider: TransportProvider, distanceKm: number): number {
   return Math.round((provider.basePrice + provider.pricePerKm * distanceKm) * 100) / 100;

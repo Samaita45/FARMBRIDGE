@@ -29,9 +29,27 @@ interface NearbyMapProps {
 export function NearbyMap({ centre, providers, height = 200 }: NearbyMapProps) {
   // Held in a local so the null check narrows inside the marker callback too.
   const M = Maps;
-  if (!M) return null;
 
-  const pins = providers
+  const pinnable = providers.filter((p) => locate(p.location) !== null);
+
+  if (!M) {
+    // Saying the map is unavailable beats silently dropping a panel people can
+    // see is missing.
+    return (
+      <View style={styles.wrap}>
+        <View style={styles.unavailable}>
+          <Ionicons name="map-outline" size={22} color={DS.colors.textSoft} />
+          <Text style={styles.unavailableTitle}>Map unavailable on this build</Text>
+          <Text style={styles.unavailableText}>
+            {pinnable.length} of {providers.length} available transporters work from towns we can
+            place. Their names and areas are listed below.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  const pins = pinnable
     .map((p) => ({ provider: p, point: locate(p.location) }))
     .filter((r): r is { provider: TransportProvider; point: NonNullable<typeof r.point> } =>
       r.point !== null
@@ -107,5 +125,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textSoft,
+  },
+
+  unavailable: { alignItems: 'center', gap: 4, padding: DS.spacing.md },
+  unavailableTitle: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  unavailableText: {
+    fontSize: 11,
+    lineHeight: 16,
+    textAlign: 'center',
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
   },
 });

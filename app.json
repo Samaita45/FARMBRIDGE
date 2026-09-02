@@ -34,7 +34,12 @@
         "VIBRATE"
       ],
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "config": {
+        "googleMaps": {
+          "apiKey": "$GOOGLE_MAPS_ANDROID_KEY"
+        }
+      }
     },
     "web": {
       "output": "static",
@@ -42,6 +47,12 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "FarmBridge uses your location to name where you are, show local weather, and find transporters near you."
+        }
+      ],
       [
         "expo-image-picker",
         {
