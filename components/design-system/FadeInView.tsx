@@ -21,6 +21,8 @@ export function FadeInView({ children, delay = 0, style, from = 'bottom' }: Fade
       animate={{ opacity: 1, translateY: 0 }}
       transition={{
         ...MOTI_TRANSITION,
+        // STAGGER_DELAY is milliseconds, matching the duration beside it. It
+        // was being multiplied into a fraction of a millisecond.
         delay: delay * STAGGER_DELAY,
       }}
       style={style}>

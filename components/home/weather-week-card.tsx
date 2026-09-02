@@ -1,9 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
+import { MotiView } from 'moti';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { LiquidSelection } from '@/components/design-system';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DS } from '@/constants/design-system';
+import { MOTI_SPRING, MOTI_TRANSITION } from '@/lib/motion';
 import type {
   AgriculturalWeather,
   CurrentWeather,
@@ -31,6 +34,13 @@ interface WeatherWeekCardProps {
  * selected, and are labelled "now". They are a current measurement, not a
  * forecast; showing them under Friday would be presenting today's soil as
  * Friday's, which is the kind of quiet lie that gets a planting decision wrong.
+ *
+ * THE SELECTION TRAVELS. A single pill springs between the days rather than
+ * appearing on one and vanishing from another, so the row reads as one control
+ * with a current value instead of seven separate buttons. The panel beneath
+ * re-enters on each change, which is what makes it obvious the numbers below
+ * belong to the day just pressed. Both fall straight to their end state when
+ * the phone is set to reduce motion.
  */
 export function WeatherWeekCard({
   current,
@@ -61,55 +71,71 @@ export function WeatherWeekCard({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.strip}>
-        {daily.map((d, i) => {
-          const active = i === index;
-          const date = new Date(d.date);
-          return (
-            <Pressable
-              key={d.date}
-              onPress={() => setSelected(i)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={`${weekday(date)} ${date.getDate()}, high ${d.maxTemp} degrees, ${d.condition}`}
-              style={[styles.day, active && styles.dayActive]}>
-              <Text style={[styles.dayName, active && styles.dayTextActive]}>
-                {i === 0 ? 'Today' : weekday(date)}
-              </Text>
-              <Ionicons
-                name={d.icon}
-                size={19}
-                color={active ? DS.colors.accentOn : DS.colors.primary}
-              />
-              <Text style={[styles.dayTemp, active && styles.dayTextActive]}>{d.maxTemp}°</Text>
-            </Pressable>
-          );
-        })}
+        contentContainerStyle={styles.stripPad}>
+        <LiquidSelection selected={index} gap={DS.spacing.sm} radius={DS.radius.full}>
+          {daily.map((d, i) => {
+            const active = i === index;
+            const date = new Date(d.date);
+            return (
+              <Pressable
+                key={d.date}
+                onPress={() => setSelected(i)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={`${weekday(date)} ${date.getDate()}, high ${d.maxTemp} degrees, ${d.condition}`}
+                style={[styles.day, !active && styles.dayIdle]}>
+                <Text style={[styles.dayName, active && styles.dayTextActive]}>
+                  {i === 0 ? 'Today' : weekday(date)}
+                </Text>
+                <Ionicons
+                  name={d.icon}
+                  size={19}
+                  color={active ? DS.colors.accentOn : DS.colors.primary}
+                />
+                <Text style={[styles.dayTemp, active && styles.dayTextActive]}>
+                  {d.maxTemp}°
+                </Text>
+              </Pressable>
+            );
+          })}
+        </LiquidSelection>
       </ScrollView>
 
-      <Pressable
-        onPress={onOpenForecast}
-        disabled={!onOpenForecast}
-        accessibilityRole="button"
-        accessibilityLabel={`${isToday ? 'Today' : longDate(day.date)}: ${day.condition}, high ${day.maxTemp}, low ${day.minTemp} degrees. Open the full forecast.`}
-        style={({ pressed }) => [styles.panel, pressed && styles.pressed]}>
-        <View style={styles.panelMain}>
-          <Text style={styles.panelDate}>{isToday ? 'Today' : longDate(day.date)}</Text>
-          <Text style={styles.panelTemp} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-            {isToday ? current.temp : day.maxTemp}°C
-          </Text>
-          <Text style={styles.panelCondition}>
-            {day.condition} · low {day.minTemp}°
-          </Text>
-        </View>
+      {/* Keyed on the date, so a new day is a new element and re-enters. */}
+      <MotiView
+        key={day.date}
+        from={{ opacity: 0, translateY: 10 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={MOTI_SPRING}>
+        <Pressable
+          onPress={onOpenForecast}
+          disabled={!onOpenForecast}
+          accessibilityRole="button"
+          accessibilityLabel={`${isToday ? 'Today' : longDate(day.date)}: ${day.condition}, high ${day.maxTemp}, low ${day.minTemp} degrees. Open the full forecast.`}
+          style={({ pressed }) => [styles.panel, pressed && styles.pressed]}>
+          <View style={styles.panelMain}>
+            <Text style={styles.panelDate}>{isToday ? 'Today' : longDate(day.date)}</Text>
+            <Text style={styles.panelTemp} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+              {isToday ? current.temp : day.maxTemp}°C
+            </Text>
+            <Text style={styles.panelCondition}>
+              {day.condition} · low {day.minTemp}°
+            </Text>
+          </View>
 
-        <View style={styles.panelSide}>
-          <Ionicons name={day.icon} size={40} color={DS.colors.primary} />
-          <Ionicons name="chevron-forward" size={16} color={DS.colors.textFaint} />
-        </View>
-      </Pressable>
+          <View style={styles.panelSide}>
+            <Ionicons name={day.icon} size={40} color={DS.colors.primary} />
+            <Ionicons name="chevron-forward" size={16} color={DS.colors.textFaint} />
+          </View>
+        </Pressable>
+      </MotiView>
 
-      <View style={styles.pills}>
+      <MotiView
+        key={`pills-${day.date}`}
+        from={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={MOTI_TRANSITION}
+        style={styles.pills}>
         <Pill icon="rainy-outline" label={`${day.rainProbability}% rain`} />
         {day.rainAmount > 0 ? <Pill icon="water-outline" label={`${day.rainAmount} mm`} /> : null}
 
@@ -122,7 +148,7 @@ export function WeatherWeekCard({
             ) : null}
           </>
         ) : null}
-      </View>
+      </MotiView>
 
       {isToday && agricultural?.insight ? (
         <Text style={styles.insight}>{agricultural.insight}</Text>
@@ -156,22 +182,22 @@ const styles = StyleSheet.create({
   gap: { marginTop: DS.spacing.sm },
   pressed: { opacity: 0.9 },
 
-  strip: { gap: DS.spacing.sm },
+  stripPad: { paddingRight: DS.spacing.xs },
   day: {
     alignItems: 'center',
     gap: 4,
-    minWidth: 56,
+    minWidth: 58,
     paddingVertical: DS.spacing.sm,
     paddingHorizontal: 8,
     borderRadius: DS.radius.full,
+  },
+  // The selected chip's fill IS the travelling pill behind it, so only the
+  // unselected ones carry a border. Text weight still changes, so selection is
+  // never carried by colour alone.
+  dayIdle: {
     borderWidth: DS.layout.hairline,
     borderColor: DS.colors.border,
     backgroundColor: DS.colors.surface,
-  },
-  // Fill, border AND text weight change together — never colour alone.
-  dayActive: {
-    backgroundColor: DS.colors.accent,
-    borderColor: DS.colors.accent,
   },
   dayName: {
     fontSize: 10,

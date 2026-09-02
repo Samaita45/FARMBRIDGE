@@ -7,6 +7,7 @@ export type { CardProps, CardVariant } from './Card';
 export { ChipTabs, type ChipTabItem } from './ChipTabs';
 export { EmptyState } from './EmptyState';
 export { FadeInView } from './FadeInView';
+export { LiquidSelection } from './LiquidSelection';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 export { ProfileScreenHeader } from './ProfileScreenHeader';
