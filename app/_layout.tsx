@@ -15,8 +15,6 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 
-import { QueryClientProvider } from '@tanstack/react-query';
-
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 import { DS } from '@/constants/design-system';
@@ -29,16 +27,11 @@ import {
 import { setSessionExpiredHandler } from '@/services/api/client';
 import { hydrateFastStorage } from '@/services/fastStorage';
 import { migrateNamespace } from '@/services/migrations/rename-namespace';
-import { createQueryClient } from '@/services/api/query-client';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 SplashScreen.preventAutoHideAsync();
-
-// One client for the app's lifetime. Created outside the component so a
-// re-render cannot discard the cache.
-const queryClient = createQueryClient();
 
 /**
  * React Navigation's own theme, derived from DS so the chrome it draws (screen
@@ -80,7 +73,6 @@ function AppBootstrap() {
   useEffect(() => {
     setSessionExpiredHandler(() => {
       void logout();
-      queryClient.clear();
     });
     return () => setSessionExpiredHandler(null);
   }, [logout]);
@@ -136,8 +128,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <ToastProvider>
+      <ToastProvider>
         <AppBootstrap />
         <OfflineBanner />
         <ThemeProvider value={colorScheme === 'dark' ? NavigationDarkTheme : NavigationLightTheme}>
@@ -155,9 +146,8 @@ export default function RootLayout() {
               />
             </Stack>
             <StatusBar style="dark" />
-          </ThemeProvider>
-        </ToastProvider>
-      </QueryClientProvider>
+        </ThemeProvider>
+      </ToastProvider>
     </SafeAreaProvider>
   );
 }
