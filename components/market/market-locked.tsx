@@ -94,12 +94,12 @@ function PlanRow({ name, price, code, features, highlight }: {
           <Text style={s.planName}>{name}</Text>
           {highlight && <View style={s.popularBadge}><Text style={s.popularText}>Popular</Text></View>}
         </View>
-        <Text style={[s.planPrice, highlight && { color: DS.colors.accent }]}>{price}</Text>
+        <Text style={[s.planPrice, highlight && { color: DS.colors.accentText }]}>{price}</Text>
       </View>
       {code && <Text style={s.planCode}>{code}</Text>}
       {features.map((f) => (
         <View key={f} style={s.featureRow}>
-          <Ionicons name="checkmark-circle" size={13} color={highlight ? DS.colors.accent : DS.colors.primary} />
+          <Ionicons name="checkmark-circle" size={13} color={highlight ? DS.colors.accentText : DS.colors.primary} />
           <Text style={s.featureText}>{f}</Text>
         </View>
       ))}
@@ -150,14 +150,14 @@ const s = StyleSheet.create({
     borderColor: DS.colors.primaryMid,
   },
   planRowHighlight: {
-    backgroundColor: DS.colors.accentLight,
-    borderColor: DS.colors.orange,
+    backgroundColor: DS.colors.accentBg,
+    borderColor: DS.colors.accentBorder,
   },
   planTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   planNameWrap: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   planName: { fontSize: 14, fontWeight: '700', color: DS.colors.text },
   popularBadge: { backgroundColor: DS.colors.accent, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 },
-  popularText: { fontSize: 10, fontWeight: '700', color: DS.colors.surface },
+  popularText: { fontSize: 10, fontWeight: '700', color: DS.colors.accentOn },
   planPrice: { fontSize: 15, fontWeight: '800', color: DS.colors.primary },
   planCode: { fontSize: 11, color: DS.colors.textMuted, marginBottom: 6 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },

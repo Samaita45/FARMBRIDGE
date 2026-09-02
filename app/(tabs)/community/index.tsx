@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   storyCard: { width: 200, marginRight: 0 },
   storyName: { fontSize: 14, fontWeight: '700', color: DS.colors.text },
   storyCrop: { fontSize: 12, color: DS.colors.textMuted, marginTop: 4 },
-  storyEarnings: { fontWeight: '700', color: DS.colors.accent },
+  storyEarnings: { fontWeight: '700', color: DS.semantic.success.fg },
   storyQuote: { fontSize: 12, color: DS.colors.textMuted, marginTop: 8, lineHeight: 17 },
   loader: { marginTop: 40 },
   feedHeader: {

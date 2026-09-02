@@ -43,7 +43,12 @@ export default function HomeScreen() {
   const isSubscribed = useAuthStore(selectIsSubscribed);
   const { unreadCount, refresh: refreshNotifications } = useNotifications();
   const { avatarUri, initials: avatarInitials, refresh: refreshAvatar } = useProfileAvatar();
-  const { location, loading: locationLoading } = useLocation();
+  const {
+    location,
+    loading: locationLoading,
+    source: locationSource,
+    refresh: refreshLocation,
+  } = useLocation();
   const { rate: fxRate, isIndicative: fxIsIndicative } = useExchangeRate();
   const { data: weather, isLoading: weatherLoading, refetch } = useWeather(location);
   const [weatherModalOpen, setWeatherModalOpen] = useState(false);
@@ -157,6 +162,8 @@ export default function HomeScreen() {
           notificationCount={unreadCount}
           avatarUri={avatarUri}
           avatarInitials={avatarInitials}
+          locationSource={locationSource}
+          onRefreshLocation={() => void refreshLocation()}
         />
 
         <View style={s.body}>

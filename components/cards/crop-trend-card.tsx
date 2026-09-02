@@ -40,9 +40,9 @@ export function CropTrendCard({ crop }: CropTrendCardProps) {
           <Ionicons
             name={up ? 'arrow-up' : 'arrow-down'}
             size={12}
-            color={up ? DS.colors.accent : DS.semantic.danger.solid}
+            color={up ? DS.semantic.success.fg : DS.semantic.danger.solid}
           />
-          <Text style={[s.changeText, { color: up ? DS.colors.accent : DS.semantic.danger.solid }]}>
+          <Text style={[s.changeText, { color: up ? DS.semantic.success.fg : DS.semantic.danger.solid }]}>
             {Math.abs(crop.priceChangePercent)}%
           </Text>
         </View>

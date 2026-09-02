@@ -5,9 +5,10 @@
  * and `constants/design-system.ts` imports it. Neither can drift from the other
  * because there is only one set of values.
  *
- * Design direction: a serious agritech product. Blue and white carry the brand,
- * agricultural green is an accent and never a background wash. Restrained
- * radii, neutral shadows, no gradient as a default surface treatment.
+ * Design direction: a serious agritech product. One brand green for actions and
+ * chrome, one harvest orange for emphasis, and the semantic set for meaning —
+ * nothing else. Photography carries the warmth. Restrained radii, neutral
+ * shadows, no gradient as a default surface treatment.
  *
  * Edit values here. Do not add a second palette anywhere else.
  */
@@ -67,6 +68,32 @@ const green = {
   800: '#166534',
 };
 
+/**
+ * Harvest orange — the one accent.
+ *
+ * Sampled from the Farm UI reference, where a single warm orange marks the
+ * selected day, the selected crop and the featured item, against green
+ * everywhere else. It is the only hue in the app that is neither the brand
+ * green nor a state colour, which is what keeps the palette uniform: one
+ * green for actions, one orange for emphasis, and the semantic set for
+ * meaning.
+ *
+ * 600 is the fill: it clears 3:1 against white, so a filled chip is visibly a
+ * chip, and takes near-black text at 5.02:1. White on it is 3.56:1 and must
+ * never be used. 700 is the same accent as text or an icon on a light surface
+ * (5.18:1).
+ */
+const orange = {
+  50: '#FFF7ED',
+  100: '#FFEDD5',
+  200: '#FED7AA',
+  400: '#FB923C',
+  500: '#F97316',
+  600: '#EA580C',
+  700: '#C2410C',
+  800: '#9A3412',
+};
+
 /** Slate. The neutral is blue-biased so it sits with the brand rather than against it. */
 const gray = {
   50: '#F8FAFC',
@@ -90,17 +117,19 @@ const colors = {
   primaryBg: forest[50],
   primaryMid: forest[100],
 
-  // A brighter, more saturated green than the brand forest, so "organic",
-  // "in season" and "available" badges stay distinguishable from a primary
-  // action rather than reading as the same thing.
+  // EMPHASIS, AND NOTHING ELSE. The accent used to be a second green, and it
+  // was carrying two jobs at once: "this is highlighted" and "this went well".
+  // Two greens a shade apart said neither clearly. Success now belongs to
+  // `semantic.success`, and the accent is the reference's orange — reserved
+  // for the selected chip, the featured item, the thing being scanned.
   //
-  // green[600] measured 3.30:1 on white — fine for a dot or a tick, short of
-  // the 4.5:1 that text needs, and it was being used for both. Moved to
-  // green[700], which clears it either way and still reads as the brighter
-  // green next to the forest.
-  accent: green[700],
-  accentLight: green[100],
-  accentDark: green[800],
+  // Never put white on `accent` (2.80:1). Use `accentOn` for text over the
+  // fill, and `accentText` for the accent as text on a light surface.
+  accent: orange[600],
+  accentOn: gray[900],
+  accentText: orange[700],
+  accentBg: orange[50],
+  accentBorder: orange[200],
 
   background: gray[50],
   surface: '#FFFFFF',
@@ -135,9 +164,10 @@ const colors = {
 
   // Data-visualisation and category accents. Not brand colours — use only to
   // distinguish series or categories, never for chrome.
-  orange: '#EA580C',
   purple: '#7C3AED',
-  teal: '#0D9488',
+  // teal-700, not teal-600: these are used as avatar fills with white initials
+  // on them, and 600 measured 3.74:1.
+  teal: '#0F766E',
 
   // State shorthands. `semantic` below is richer (it pairs a foreground with a
   // surface); these exist because screens already reference them directly.
@@ -149,6 +179,7 @@ const colors = {
   forest,
   blue,
   green,
+  orange,
   gray,
 };
 

@@ -52,7 +52,7 @@ export default function ProductDetailScreen() {
           {product.isOrganic ? (
             <Badge text="Organic" color={DS.semantic.success.solid} />
           ) : null}
-          {product.isCertified ? <Badge text="Certified" color={DS.colors.accent} /> : null}
+          {product.isCertified ? <Badge text="Certified" color={DS.semantic.success.fg} /> : null}
           <Badge
             text={product.inStock ? 'In Stock' : 'Out of Stock'}
             color={product.inStock ? DS.semantic.success.solid : DS.semantic.danger.solid}

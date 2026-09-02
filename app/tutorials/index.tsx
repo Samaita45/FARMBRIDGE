@@ -181,7 +181,7 @@ const s = StyleSheet.create({
   progressLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
   progressPct: { fontSize: 11, fontWeight: '700', color: DS.colors.surface },
   progressTrack: { height: 5, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: DS.colors.accentLight, borderRadius: 4 },
+  progressFill: { height: '100%', backgroundColor: DS.colors.accent, borderRadius: 4 },
 
   searchBar: {
     flexDirection: 'row', alignItems: 'center', gap: 8,

@@ -154,8 +154,8 @@ export default function ProfileScreen() {
         <Card style={s.card}>
           <View style={s.subRow}>
             <View style={s.subLeft}>
-              <View style={[s.subIcon, isSubscribed && { backgroundColor: DS.colors.accentLight }]}>
-                <Ionicons name="ribbon" size={18} color={isSubscribed ? DS.colors.accent : DS.colors.primary} />
+              <View style={[s.subIcon, isSubscribed && { backgroundColor: DS.semantic.success.bg }]}>
+                <Ionicons name="ribbon" size={18} color={isSubscribed ? DS.semantic.success.fg : DS.colors.primary} />
               </View>
               <View>
                 <Text style={s.subName}>{plan?.name ?? 'Basic'} Plan</Text>
@@ -170,7 +170,7 @@ export default function ProfileScreen() {
               </Pressable>
             ) : (
               <View style={s.activeChip}>
-                <Ionicons name="checkmark-circle" size={14} color={DS.colors.accent} />
+                <Ionicons name="checkmark-circle" size={14} color={DS.semantic.success.fg} />
                 <Text style={s.activeChipText}>Active</Text>
               </View>
             )}
@@ -331,8 +331,8 @@ const s = StyleSheet.create({
   subHint: { fontSize: 12, color: DS.colors.textMuted, marginTop: 2 },
   upgradeBtn: { backgroundColor: DS.colors.primary, borderRadius: DS.radius.md, paddingHorizontal: 16, paddingVertical: 8 },
   upgradeBtnText: { fontSize: 13, fontWeight: '700', color: DS.colors.surface },
-  activeChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: DS.colors.accentLight, borderRadius: DS.radius.md, paddingHorizontal: 10, paddingVertical: 6 },
-  activeChipText: { fontSize: 12, fontWeight: '700', color: DS.colors.accent },
+  activeChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: DS.semantic.success.bg, borderRadius: DS.radius.md, paddingHorizontal: 10, paddingVertical: 6 },
+  activeChipText: { fontSize: 12, fontWeight: '700', color: DS.semantic.success.fg },
   farmName: { fontSize: 16, fontWeight: '700', color: DS.colors.text },
   farmMeta: { fontSize: 13, color: DS.colors.textMuted, marginTop: 4 },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, marginTop: 8 },
@@ -340,8 +340,8 @@ const s = StyleSheet.create({
   progressPct: { fontSize: 13, fontWeight: '700', color: DS.colors.primary },
   progressTrack: { height: 8, backgroundColor: DS.colors.borderLight, borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: DS.colors.primary, borderRadius: 4 },
-  badgeEarned: { marginTop: 12, backgroundColor: DS.colors.accentLight, borderRadius: DS.radius.md, padding: 10 },
-  badgeEarnedText: { fontSize: 13, fontWeight: '700', color: DS.colors.accent, textAlign: 'center' },
+  badgeEarned: { marginTop: 12, backgroundColor: DS.colors.accentBg, borderRadius: DS.radius.md, padding: 10 },
+  badgeEarnedText: { fontSize: 13, fontWeight: '700', color: DS.colors.accentText, textAlign: 'center' },
   tutorialHint: { fontSize: 12, color: DS.colors.textMuted, marginTop: 10 },
   linkBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,

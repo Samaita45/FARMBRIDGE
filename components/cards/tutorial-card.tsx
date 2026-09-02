@@ -7,7 +7,7 @@ import { asHref } from '@/lib/href';
 import type { Tutorial } from '@/types/tutorials';
 
 const DIFF_COLORS: Record<string, { bg: string; text: string }> = {
-  beginner:     { bg: DS.colors.accentLight, text: DS.colors.accent },
+  beginner:     { bg: DS.semantic.success.bg, text: DS.semantic.success.fg },
   intermediate: { bg: DS.semantic.warning.bg, text: DS.semantic.warning.fg },
   advanced:     { bg: DS.semantic.danger.bg,  text: DS.semantic.danger.fg },
 };
@@ -28,7 +28,7 @@ export function TutorialCard({ tutorial, completed, bookmarked, onBookmark }: Tu
         <Ionicons name={tutorial.icon} size={26} color={DS.colors.primary} />
         {completed && (
           <View style={s.doneStamp}>
-            <Ionicons name="checkmark-circle" size={16} color={DS.colors.accent} />
+            <Ionicons name="checkmark-circle" size={16} color={DS.semantic.success.fg} />
           </View>
         )}
       </View>
@@ -78,7 +78,7 @@ const s = StyleSheet.create({
     shadowColor: DS.colors.text, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
     borderWidth: 1, borderColor: DS.colors.borderLight,
   },
-  cardDone: { borderColor: DS.colors.accentLight },
+  cardDone: { borderColor: DS.semantic.success.border },
   iconCol: {
     width: 70, backgroundColor: DS.colors.primaryBg,
     alignItems: 'center', justifyContent: 'center', gap: 4,

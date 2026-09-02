@@ -101,7 +101,7 @@ export default function CreatePostScreen() {
 
       <View className="mt-4 flex-row items-center justify-between rounded-xl bg-white px-4 py-3">
         <Text className="font-sans text-dark">Post anonymously</Text>
-        <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ true: DS.colors.accent }} />
+        <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ true: DS.colors.primary }} />
       </View>
 
       <View className="mt-6">

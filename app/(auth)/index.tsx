@@ -1,168 +1,193 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { Link } from 'expo-router';
-import { ImageBackground, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/design-system';
 import { AppLogo } from '@/components/ui/app-logo';
 import { DS } from '@/constants/design-system';
 import { AuthImages } from '@/constants/images';
-import type { IconName } from '@/types/icons';
-
-const FEATURES: { icon: IconName; label: string }[] = [
-  { icon: 'leaf-outline', label: 'Crop management' },
-  { icon: 'storefront-outline', label: 'Marketplace' },
-  { icon: 'bus-outline', label: 'Transport' },
-  { icon: 'wallet-outline', label: 'Financials' },
-];
+import { imageSourceFor } from '@/constants/produce-imagery';
 
 /**
- * The first screen.
+ * The first screen, laid out to the Farm UI reference: the promise in large
+ * type on a clean ground, a photograph filling the lower two thirds, and the
+ * way in sitting on top of it.
  *
- * The photograph stays — it is the product, not decoration. What went is the
- * translucent "glass" panel and the blue glow behind the primary button
- * (`shadowColor: primary` at 45% over 14px), which read as consumer-app
- * styling rather than a platform people are asked to trust with money.
+ * THE PHOTOGRAPH IS BUNDLED, NOT FETCHED. Everything else in the app now pulls
+ * its imagery from Unsplash, but this screen is the one a farmer opens before
+ * the app has ever had a network — on a new phone, on a new SIM, in a field.
+ * A remote hero would be a grey rectangle exactly then. The Unsplash photograph
+ * loads over the top when it can, so the screen is never empty and is at its
+ * best when there is signal.
  *
- * The panel is now a solid surface: real contrast, readable at any brightness,
- * and legible in direct sun — which is where a farmer will actually open this.
+ * BOTH WAYS IN STAY VISIBLE. The reference has a single "Get Started". This has
+ * two labelled routes, because the version that offered only "sign in" left new
+ * users to work out for themselves that registering was somewhere else.
  */
 export default function OnboardingScreen() {
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
 
-      <ImageBackground source={AuthImages.onboardingFarm} style={styles.bg} resizeMode="cover">
-        <View style={styles.scrim} />
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <Animated.View entering={FadeInUp.duration(450)} style={styles.top}>
+          <AppLogo size={40} />
 
-        <SafeAreaView style={styles.safe}>
-          <Animated.View entering={FadeInUp.duration(500)} style={styles.brandRow}>
-            <AppLogo size={48} />
-            <View style={styles.brandText}>
-              <Text style={styles.brandName} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-                FarmBridge
-              </Text>
-              <Text style={styles.brandSub} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-                Zimbabwe’s farming platform
-              </Text>
-            </View>
-          </Animated.View>
+          <Text style={styles.headline} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+            <Text style={styles.headlineAccent}>Grow</Text>, sell and move
+          </Text>
 
-          <Animated.View entering={FadeInDown.delay(150).duration(500)} style={styles.panel}>
+          <View style={styles.headlineRow}>
+            {/* The inline photo chip from the reference. Decorative: the words
+                either side carry the meaning, so it is hidden from screen readers. */}
+            <Image
+              source={imageSourceFor('tomato vegetables')}
+              style={styles.headlineChip}
+              contentFit="cover"
+              transition={200}
+              cachePolicy="memory-disk"
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
             <Text style={styles.headline} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-              Grow, sell and move your harvest
+              your <Text style={styles.headlineAccent}>harvest</Text>
             </Text>
-            <Text style={styles.body} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-              Plan your crops, reach buyers, book transport and keep track of what your farm
-              actually earns.
-            </Text>
+          </View>
 
-            <View style={styles.features}>
-              {FEATURES.map((feature) => (
-                <View key={feature.label} style={styles.feature}>
-                  <Ionicons name={feature.icon} size={15} color={DS.colors.primary} />
-                  <Text
-                    style={styles.featureLabel}
-                    maxFontSizeMultiplier={DS.layout.maxFontScale}>
-                    {feature.label}
-                  </Text>
+          <Text style={styles.body} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+            Plan your crops, reach buyers, book transport, and keep track of what your farm
+            actually earns.
+          </Text>
+        </Animated.View>
+      </SafeAreaView>
+
+      <Animated.View entering={FadeInDown.delay(120).duration(500)} style={styles.heroWrap}>
+        <Image
+          source={AuthImages.onboardingFarm}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={300}
+        />
+        {/* Bottom-weighted scrim so the actions stay legible over any frame. */}
+        <View style={styles.heroScrim} />
+
+        <SafeAreaView style={styles.heroSafe} edges={['bottom']}>
+          <View style={styles.actions}>
+            <Link href="/(auth)/register" asChild>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Create an account"
+                style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}>
+                <Text style={styles.primaryActionText}>Create an account</Text>
+                <View style={styles.primaryActionIcon}>
+                  <Ionicons name="arrow-forward" size={17} color={DS.colors.primary} />
                 </View>
-              ))}
-            </View>
+              </Pressable>
+            </Link>
 
-            {/*
-              Both routes are offered as equal, explicitly labelled actions.
-              A new user should not have to infer that "sign in" implies a
-              separate place to register.
-            */}
-            <View style={styles.actions}>
-              <Link href="/(auth)/register" asChild>
-                <Button title="Create an account" size="lg" />
-              </Link>
-              <Link href="/(auth)/login" asChild>
-                <Button title="Sign in" variant="outline" size="lg" />
-              </Link>
-              <Text style={styles.actionsHint} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-                New to FarmBridge? Create an account. Already registered? Sign in.
-              </Text>
-            </View>
-          </Animated.View>
+            <Link href="/(auth)/login" asChild>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Sign in to an existing account"
+                style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressed]}>
+                <Text style={styles.secondaryActionText}>I already have an account</Text>
+              </Pressable>
+            </Link>
+          </View>
         </SafeAreaView>
-      </ImageBackground>
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: DS.colors.text },
-  bg: { flex: 1 },
-  // Dark enough that the white brand text clears contrast over any photograph.
-  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 23, 42, 0.45)' },
+  root: { flex: 1, backgroundColor: DS.colors.surface },
+  safe: { backgroundColor: DS.colors.surface },
+  pressed: { opacity: 0.9 },
 
-  safe: { flex: 1, justifyContent: 'space-between', padding: DS.spacing.md },
-
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: DS.spacing.sm + 4,
-    marginTop: DS.spacing.sm,
-  },
-  brandText: { flex: 1 },
-  brandName: {
-    fontSize: DS.typography.h1.fontSize,
-    fontFamily: DS.fontFamily.display,
-    color: DS.colors.textInverse,
-  },
-  brandSub: {
-    fontSize: DS.typography.caption.fontSize,
-    fontFamily: DS.fontFamily.regular,
-    color: 'rgba(255, 255, 255, 0.82)',
-    marginTop: 1,
-  },
-
-  panel: {
-    backgroundColor: DS.colors.surface,
-    borderRadius: DS.radius.xl,
-    padding: DS.spacing.lg,
-    gap: DS.spacing.sm + 4,
+  top: {
+    paddingHorizontal: DS.spacing.lg,
+    paddingTop: DS.spacing.md,
+    paddingBottom: DS.spacing.lg,
+    gap: DS.spacing.xs,
   },
   headline: {
-    fontSize: DS.typography.display.fontSize,
-    lineHeight: DS.typography.display.lineHeight,
+    fontSize: 32,
+    lineHeight: 39,
     fontFamily: DS.fontFamily.display,
     color: DS.colors.text,
+  },
+  headlineAccent: { color: DS.colors.primary },
+  headlineRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headlineChip: {
+    width: 62,
+    height: 34,
+    borderRadius: DS.radius.full,
+    backgroundColor: DS.colors.surfaceMuted,
   },
   body: {
     fontSize: DS.typography.bodySm.fontSize,
     lineHeight: 21,
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
+    marginTop: DS.spacing.sm,
   },
 
-  features: { flexDirection: 'row', flexWrap: 'wrap', gap: DS.spacing.sm },
-  feature: {
+  heroWrap: {
+    flex: 1,
+    backgroundColor: DS.colors.surfaceMuted,
+    borderTopLeftRadius: DS.radius.xxl,
+    borderTopRightRadius: DS.radius.xxl,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  heroScrim: {
+    ...StyleSheet.absoluteFillObject,
+    top: '45%',
+    backgroundColor: 'rgba(15, 23, 42, 0.68)',
+  },
+  heroSafe: { padding: DS.spacing.md },
+
+  actions: { gap: DS.spacing.sm },
+  primaryAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: DS.colors.primaryBg,
-    borderRadius: DS.radius.sm,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    justifyContent: 'space-between',
+    gap: DS.spacing.sm,
+    minHeight: 58,
+    paddingLeft: DS.spacing.lg,
+    paddingRight: 6,
+    borderRadius: DS.radius.full,
+    backgroundColor: DS.colors.primary,
   },
-  featureLabel: {
-    fontSize: 11,
+  primaryActionText: {
+    flex: 1,
+    fontSize: DS.typography.h3.fontSize,
     fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.primaryDark,
+    color: DS.colors.textInverse,
+  },
+  primaryActionIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: DS.radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: DS.colors.surface,
   },
 
-  actions: { gap: DS.spacing.sm, marginTop: DS.spacing.xs },
-  actionsHint: {
-    fontSize: 11,
-    lineHeight: 15,
-    textAlign: 'center',
-    fontFamily: DS.fontFamily.regular,
-    color: DS.colors.textSoft,
-    marginTop: 2,
+  secondaryAction: {
+    minHeight: DS.layout.touchTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: DS.radius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.55)',
+  },
+  secondaryActionText: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textInverse,
   },
 });

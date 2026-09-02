@@ -17,9 +17,9 @@ const ROLE_LABELS: Record<string, string> = {
 const AVATAR_COLORS = [
   DS.colors.primary,
   DS.colors.purple,
-  DS.colors.orange,
+  DS.colors.accentText,
   DS.colors.teal,
-  DS.colors.accent,
+  DS.semantic.info.solid,
 ];
 
 function avatarColor(name: string): string {
@@ -87,8 +87,8 @@ export function PostCard({ post }: { post: CommunityPost }) {
         ))}
         {post.isSolved && (
           <View style={[s.tag, s.tagSolved]}>
-            <Ionicons name="checkmark-circle" size={10} color={DS.colors.accent} />
-            <Text style={[s.tagText, { color: DS.colors.accent }]}>Solved</Text>
+            <Ionicons name="checkmark-circle" size={10} color={DS.semantic.success.fg} />
+            <Text style={[s.tagText, { color: DS.semantic.success.fg }]}>Solved</Text>
           </View>
         )}
       </View>
@@ -141,7 +141,7 @@ const s = StyleSheet.create({
   body: { fontSize: 14, color: DS.colors.textMuted, lineHeight: 20 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
   tag: { backgroundColor: DS.colors.primaryBg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, flexDirection: 'row', alignItems: 'center', gap: 3 },
-  tagSolved: { backgroundColor: DS.colors.accentLight },
+  tagSolved: { backgroundColor: DS.semantic.success.bg },
   tagText: { fontSize: 11, fontWeight: '600', color: DS.colors.primary },
   actions: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: DS.colors.borderLight, paddingTop: 10 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5 },

@@ -85,7 +85,7 @@ export default function FinancialsHubScreen() {
             label="Revenue"
             value={fmt(totals?.revenueUSD ?? 0)}
             icon="trending-up"
-            color={DS.colors.accent}
+            color={DS.semantic.success.fg}
           />
           <StatCard
             label="Expenses"
@@ -99,11 +99,11 @@ export default function FinancialsHubScreen() {
         <View style={[s.netCard, { backgroundColor: netPositive ? DS.semantic.success.bg : DS.semantic.danger.bg }]}>
           <View>
             <Text style={s.netLabel}>Net Profit (this season)</Text>
-            <Text style={[s.netValue, { color: netPositive ? DS.colors.accent : DS.semantic.danger.solid }]}>
+            <Text style={[s.netValue, { color: netPositive ? DS.semantic.success.fg : DS.semantic.danger.solid }]}>
               {netPositive ? '+' : ''}{fmt(net)}
             </Text>
           </View>
-          <View style={[s.netIcon, { backgroundColor: netPositive ? DS.colors.accent : DS.semantic.danger.solid }]}>
+          <View style={[s.netIcon, { backgroundColor: netPositive ? DS.semantic.success.fg : DS.semantic.danger.solid }]}>
             <Ionicons name={netPositive ? 'trending-up' : 'trending-down'} size={22} color={DS.colors.surface} />
           </View>
         </View>

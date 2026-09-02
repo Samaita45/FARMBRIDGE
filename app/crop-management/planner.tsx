@@ -123,7 +123,7 @@ export default function CropPlannerScreen() {
 
       {rotationTip ? (
         <Card style={styles.rotation}>
-          <Ionicons name="refresh-circle-outline" size={20} color={DS.colors.accent} />
+          <Ionicons name="refresh-circle-outline" size={20} color={DS.colors.primary} />
           <View style={styles.flex}>
             <Text style={styles.rotationTitle}>Crop rotation</Text>
             <Text style={styles.rotationDesc}>{rotationTip}</Text>
