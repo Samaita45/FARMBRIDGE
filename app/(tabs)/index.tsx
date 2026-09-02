@@ -34,6 +34,7 @@ import { isOnline } from '@/services/syncService';
 import { useAuthStore, selectIsSubscribed } from '@/stores/authStore';
 
 const MONTH = new Date().getMonth() + 1;
+const MONTH_NAME = new Date().toLocaleDateString('en-ZW', { month: 'long' });
 const HOURS = new Date().getHours();
 const GREETING =
   HOURS < 12 ? 'Good morning' : HOURS < 17 ? 'Good afternoon' : 'Good evening';
@@ -88,7 +89,7 @@ export default function HomeScreen() {
     [topCrops, cropCategory]
   );
 
-  const plantNow = useMemo(() => getCropsForMonth(MONTH).slice(0, 4), []);
+  const plantNow = useMemo(() => getCropsForMonth(MONTH).slice(0, 6), []);
 
   const insights = useMemo(
     () => [
@@ -273,17 +274,38 @@ export default function HomeScreen() {
           <FadeInView delay={5} style={s.block}>
             <PremiumSectionHeader
               icon="leaf"
-              title="Plant Now"
+              title={`Plant now · ${MONTH_NAME}`}
               actionLabel="Planner"
               onPress={() => router.push('/crop-management/planner' as Href)}
             />
-            {plantNow.map((crop) => (
-              <PlantNowCard
-                key={crop.id}
-                crop={crop}
-                onPress={() => router.push('/crop-management/planner' as Href)}
-              />
-            ))}
+            {plantNow.length === 0 ? (
+              <View style={s.filterEmpty}>
+                <Text style={s.filterEmptyText}>
+                  Nothing in the catalogue has a planting window open in {MONTH_NAME}. The planner
+                  shows what is coming next.
+                </Text>
+                <Pressable
+                  onPress={() => router.push('/crop-management/planner' as Href)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open the planner"
+                  hitSlop={8}>
+                  <Text style={s.filterEmptyAction}>Open the planner</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={s.cardRow}>
+                {plantNow.map((crop) => (
+                  <PlantNowCard
+                    key={crop.id}
+                    crop={crop}
+                    onPress={() => router.push('/crop-management/planner' as Href)}
+                  />
+                ))}
+              </ScrollView>
+            )}
           </FadeInView>
 
           <FadeInView delay={6} style={s.block}>
@@ -320,6 +342,7 @@ const s = StyleSheet.create({
   },
   block: { marginTop: DS.spacing.lg },
   hScroll: { paddingRight: 8, paddingLeft: 2 },
+  cardRow: { gap: DS.spacing.sm + 4, paddingRight: DS.spacing.md, paddingLeft: 2 },
   filterEmpty: {
     gap: 6,
     backgroundColor: DS.colors.surfaceMuted,

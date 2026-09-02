@@ -4,7 +4,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { DS } from '@/constants/design-system';
 import type { Crop } from '@/types';
-import type { IconName } from '@/types/icons';
 import { getCropImage } from '@/utils/crop-emoji';
 
 interface PlantNowCardProps {
@@ -12,118 +11,189 @@ interface PlantNowCardProps {
   onPress: () => void;
 }
 
+const MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
 /**
- * A crop whose planting window is open this month.
+ * A crop whose planting window is open this month, as the reference's field
+ * card: the photograph carries the tile, and the facts sit on it.
+ *
+ * This was a 64px thumbnail beside three lines of text, repeated four times
+ * down the page — accurate, and completely inert. A farmer deciding what to put
+ * in the ground recognises the crop by sight long before they read its name,
+ * so the picture gets the space.
+ *
+ * THE HARVEST DATE IS DERIVED, NOT PROMISED. It is today plus the crop's
+ * `harvestDays`, which assumes planting today and ideal conditions. The card
+ * says "if planted now" rather than printing a date as though it were a
+ * commitment.
  *
  * The badge used to read "AI recommendation". The list comes from
- * `getCropsForMonth` — a lookup against each crop's `bestPlantingMonths`. It
- * now says what that is.
+ * `getCropsForMonth`, a lookup against each crop's `bestPlantingMonths`, and it
+ * now says so.
  */
 export function PlantNowCard({ crop, onPress }: PlantNowCardProps) {
+  const harvest = new Date();
+  harvest.setDate(harvest.getDate() + crop.harvestDays);
+  const harvestLabel = `${MONTHS[harvest.getMonth()]} ${harvest.getDate()}`;
+
+  const window = crop.bestPlantingMonths.map((m) => MONTHS[m - 1]).join(' · ');
+
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${crop.name}. In season. ${crop.harvestDays} days to harvest, ${crop.waterRequirements} water. Around $${crop.currentPriceUSD.toFixed(2)} per kilogram. Open the planner.`}
+      accessibilityLabel={`${crop.name}. Planting window ${window}. About ${crop.harvestDays} days to harvest, around ${harvestLabel} if planted now. ${crop.waterRequirements} water. Market price $${crop.currentPriceUSD.toFixed(2)} per kilogram. Open the planner.`}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
       <Image
         source={getCropImage(crop.id, crop.category)}
-        style={styles.image}
+        style={StyleSheet.absoluteFill}
         contentFit="cover"
-        transition={150}
+        transition={220}
+        cachePolicy="memory-disk"
       />
+      {/* Bottom-weighted: the crop stays visible at the top, the words stay
+          readable at the bottom over any frame. */}
+      <View style={styles.scrim} />
 
-      <View style={styles.body}>
-        <View style={styles.badge}>
-          <Ionicons name="calendar-outline" size={10} color={DS.semantic.success.fg} />
-          <Text style={styles.badgeText}>In season</Text>
+      <View style={styles.top}>
+        <View style={styles.seasonBadge}>
+          <Ionicons name="leaf" size={10} color={DS.semantic.success.onSolid} />
+          <Text style={styles.seasonText}>In season</Text>
         </View>
 
-        <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-          {crop.name}
-        </Text>
-
-        <View style={styles.metaRow}>
-          <MetaChip icon="time-outline" text={`${crop.harvestDays} days`} />
-          <MetaChip icon="water-outline" text={`${crop.waterRequirements} water`} />
+        <View style={styles.waterBadge}>
+          <Ionicons name="water-outline" size={10} color={DS.colors.text} />
+          <Text style={styles.waterText}>{crop.waterRequirements}</Text>
         </View>
-
-        <Text style={styles.value} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-          ${crop.currentPriceUSD.toFixed(2)}
-          <Text style={styles.valueUnit}>/kg market price</Text>
-        </Text>
       </View>
 
-      <Ionicons name="chevron-forward" size={18} color={DS.colors.textFaint} />
-    </Pressable>
-  );
-}
+      <View style={styles.bottom}>
+        <Text style={styles.window} numberOfLines={1}>
+          Plant {window}
+        </Text>
 
-function MetaChip({ icon, text }: { icon: IconName; text: string }) {
-  return (
-    <View style={styles.chip}>
-      <Ionicons name={icon} size={11} color={DS.colors.textSoft} />
-      <Text style={styles.chipText}>{text}</Text>
-    </View>
+        <View style={styles.titleRow}>
+          <View style={styles.titleText}>
+            <Text
+              style={styles.name}
+              numberOfLines={1}
+              maxFontSizeMultiplier={DS.layout.maxFontScale}>
+              {crop.name}
+            </Text>
+            <Text style={styles.harvest} numberOfLines={1}>
+              ~{crop.harvestDays} days · {harvestLabel} if planted now
+            </Text>
+          </View>
+
+          <View style={styles.arrow}>
+            <Ionicons name="arrow-forward" size={16} color={DS.colors.primary} />
+          </View>
+        </View>
+
+        <View style={styles.priceRow}>
+          <Text style={styles.price}>${crop.currentPriceUSD.toFixed(2)}</Text>
+          <Text style={styles.priceUnit}>per kg market price</Text>
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: DS.spacing.sm + 4,
-    backgroundColor: DS.colors.surface,
-    borderRadius: DS.radius.lg,
-    borderWidth: 1,
-    borderColor: DS.colors.border,
-    padding: DS.spacing.sm + 2,
-    marginBottom: DS.spacing.sm + 2,
-  },
-  pressed: { backgroundColor: DS.colors.surfaceMuted },
-  image: {
-    width: 64,
-    height: 64,
-    borderRadius: DS.radius.md,
+    width: 272,
+    height: 236,
+    borderRadius: DS.radius.xl,
+    overflow: 'hidden',
+    justifyContent: 'space-between',
     backgroundColor: DS.colors.surfaceMuted,
   },
-  body: { flex: 1, gap: 3 },
-  badge: {
+  pressed: { opacity: 0.92 },
+  scrim: {
+    ...StyleSheet.absoluteFillObject,
+    top: '35%',
+    backgroundColor: 'rgba(15, 23, 42, 0.68)',
+  },
+
+  top: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    padding: DS.spacing.sm + 2,
+  },
+  seasonBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    alignSelf: 'flex-start',
-    backgroundColor: DS.semantic.success.bg,
-    borderRadius: DS.radius.xs,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    backgroundColor: DS.semantic.success.solid,
+    borderRadius: DS.radius.full,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
   },
-  badgeText: {
+  seasonText: {
     fontSize: 10,
     fontFamily: DS.fontFamily.semibold,
-    color: DS.semantic.success.fg,
+    color: DS.semantic.success.onSolid,
   },
-  name: {
-    fontSize: DS.typography.h3.fontSize,
+  waterBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.full,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  waterText: {
+    fontSize: 10,
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.text,
+    textTransform: 'capitalize',
   },
-  metaRow: { flexDirection: 'row', gap: DS.spacing.sm + 4 },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  chipText: {
+
+  bottom: { padding: DS.spacing.sm + 4, gap: 3 },
+  window: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textInverse,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: DS.spacing.sm },
+  titleText: { flex: 1 },
+  name: {
+    fontSize: DS.typography.h1.fontSize,
+    lineHeight: DS.typography.h1.lineHeight,
+    fontFamily: DS.fontFamily.display,
+    color: DS.colors.textInverse,
+  },
+  harvest: {
     fontSize: 11,
     fontFamily: DS.fontFamily.regular,
-    color: DS.colors.textMuted,
-  },
-  value: {
-    fontSize: DS.typography.bodySm.fontSize,
-    fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.primary,
+    color: DS.colors.textInverse,
     marginTop: 1,
   },
-  valueUnit: {
+  arrow: {
+    width: 38,
+    height: 38,
+    borderRadius: DS.radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: DS.colors.surface,
+  },
+
+  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 5, marginTop: 2 },
+  price: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.bold,
+    color: DS.colors.textInverse,
+  },
+  priceUnit: {
     fontSize: 11,
     fontFamily: DS.fontFamily.regular,
-    color: DS.colors.textMuted,
+    color: DS.colors.textInverse,
   },
 });
