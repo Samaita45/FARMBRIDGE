@@ -100,7 +100,7 @@ export default function RegisterScreen() {
         <SafeAreaView style={styles.safe}>
           <KeyboardAvoidingView
             style={styles.flex}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={styles.backRow}>
               <IconButton
                 icon="arrow-back"
@@ -247,13 +247,23 @@ export default function RegisterScreen() {
                   )}
                 />
 
-                <Button
-                  title="Create account"
-                  size="lg"
-                  loading={isLoading}
-                  onPress={handleSubmit(onSubmit)}
-                />
               </View>
+            </ScrollView>
+
+            {/*
+              Pinned, not the last child of a long scrolling form. On a
+              registration form this matters more than on sign-in: the fields
+              run past a screen height even before the keyboard opens, so the
+              submit button was never visible at the moment anyone finished
+              typing.
+            */}
+            <View style={styles.footer}>
+              <Button
+                title="Create account"
+                size="lg"
+                loading={isLoading}
+                onPress={handleSubmit(onSubmit)}
+              />
 
               <Link href={asHref('/(auth)/login')} asChild>
                 <Pressable
@@ -265,7 +275,7 @@ export default function RegisterScreen() {
                   </Text>
                 </Pressable>
               </Link>
-            </ScrollView>
+            </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
       </ImageBackground>
@@ -322,6 +332,15 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   backRow: { paddingHorizontal: DS.spacing.md, paddingTop: DS.spacing.sm },
   scroll: { flexGrow: 1, padding: DS.spacing.md, gap: DS.spacing.md },
+  footer: {
+    gap: DS.spacing.sm,
+    paddingHorizontal: DS.spacing.md,
+    paddingTop: DS.spacing.sm + 4,
+    paddingBottom: DS.spacing.sm + 4,
+    backgroundColor: DS.colors.surface,
+    borderTopWidth: DS.layout.hairline,
+    borderTopColor: DS.colors.border,
+  },
 
   header: { alignItems: 'center', gap: 3, marginTop: DS.spacing.sm },
   title: {
@@ -365,10 +384,12 @@ const styles = StyleSheet.create({
   },
 
   loginRow: { alignItems: 'center', paddingVertical: DS.spacing.sm },
+  // White on the photograph before; the bar it lives on now is a surface, and
+  // primaryLight measured 2.6:1 there.
   loginText: {
     fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.regular,
-    color: DS.colors.textInverse,
+    color: DS.colors.textMuted,
   },
-  link: { fontFamily: DS.fontFamily.semibold, color: DS.colors.primaryLight },
+  link: { fontFamily: DS.fontFamily.semibold, color: DS.colors.primary },
 });

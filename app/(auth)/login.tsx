@@ -103,7 +103,7 @@ export default function LoginScreen() {
         <SafeAreaView style={styles.safe}>
           <KeyboardAvoidingView
             style={styles.flex}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             {/*
               The auth stack hides its header, so screens pushed onto it carry
               their own way back. Without this, a user who taps "Sign in" from
@@ -194,13 +194,6 @@ export default function LoginScreen() {
                   </Pressable>
                 </View>
 
-                <Button
-                  title="Sign in"
-                  size="lg"
-                  loading={isLoading}
-                  onPress={handleSubmit(onSubmit)}
-                />
-
                 {demoCredentials ? (
                   <Pressable
                     onPress={() => {
@@ -217,6 +210,27 @@ export default function LoginScreen() {
                 ) : null}
               </View>
 
+            </ScrollView>
+
+            {/*
+              THE ACTION LIVES OUTSIDE THE SCROLL VIEW ON PURPOSE.
+
+              It used to be the last child of a card inside a ScrollView whose
+              content was centred (`justifyContent: 'center'`). Once the
+              keyboard opened, the viewport shrank, the centred content was
+              clipped at both ends, and the button was below the fold with no
+              reliable way to scroll to it — which is why it read as missing
+              after you filled the form in. It is now pinned above the keyboard
+              and is always on screen.
+            */}
+            <View style={styles.footer}>
+              <Button
+                title="Sign in"
+                size="lg"
+                loading={isLoading}
+                onPress={handleSubmit(onSubmit)}
+              />
+
               <Link href="/(auth)/register" asChild>
                 <Pressable
                   accessibilityRole="link"
@@ -227,7 +241,7 @@ export default function LoginScreen() {
                   </Text>
                 </Pressable>
               </Link>
-            </ScrollView>
+            </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
       </ImageBackground>
@@ -277,9 +291,20 @@ const styles = StyleSheet.create({
   backRow: { paddingHorizontal: DS.spacing.md, paddingTop: DS.spacing.sm },
   scroll: {
     flexGrow: 1,
-    justifyContent: 'center',
+    // Not `justifyContent: 'center'`. Centring inside a container the keyboard
+    // shrinks pushes the ends of the content out of reach.
     padding: DS.spacing.md,
+    paddingBottom: DS.spacing.md,
     gap: DS.spacing.lg,
+  },
+  footer: {
+    gap: DS.spacing.sm,
+    paddingHorizontal: DS.spacing.md,
+    paddingTop: DS.spacing.sm + 4,
+    paddingBottom: DS.spacing.sm + 4,
+    backgroundColor: DS.colors.surface,
+    borderTopWidth: DS.layout.hairline,
+    borderTopColor: DS.colors.border,
   },
 
   header: { alignItems: 'center', gap: 4 },
@@ -342,9 +367,10 @@ const styles = StyleSheet.create({
   },
 
   registerRow: { alignItems: 'center', paddingVertical: DS.spacing.sm },
+  // White when it sat on the photograph; the bar it lives on now is a surface.
   registerText: {
     fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.regular,
-    color: DS.colors.textInverse,
+    color: DS.colors.textMuted,
   },
 });
