@@ -93,9 +93,14 @@ const colors = {
   // A brighter, more saturated green than the brand forest, so "organic",
   // "in season" and "available" badges stay distinguishable from a primary
   // action rather than reading as the same thing.
-  accent: green[600],
+  //
+  // green[600] measured 3.30:1 on white — fine for a dot or a tick, short of
+  // the 4.5:1 that text needs, and it was being used for both. Moved to
+  // green[700], which clears it either way and still reads as the brighter
+  // green next to the forest.
+  accent: green[700],
   accentLight: green[100],
-  accentDark: green[700],
+  accentDark: green[800],
 
   background: gray[50],
   surface: '#FFFFFF',
@@ -148,17 +153,42 @@ const colors = {
 };
 
 /**
- * Semantic states. Each carries a foreground that passes contrast on its own
- * background, so alert surfaces stop being assembled from ad-hoc hex literals.
+ * Semantic states.
+ *
+ * `fg` passes contrast on `bg`, for the quiet inline treatment. `onSolid` is
+ * the text colour for the loud one — a filled banner, pill or toast — and is
+ * NOT always white. White on the amber measures 3.19:1 and on the green
+ * 3.30:1, both short of 4.5:1, and a warning nobody can read is worse than no
+ * warning. Amber takes near-black; green is darkened until white clears.
+ *
+ * Never hardcode a foreground against one of these; take `onSolid`.
  */
 const semantic = {
-  success: { fg: green[800], bg: green[50], border: green[200], solid: green[600] },
-  warning: { fg: '#92400E', bg: '#FFFBEB', border: '#FDE68A', solid: '#D97706' },
-  danger: { fg: '#991B1B', bg: '#FEF2F2', border: '#FECACA', solid: '#DC2626' },
+  success: {
+    fg: green[800],
+    bg: green[50],
+    border: green[200],
+    solid: green[700],
+    onSolid: '#FFFFFF',
+  },
+  warning: {
+    fg: '#92400E',
+    bg: '#FFFBEB',
+    border: '#FDE68A',
+    solid: '#D97706',
+    onSolid: gray[900],
+  },
+  danger: {
+    fg: '#991B1B',
+    bg: '#FEF2F2',
+    border: '#FECACA',
+    solid: '#DC2626',
+    onSolid: '#FFFFFF',
+  },
   // Informational stays blue: it must not be mistaken for a primary action now
   // that actions are green.
-  info: { fg: blue[800], bg: blue[50], border: blue[200], solid: blue[600] },
-  neutral: { fg: gray[700], bg: gray[100], border: gray[200], solid: gray[500] },
+  info: { fg: blue[800], bg: blue[50], border: blue[200], solid: blue[600], onSolid: '#FFFFFF' },
+  neutral: { fg: gray[700], bg: gray[100], border: gray[200], solid: gray[600], onSolid: '#FFFFFF' },
 };
 
 /**

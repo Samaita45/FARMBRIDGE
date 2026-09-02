@@ -91,13 +91,13 @@ const VARIANTS: Record<ButtonVariant, VariantTokens> = {
   danger: {
     background: DS.semantic.danger.solid,
     border: DS.semantic.danger.solid,
-    foreground: DS.colors.textInverse,
+    foreground: DS.semantic.danger.onSolid,
     pressedBackground: DS.semantic.danger.fg,
   },
   success: {
     background: DS.semantic.success.solid,
     border: DS.semantic.success.solid,
-    foreground: DS.colors.textInverse,
+    foreground: DS.semantic.success.onSolid,
     pressedBackground: DS.semantic.success.fg,
   },
   /**

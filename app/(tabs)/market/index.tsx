@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     minWidth: 16,
     height: 16,
     borderRadius: DS.radius.full,
-    backgroundColor: DS.semantic.warning.solid,
+    backgroundColor: DS.semantic.danger.solid,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   filterBadgeText: {
     fontSize: 9,
     fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.textInverse,
+    color: DS.semantic.danger.onSolid,
   },
 
   list: { paddingHorizontal: DS.spacing.md, paddingBottom: DS.spacing.xl },

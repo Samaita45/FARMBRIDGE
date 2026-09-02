@@ -25,11 +25,15 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const BG: Record<ToastType, string> = {
-  success: DS.colors.accent,        // green
-  error:   DS.semantic.danger.solid,         // red
-  warning: DS.semantic.warning.solid,       // amber
-  info:    DS.colors.primary,       // blue
+/**
+ * Background and foreground travel together. White on the amber measures
+ * 3.19:1 — a warning nobody can read — so the amber toast takes dark text.
+ */
+const TONE: Record<ToastType, { bg: string; fg: string }> = {
+  success: { bg: DS.semantic.success.solid, fg: DS.semantic.success.onSolid },
+  error: { bg: DS.semantic.danger.solid, fg: DS.semantic.danger.onSolid },
+  warning: { bg: DS.semantic.warning.solid, fg: DS.semantic.warning.onSolid },
+  info: { bg: DS.colors.primary, fg: DS.colors.textInverse },
 };
 
 const ICON: Record<ToastType, keyof typeof Ionicons.glyphMap> = {
@@ -59,9 +63,11 @@ function ToastItem({
     <Animated.View style={[t.item, { opacity, transform: [{ translateY }] }]}>
       <Pressable
         onPress={onDismiss}
-        style={[t.pill, { backgroundColor: BG[toast.type] }]}>
-        <Ionicons name={ICON[toast.type]} size={18} color={DS.colors.textInverse} />
-        <Text style={t.msg} numberOfLines={3}>{toast.message}</Text>
+        style={[t.pill, { backgroundColor: TONE[toast.type].bg }]}>
+        <Ionicons name={ICON[toast.type]} size={18} color={TONE[toast.type].fg} />
+        <Text style={[t.msg, { color: TONE[toast.type].fg }]} numberOfLines={3}>
+          {toast.message}
+        </Text>
       </Pressable>
     </Animated.View>
   );

@@ -27,6 +27,11 @@ export interface SemanticRole {
   border: string;
   /** Filled treatment — badges, solid buttons, chart marks. */
   solid: string;
+  /**
+   * Text and icon colour for use ON `solid`. Not always white: white measures
+   * 3.19:1 on the amber. Take this rather than assuming a foreground.
+   */
+  onSolid: string;
 }
 
 export const DS = {

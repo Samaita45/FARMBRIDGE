@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
   filterBadgeText: {
     fontSize: 9,
     fontFamily: DS.fontFamily.bold,
-    color: DS.colors.textInverse,
+    color: DS.semantic.danger.onSolid,
   },
 
   browse: { padding: DS.spacing.md, gap: DS.spacing.lg, paddingBottom: DS.spacing.xl },

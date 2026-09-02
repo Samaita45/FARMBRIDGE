@@ -32,8 +32,8 @@ const s = StyleSheet.create({
   wrap: { borderRadius: 16, overflow: 'hidden' },
   inner: { padding: 16, backgroundColor: DS.semantic.warning.solid },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  title: { fontSize: 17, fontWeight: '800', color: DS.colors.surface },
-  sub: { marginTop: 6, fontSize: 13, color: 'rgba(255,255,255,0.92)' },
+  title: { fontSize: 17, fontWeight: '800', color: DS.semantic.warning.onSolid },
+  sub: { marginTop: 6, fontSize: 13, color: DS.semantic.warning.onSolid, opacity: 0.85 },
   cta: {
     marginTop: 12,
     alignSelf: 'flex-start',
