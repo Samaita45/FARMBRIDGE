@@ -14,9 +14,9 @@ export default function NegotiateScreen() {
   const selectedProviderId = useTransportStore((s: TransportState) => s.selectedProviderId);
   const askingPriceUSD = useTransportStore((s: TransportState) => s.askingPriceUSD);
   const setCounterPrice = useTransportStore((s: TransportState) => s.setCounterPrice);
+  const counterPriceUSD = useTransportStore((s: TransportState) => s.counterPriceUSD);
 
   const [counter, setCounter] = useState(String(Math.max(1, askingPriceUSD - 5)));
-  const [reply, setReply] = useState<number | null>(null);
   const [touched, setTouched] = useState(false);
 
   const provider = TRANSPORT_PROVIDERS.find((p) => p.id === selectedProviderId);
@@ -51,11 +51,10 @@ export default function NegotiateScreen() {
     setTouched(true);
     if (counterError) return;
     setCounterPrice(parsed);
-    setReply(Math.round((askingPriceUSD + parsed) / 2));
   };
 
   const acceptDeal = () => {
-    const finalPrice = reply ?? askingPriceUSD;
+    const finalPrice = counterPriceUSD ?? parsed ?? askingPriceUSD;
     setCounterPrice(finalPrice);
     router.push(
       asHref({
@@ -112,23 +111,30 @@ export default function NegotiateScreen() {
           />
         </Card>
 
-        {reply !== null ? (
+        {counterPriceUSD !== null ? (
           <Card style={styles.replyCard}>
             <View style={styles.replyHeader}>
-              <Ionicons name="chatbubble-ellipses-outline" size={16} color={DS.colors.primary} />
-              <Text style={styles.replyLabel}>{provider.name} responds</Text>
+              <Ionicons name="pricetag-outline" size={16} color={DS.colors.primary} />
+              <Text style={styles.replyLabel}>Your offer</Text>
             </View>
-            <Text style={styles.replyValue}>${reply}</Text>
+            <Text style={styles.replyValue}>${counterPriceUSD}</Text>
             {/*
-              There is no transporter on the other end of this yet. The figure
-              is the midpoint of the two prices, and the screen says so rather
-              than implying a real person replied.
+              THIS USED TO SHOW A REPLY. It printed "<name> responds" over a
+              figure the app had invented by splitting the difference, under a
+              caption admitting as much. A labelled fabrication attributed to a
+              named person is still a fabrication, and nobody reads the caption
+              before they read the number.
+
+              Nothing here can reach a transporter — there is no server and no
+              transporter is signed in — so the screen shows what the farmer is
+              offering and what this transporter usually charges, and leaves the
+              conversation to the phone call that follows.
             */}
             <View style={styles.notice}>
               <Ionicons name="information-circle-outline" size={13} color={DS.semantic.warning.fg} />
               <Text style={styles.noticeText}>
-                Placeholder response — the midpoint of the two prices. Live bidding
-                arrives with transporter accounts.
+                {provider.name} usually charges ${askingPriceUSD} for this trip and has not seen
+                your offer. Booking records it and gives you their number.
               </Text>
             </View>
           </Card>
@@ -137,7 +143,11 @@ export default function NegotiateScreen() {
 
       <View style={styles.footer}>
         <Button
-          title={reply !== null ? `Accept $${reply} and book` : `Book at $${askingPriceUSD}`}
+          title={
+            counterPriceUSD !== null
+              ? `Book at your $${counterPriceUSD}`
+              : `Book at their $${askingPriceUSD}`
+          }
           icon="checkmark-circle-outline"
           onPress={acceptDeal}
         />

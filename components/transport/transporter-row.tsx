@@ -8,6 +8,8 @@ import type { TransportProvider } from '@/types';
 interface TransporterRowProps {
   provider: TransportProvider;
   estimatedPrice: number;
+  /** What the farmer said they would pay, if they have said. */
+  offeredPrice?: number | null;
   selected?: boolean;
   onPress?: () => void;
   /** Renders without the press behaviour, for a summary of an already-made choice. */
@@ -27,11 +29,20 @@ interface TransporterRowProps {
 export function TransporterRow({
   provider,
   estimatedPrice,
+  offeredPrice = null,
   selected,
   onPress,
   static: isStatic,
 }: TransporterRowProps) {
   const unavailable = !provider.isAvailable;
+
+  /*
+    How this transporter's own published rate sits against the offer. It is not
+    a response: nobody here has seen the request. The wording says "usually
+    charges" for exactly that reason.
+  */
+  const fitsOffer = offeredPrice !== null && estimatedPrice <= offeredPrice;
+  const gap = offeredPrice !== null ? estimatedPrice - offeredPrice : 0;
 
   const body = (
     <>
@@ -65,8 +76,13 @@ export function TransporterRow({
         <Text style={styles.price} maxFontSizeMultiplier={DS.layout.maxFontScale}>
           ${estimatedPrice}
         </Text>
+
         {unavailable ? (
           <Text style={styles.busy}>Busy</Text>
+        ) : offeredPrice !== null ? (
+          <Text style={fitsOffer ? styles.withinOffer : styles.aboveOffer}>
+            {fitsOffer ? 'Within your offer' : `$${gap} above`}
+          </Text>
         ) : selected ? (
           <Ionicons name="checkmark-circle" size={18} color={DS.colors.primary} />
         ) : null}
@@ -84,7 +100,13 @@ export function TransporterRow({
       disabled={unavailable}
       accessibilityRole="radio"
       accessibilityState={{ selected: Boolean(selected), disabled: unavailable }}
-      accessibilityLabel={`${provider.name}, ${VEHICLE_LABELS[provider.vehicleType]}, ${provider.capacity} tonne capacity, based in ${provider.location}. Rated ${provider.rating} over ${provider.totalTrips} trips. Estimated $${estimatedPrice}.${unavailable ? ' Currently busy.' : ''}`}
+      accessibilityLabel={`${provider.name}, ${VEHICLE_LABELS[provider.vehicleType]}, ${provider.capacity} tonne capacity, based in ${provider.location}. Rated ${provider.rating} over ${provider.totalTrips} trips. They usually charge $${estimatedPrice} for this trip.${
+        offeredPrice !== null
+          ? fitsOffer
+            ? ' That is within your offer.'
+            : ` That is $${gap} above your offer.`
+          : ''
+      }${unavailable ? ' Currently busy.' : ''}`}
       style={({ pressed }) => [
         styles.row,
         selected && styles.rowSelected,
@@ -149,5 +171,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: DS.fontFamily.semibold,
     color: DS.semantic.neutral.fg,
+  },
+  withinOffer: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.semantic.success.fg,
+  },
+  aboveOffer: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textMuted,
   },
 });

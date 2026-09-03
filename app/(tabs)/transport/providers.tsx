@@ -30,12 +30,24 @@ interface Quote {
  *
  * Nothing was dropped: negotiating still exists, one step further in, where
  * there is room to show what you are negotiating over.
+ *
+ * RANKED AGAINST YOUR OFFER, which is the inDrive part. Once you have named a
+ * price, the useful question is not "who is cheapest" but "who would take
+ * this". Transporters whose own published rate for this distance is at or below
+ * your offer come first and are marked; the rest show how far above they are,
+ * so the choice is between calling someone likely to say yes and calling
+ * someone you will have to talk round.
+ *
+ * Nobody here has seen your offer. There is no server, and the marking is
+ * arithmetic on each transporter's own rate — the screen says so rather than
+ * implying anyone has responded.
  */
 export default function ProvidersScreen() {
   const request = useTransportStore((s: TransportState) => s.request);
   const distanceKm = useTransportStore((s: TransportState) => s.distanceKm);
   const selectedId = useTransportStore((s: TransportState) => s.selectedProviderId);
   const selectProvider = useTransportStore((s: TransportState) => s.selectProvider);
+  const offer = useTransportStore((s: TransportState) => s.offeredPriceUSD);
 
   // Sorted cheapest first, but availability is not a filter here: seeing that a
   // transporter exists and is busy is information, and hiding them made the
@@ -49,9 +61,15 @@ export default function ProvidersScreen() {
         if (a.provider.isAvailable !== b.provider.isAvailable) {
           return a.provider.isAvailable ? -1 : 1;
         }
+        // With an offer on the table, the ones who would take it come first.
+        if (offer !== null) {
+          const aFits = a.price <= offer;
+          const bFits = b.price <= offer;
+          if (aFits !== bFits) return aFits ? -1 : 1;
+        }
         return a.price - b.price;
       }),
-    [distanceKm]
+    [distanceKm, offer]
   );
 
   const [choice, setChoice] = useState<Quote | null>(
@@ -59,17 +77,22 @@ export default function ProvidersScreen() {
   );
 
   const availableCount = quotes.filter((q) => q.provider.isAvailable).length;
+  const withinOffer =
+    offer === null
+      ? 0
+      : quotes.filter((q) => q.provider.isAvailable && q.price <= offer).length;
 
   const renderQuote = useCallback(
     ({ item }: { item: Quote }) => (
       <TransporterRow
         provider={item.provider}
         estimatedPrice={item.price}
+        offeredPrice={offer}
         selected={choice?.provider.id === item.provider.id}
         onPress={() => setChoice(item)}
       />
     ),
-    [choice]
+    [choice, offer]
   );
 
   if (!request) {
@@ -120,7 +143,9 @@ export default function ProvidersScreen() {
 
             <Text style={styles.sectionTitle}>Choose a transporter</Text>
             <Text style={styles.sectionNote}>
-              {availableCount} of {quotes.length} are free for this route.
+              {offer !== null
+                ? `${withinOffer} of ${availableCount} available transporters usually charge $${offer} or less for this trip. None of them has seen your offer — this is their own rate.`
+                : `${availableCount} of ${quotes.length} are free for this route.`}
             </Text>
           </View>
         }
@@ -139,7 +164,11 @@ export default function ProvidersScreen() {
             {choice ? choice.provider.name : 'No transporter chosen'}
           </Text>
           <Text style={styles.barPrice}>
-            {choice ? `$${choice.price} estimated` : 'Pick one to continue'}
+            {choice
+              ? offer !== null
+                ? `Their rate $${choice.price} · your offer $${offer}`
+                : `$${choice.price} estimated`
+              : 'Pick one to continue'}
           </Text>
         </View>
 
