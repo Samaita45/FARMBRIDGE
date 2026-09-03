@@ -1,3 +1,5 @@
+import type { IconName } from '@/types/icons';
+
 /**
  * Support and contact channels.
  *
@@ -25,3 +27,34 @@ export const SUPPORT_WHATSAPP_URL = whatsAppUrl('Hi FarmBridge support, I need h
  */
 export const TERMS_URL = process.env.EXPO_PUBLIC_TERMS_URL?.trim() ?? '';
 export const PRIVACY_URL = process.env.EXPO_PUBLIC_PRIVACY_URL?.trim() ?? '';
+
+/**
+ * Social accounts.
+ *
+ * Empty until FarmBridge actually has them. The drawer renders the row only
+ * when a URL is configured, on the same rule as the legal links above: an icon
+ * that opens nothing is a dead control, and this app has spent a lot of effort
+ * removing those.
+ */
+export interface SocialLink {
+  key: string;
+  icon: IconName;
+  url: string;
+  accessibilityLabel: string;
+}
+
+export const SOCIAL_LINKS: SocialLink[] = ([
+
+  {
+    key: 'facebook',
+    icon: 'logo-facebook',
+    url: process.env.EXPO_PUBLIC_FACEBOOK_URL?.trim() ?? '',
+    accessibilityLabel: 'FarmBridge on Facebook',
+  },
+  {
+    key: 'instagram',
+    icon: 'logo-instagram',
+    url: process.env.EXPO_PUBLIC_INSTAGRAM_URL?.trim() ?? '',
+    accessibilityLabel: 'FarmBridge on Instagram',
+  },
+] satisfies SocialLink[]).filter((l) => l.url.length > 0);

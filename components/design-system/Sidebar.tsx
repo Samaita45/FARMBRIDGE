@@ -5,6 +5,7 @@ import {
   BackHandler,
   Dimensions,
   Easing,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -19,50 +20,85 @@ import type { IconName } from '@/types/icons';
 
 export interface SidebarItem {
   key: string;
-  /** Starts a new group: a rule is drawn above this item. */
-  startsGroup?: boolean;
   label: string;
   icon: IconName;
-  /** Shown on the right — a count, or a word like "New". */
-  badge?: string;
   onPress: () => void;
   /** Reads as the current place rather than somewhere to go. */
   active?: boolean;
-  /** Sign out and the like: separated, and tinted. */
+  /** Sign out and the like: tinted. */
   destructive?: boolean;
+}
+
+export interface SidebarProfile {
+  name: string;
+  /** The line under the name — a rating, a count. Never invented. */
+  meta?: ReactNode;
+  avatar: ReactNode;
+  onPress?: () => void;
+}
+
+export interface SidebarAction {
+  label: string;
+  icon?: IconName;
+  onPress: () => void;
+}
+
+export interface SidebarLink {
+  key: string;
+  icon: IconName;
+  url: string;
+  accessibilityLabel: string;
 }
 
 export interface SidebarProps {
   visible: boolean;
   onClose: () => void;
   items: SidebarItem[];
-  /** Rendered above the list — an identity block, usually. */
-  header?: ReactNode;
-  footer?: ReactNode;
+  profile?: SidebarProfile;
+  /** The one highlighted action at the foot of the drawer. */
+  primaryAction?: SidebarAction;
+  /** Rendered under the action. Pass nothing rather than links that go nowhere. */
+  links?: SidebarLink[];
 }
 
 /**
- * A drawer that slides in from the left.
+ * The navigation drawer, laid out as the inDrive reference lays it out: the
+ * person at the top, the destinations as one plain list, and a single
+ * highlighted action at the foot.
+ *
+ * THINGS THE REFERENCE DOES NOT HAVE, SO NEITHER DOES THIS. No close button —
+ * the backdrop and the back gesture do that, and a cross competes with the
+ * profile row for the top corner. No chevrons on the rows: nine of them turn a
+ * list into a wall of arrows. No badges. The current row is marked by a tint
+ * running the full width of the panel rather than by a bar inside a margin.
  *
  * WIDTH IS CAPPED AT 320 AND AT 86% OF THE SCREEN, WHICHEVER IS SMALLER. A
- * drawer that covers the whole width has nothing left to tap to dismiss it, and
- * on a small phone a fixed 320 does exactly that — so the strip of visible
- * backdrop is guaranteed rather than assumed.
+ * drawer covering the whole width leaves nothing to tap to dismiss it, and on a
+ * small phone a fixed 320 does exactly that — so the strip of visible backdrop
+ * is guaranteed rather than assumed. With the close button gone that strip is
+ * now the primary way out, which makes the cap load-bearing rather than tidy.
  *
- * Closing is the same contract as every other overlay here: the backdrop, the
- * close button, and Android's hardware back. Choosing an item closes the drawer
- * before its action runs, so the destination is not revealed behind a panel
- * that is still sliding away.
+ * The list scrolls and the action stays put, so the action is reachable on a
+ * short screen without scrolling to the end of the menu.
  *
- * The panel honours the safe area on all four sides. It sits under the status
- * bar, so without the top inset the first row lands beneath the clock.
+ * TWO PLACES WHERE COPYING EXACTLY WOULD MEAN INVENTING SOMETHING.
  *
- * The current place is marked with a bar as well as a fill, because a tinted
- * row and an untinted one are two greens apart and that is not a distinction
- * everybody can make. `startsGroup` draws a rule above an item, so a list of
- * nine reads as sections rather than as one column of nine.
+ * The reference shows a driver's star rating under their name. `meta` is a slot
+ * rather than a rating, because most people using FarmBridge have never been
+ * rated — printing stars for them would be showing a score nobody gave.
+ *
+ * The reference has Facebook and Instagram under the action. `links` is empty
+ * unless real URLs are configured: two icons that open nothing are worse than
+ * no icons, and this app has no social accounts to point at yet.
  */
-export function Sidebar({ visible, onClose, items, header, footer }: SidebarProps) {
+export function Sidebar({
+  visible,
+  onClose,
+  items,
+  profile,
+  primaryAction,
+  links,
+}: SidebarProps) {
   const insets = useSafeAreaInsets();
   const anim = useRef(new Animated.Value(0)).current;
 
@@ -107,24 +143,30 @@ export function Sidebar({ visible, onClose, items, header, footer }: SidebarProp
         <Animated.View
           style={[
             styles.panel,
-            {
-              width,
-              paddingTop: insets.top,
-              paddingBottom: insets.bottom,
-              transform: [{ translateX }],
-            },
+            { width, paddingTop: insets.top, transform: [{ translateX }] },
           ]}>
-          <View style={styles.headerRow}>
-            <View style={styles.headerPanel}>{header}</View>
-            <Pressable
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="Close the menu"
-              hitSlop={8}
-              style={({ pressed }) => [styles.close, pressed && styles.pressed]}>
-              <Ionicons name="close" size={20} color={DS.colors.text} />
-            </Pressable>
-          </View>
+          {profile ? (
+            <>
+              <Pressable
+                onPress={profile.onPress}
+                disabled={!profile.onPress}
+                accessibilityRole={profile.onPress ? 'button' : 'summary'}
+                accessibilityLabel={profile.name}
+                style={({ pressed }) => [styles.profile, pressed && styles.pressedRow]}>
+                {profile.avatar}
+                <View style={styles.profileText}>
+                  <Text style={styles.profileName} numberOfLines={1}>
+                    {profile.name}
+                  </Text>
+                  {profile.meta ? <View style={styles.profileMeta}>{profile.meta}</View> : null}
+                </View>
+                {profile.onPress ? (
+                  <Ionicons name="chevron-forward" size={20} color={DS.colors.textMuted} />
+                ) : null}
+              </Pressable>
+              <View style={styles.rule} />
+            </>
+          ) : null}
 
           <ScrollView
             contentContainerStyle={styles.list}
@@ -134,30 +176,26 @@ export function Sidebar({ visible, onClose, items, header, footer }: SidebarProp
                 key={item.key}
                 onPress={() => {
                   // Close first: the destination should not appear behind a
-                  // panel that is still on screen.
+                  // panel that is still sliding away.
                   onClose();
                   item.onPress();
                 }}
                 accessibilityRole="button"
                 accessibilityState={{ selected: Boolean(item.active) }}
-                accessibilityLabel={item.badge ? `${item.label}, ${item.badge}` : item.label}
+                accessibilityLabel={item.label}
                 style={({ pressed }) => [
                   styles.item,
-                  item.startsGroup && styles.itemGroupStart,
                   item.active && styles.itemActive,
                   pressed && styles.pressedRow,
                 ]}>
-                {/* A bar, not just a fill: the current place should be legible
-                    without depending on telling two greens apart. */}
-                {item.active ? <View style={styles.activeBar} /> : null}
                 <Ionicons
                   name={item.icon}
-                  size={19}
+                  size={22}
                   color={
                     item.destructive
                       ? DS.semantic.danger.fg
                       : item.active
-                        ? DS.colors.primary
+                        ? DS.colors.primaryDark
                         : DS.colors.textMuted
                   }
                 />
@@ -170,16 +208,47 @@ export function Sidebar({ visible, onClose, items, header, footer }: SidebarProp
                   numberOfLines={1}>
                   {item.label}
                 </Text>
-                {item.badge ? (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{item.badge}</Text>
-                  </View>
-                ) : null}
               </Pressable>
             ))}
           </ScrollView>
 
-          {footer ? <View style={styles.footer}>{footer}</View> : null}
+          {primaryAction || (links && links.length > 0) ? (
+            <View style={[styles.footer, { paddingBottom: insets.bottom + DS.spacing.md }]}>
+              <View style={styles.rule} />
+
+              {primaryAction ? (
+                <Pressable
+                  onPress={() => {
+                    onClose();
+                    primaryAction.onPress();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={primaryAction.label}
+                  style={({ pressed }) => [styles.action, pressed && styles.pressed]}>
+                  {primaryAction.icon ? (
+                    <Ionicons name={primaryAction.icon} size={19} color={DS.colors.accentOn} />
+                  ) : null}
+                  <Text style={styles.actionText}>{primaryAction.label}</Text>
+                </Pressable>
+              ) : null}
+
+              {links && links.length > 0 ? (
+                <View style={styles.links}>
+                  {links.map((link) => (
+                    <Pressable
+                      key={link.key}
+                      onPress={() => void Linking.openURL(link.url)}
+                      accessibilityRole="link"
+                      accessibilityLabel={link.accessibilityLabel}
+                      hitSlop={10}
+                      style={({ pressed }) => [styles.link, pressed && styles.pressed]}>
+                      <Ionicons name={link.icon} size={22} color={DS.colors.text} />
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </Animated.View>
       </View>
     </Modal>
@@ -188,93 +257,87 @@ export function Sidebar({ visible, onClose, items, header, footer }: SidebarProp
 
 const styles = StyleSheet.create({
   root: { flex: 1, flexDirection: 'row', backgroundColor: DS.colors.overlay },
-  panel: {
-    height: '100%',
-    backgroundColor: DS.colors.surface,
-    borderTopRightRadius: DS.radius.xxl,
-    borderBottomRightRadius: DS.radius.xxl,
-    overflow: 'hidden',
-  },
-
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: DS.spacing.sm,
-    paddingHorizontal: DS.spacing.md,
-    paddingTop: DS.spacing.md,
-    paddingBottom: DS.spacing.md,
-  },
-  headerPanel: {
-    flex: 1,
-    backgroundColor: DS.colors.primaryBg,
-    borderRadius: DS.radius.lg,
-    padding: DS.spacing.sm + 2,
-  },
-  close: {
-    width: 38,
-    height: 38,
-    borderRadius: DS.radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: DS.colors.surfaceMuted,
-  },
-  pressed: { opacity: 0.7 },
+  // Square edges, as the reference has them: the panel is a wall, not a card.
+  panel: { height: '100%', backgroundColor: DS.colors.surface },
+  pressed: { opacity: 0.85 },
   pressedRow: { backgroundColor: DS.colors.surfaceMuted },
 
-  list: { paddingHorizontal: DS.spacing.sm, paddingBottom: DS.spacing.md, gap: 2 },
-  item: {
+  profile: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: DS.spacing.sm + 4,
-    minHeight: 52,
-    paddingHorizontal: DS.spacing.sm + 4,
-    borderRadius: DS.radius.md,
-    overflow: 'hidden',
+    paddingHorizontal: DS.spacing.md,
+    paddingVertical: DS.spacing.md,
   },
-  itemGroupStart: {
-    borderTopWidth: DS.layout.hairline,
-    borderTopColor: DS.colors.borderLight,
-    marginTop: DS.spacing.sm,
-    paddingTop: DS.spacing.xs,
-    borderRadius: 0,
-  },
-  itemActive: { backgroundColor: DS.colors.primaryBg },
-  activeBar: {
-    position: 'absolute',
-    left: 0,
-    top: 8,
-    bottom: 8,
-    width: 3,
-    borderRadius: 2,
-    backgroundColor: DS.colors.primary,
-  },
-  itemLabel: {
-    flex: 1,
-    fontSize: DS.typography.body.fontSize,
-    fontFamily: DS.fontFamily.regular,
+  profileText: { flex: 1, gap: 3 },
+  profileName: {
+    fontSize: DS.typography.h2.fontSize,
+    lineHeight: DS.typography.h2.lineHeight,
+    fontFamily: DS.fontFamily.bold,
     color: DS.colors.text,
   },
-  itemLabelActive: { fontFamily: DS.fontFamily.semibold, color: DS.colors.primaryDark },
+  profileMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+
+  rule: { height: DS.layout.hairline, backgroundColor: DS.colors.border },
+
+  list: { paddingVertical: DS.spacing.sm },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DS.spacing.md,
+    minHeight: 54,
+    // Edge to edge, so the active tint spans the panel as it does in the
+    // reference rather than sitting inside a margin.
+    paddingHorizontal: DS.spacing.md,
+  },
+  itemActive: { backgroundColor: DS.colors.primaryBg },
+  itemLabel: {
+    flex: 1,
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  /*
+    The reference marks the current row with a very pale tint — theirs measures
+    about 1.05 against white, ours 1.10 — which is a fine background and a poor
+    signal on its own. The weight changes too, so the state survives a screen
+    where the tint is washed out by sunlight or by anyone who cannot pick it
+    out. Two cues, one of which is not colour.
+  */
+  itemLabelActive: {
+    fontFamily: DS.fontFamily.bold,
+    color: DS.colors.primaryDark,
+  },
   itemLabelDestructive: { color: DS.semantic.danger.fg },
 
-  badge: {
-    minWidth: 20,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+  footer: { gap: DS.spacing.md },
+  /*
+    The reference's action is lime with black text. This is the accent, which
+    plays the same part in our palette — the one bright colour, taking near
+    black — rather than importing a lime that would put three greens on one
+    screen.
+  */
+  action: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: DS.spacing.sm,
+    minHeight: 56,
+    marginHorizontal: DS.spacing.md,
     borderRadius: DS.radius.full,
-    backgroundColor: DS.semantic.danger.solid,
+    backgroundColor: DS.colors.accent,
   },
-  badgeText: {
-    fontSize: 10,
-    textAlign: 'center',
+  actionText: {
+    fontSize: DS.typography.h3.fontSize,
     fontFamily: DS.fontFamily.bold,
-    color: DS.semantic.danger.onSolid,
+    color: DS.colors.accentOn,
   },
 
-  footer: {
-    paddingHorizontal: DS.spacing.md,
-    paddingTop: DS.spacing.sm,
-    borderTopWidth: DS.layout.hairline,
-    borderTopColor: DS.colors.border,
+  links: { flexDirection: 'row', justifyContent: 'center', gap: DS.spacing.lg },
+  link: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

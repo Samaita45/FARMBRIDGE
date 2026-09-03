@@ -19,7 +19,7 @@ import { TransportLocked } from '@/components/transport/transport-locked';
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { DS } from '@/constants/design-system';
 import { ScreenImages } from '@/constants/images';
-import { whatsAppUrl } from '@/constants/support';
+import { SOCIAL_LINKS, whatsAppUrl } from '@/constants/support';
 import { TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
 import { useLocation, type LocationSource } from '@/hooks/useLocation';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar';
@@ -106,7 +106,6 @@ export default function TransportHubScreen() {
       key: 'trips',
       label: 'My trips',
       icon: 'time-outline',
-      badge: activeTrips.length > 0 ? String(activeTrips.length) : undefined,
       onPress: () => router.push(asHref('/(tabs)/transport/trips')),
     },
     {
@@ -119,7 +118,6 @@ export default function TransportHubScreen() {
       key: 'notifications',
       label: 'Notifications',
       icon: 'notifications-outline',
-      startsGroup: true,
       onPress: () => router.push(asHref('/notifications')),
     },
     {
@@ -277,37 +275,38 @@ export default function TransportHubScreen() {
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
         items={menuItems}
-        header={
-          <Pressable
-            onPress={() => router.push(asHref('/(tabs)/profile'))}
-            accessibilityRole="button"
-            accessibilityLabel="Open your profile"
-            style={styles.menuHeader}>
-            <ProfileAvatar uri={avatarUri} initials={initials} size={46} embedded showCameraBadge={false} />
-            <View style={styles.flex}>
-              <Text style={styles.menuName} numberOfLines={1}>
-                {user?.name ?? 'Guest'}
-              </Text>
-              <Text style={styles.menuMeta} numberOfLines={1}>
+        profile={{
+          name: user?.name ?? 'Guest',
+          avatar: (
+            <ProfileAvatar
+              uri={avatarUri}
+              initials={initials}
+              size={52}
+              embedded
+              showCameraBadge={false}
+            />
+          ),
+          /*
+            The reference prints a star rating here. Most people using this app
+            have never been rated, and stars for them would be a score nobody
+            gave — so this is the count of trips they have actually booked.
+          */
+          meta: (
+            <>
+              <Ionicons name="cube-outline" size={13} color={DS.colors.textMuted} />
+              <Text style={styles.menuMeta}>
                 {bookings.length} {bookings.length === 1 ? 'trip' : 'trips'} booked
               </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={DS.colors.textFaint} />
-          </Pressable>
-        }
-        footer={
-          <Pressable
-            onPress={() => {
-              setMenuOpen(false);
-              router.push(asHref('/(tabs)/transport/register'));
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Transporter mode: register your vehicle and take jobs"
-            style={({ pressed }) => [styles.driverMode, pressed && styles.pressed]}>
-            <Ionicons name="car-sport-outline" size={19} color={DS.colors.textInverse} />
-            <Text style={styles.driverModeText}>Transporter mode</Text>
-          </Pressable>
-        }
+            </>
+          ),
+          onPress: () => router.push(asHref('/(tabs)/profile')),
+        }}
+        primaryAction={{
+          label: 'Transporter mode',
+          icon: 'car-sport-outline',
+          onPress: () => router.push(asHref('/(tabs)/transport/register')),
+        }}
+        links={SOCIAL_LINKS}
       />
     </View>
   );
@@ -560,12 +559,6 @@ const styles = StyleSheet.create({
     color: DS.colors.textSoft,
   },
 
-  menuHeader: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm + 2 },
-  menuName: {
-    fontSize: DS.typography.h3.fontSize,
-    fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.text,
-  },
   menuMeta: {
     fontSize: DS.typography.caption.fontSize,
     fontFamily: DS.fontFamily.regular,
@@ -573,19 +566,4 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
-  driverMode: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: DS.spacing.sm,
-    minHeight: 52,
-    borderRadius: DS.radius.full,
-    backgroundColor: DS.colors.primary,
-    marginVertical: DS.spacing.sm,
-  },
-  driverModeText: {
-    fontSize: DS.typography.bodySm.fontSize,
-    fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.textInverse,
-  },
 });
