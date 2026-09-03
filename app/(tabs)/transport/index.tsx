@@ -2,10 +2,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Linking,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ImageSourcePropType,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Sidebar, type SidebarItem } from '@/components/design-system';
+import { BottomPanel } from '@/components/transport/bottom-panel';
 import { FullMap } from '@/components/transport/full-map';
 import { TransportLocked } from '@/components/transport/transport-locked';
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
@@ -111,6 +119,7 @@ export default function TransportHubScreen() {
       key: 'notifications',
       label: 'Notifications',
       icon: 'notifications-outline',
+      startsGroup: true,
       onPress: () => router.push(asHref('/notifications')),
     },
     {
@@ -160,89 +169,109 @@ export default function TransportHubScreen() {
         </Pressable>
       </View>
 
-      <View style={[styles.sheet, { paddingBottom: insets.bottom + DS.spacing.sm }]}>
-        <View style={styles.grabber} />
-
-        <ScrollView
-          contentContainerStyle={styles.sheetBody}
-          showsVerticalScrollIndicator={false}>
-          {/* The truck photograph, kept. */}
-          <View style={styles.banner}>
-            <Image
-              source={ScreenImages.transport}
-              style={StyleSheet.absoluteFill}
-              contentFit="cover"
-              transition={220}
-            />
-            <View style={styles.bannerScrim} />
+      <BottomPanel paddingBottom={insets.bottom + DS.spacing.sm}>
+        {/*
+          The truck photograph, kept — and doing a job here rather than only
+          being present: it is the strip that says how many transporters are
+          free, which is the first thing worth knowing on this screen.
+        */}
+        <View style={styles.banner}>
+          <Image
+            source={ScreenImages.transport}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={220}
+          />
+          <View style={styles.bannerScrim} />
+          <View style={styles.bannerRow}>
+            <View style={styles.bannerDot} />
             <Text style={styles.bannerText} numberOfLines={1}>
               {available.length} transporters free now
             </Text>
           </View>
+        </View>
 
-          <View style={styles.modes}>
-            <ModeTab
-              icon="cube"
-              label="Move a load"
-              caption={`${available.length} available`}
-              active
-              onPress={() => router.push(asHref('/(tabs)/transport/request'))}
-            />
-            <ModeTab
-              icon="car-outline"
-              label="Offer transport"
-              caption="Register a vehicle"
-              onPress={() => router.push(asHref('/(tabs)/transport/register'))}
-            />
+        {/* The one question. Sized to be the obvious thing to press. */}
+        <Pressable
+          onPress={() => router.push(asHref('/(tabs)/transport/request'))}
+          accessibilityRole="button"
+          accessibilityLabel="Where to, and for how much? Opens the order form."
+          style={({ pressed }) => [styles.search, pressed && styles.pressed]}>
+          <View style={styles.searchIcon}>
+            <Ionicons name="search" size={19} color={DS.colors.textInverse} />
           </View>
-
-          {/* inDrive's one question, and the reason the form is not on this screen. */}
-          <Pressable
-            onPress={() => router.push(asHref('/(tabs)/transport/request'))}
-            accessibilityRole="button"
-            accessibilityLabel="Where to, and for how much? Opens the order form."
-            style={({ pressed }) => [styles.search, pressed && styles.pressed]}>
-            <Ionicons name="search" size={20} color={DS.colors.text} />
-            <Text style={styles.searchText}>Where to & for how much?</Text>
-          </Pressable>
-
-          {recentDestinations.map((place) => (
-            <Pressable
-              key={place}
-              onPress={() =>
-                router.push(
-                  asHref({ pathname: '/(tabs)/transport/request', params: { to: place } })
-                )
-              }
-              accessibilityRole="button"
-              accessibilityLabel={`Send another load to ${place}`}
-              style={({ pressed }) => [styles.recent, pressed && styles.pressedRow]}>
-              <Ionicons name="location-outline" size={19} color={DS.colors.textMuted} />
-              <Text style={styles.recentText} numberOfLines={1}>
-                {place}
-              </Text>
-            </Pressable>
-          ))}
-
-          {activeTrips.length > 0 ? (
-            <Pressable
-              onPress={() => router.push(asHref('/(tabs)/transport/trips'))}
-              accessibilityRole="button"
-              accessibilityLabel={`${activeTrips.length} active ${activeTrips.length === 1 ? 'trip' : 'trips'}. Open my trips.`}
-              style={({ pressed }) => [styles.active, pressed && styles.pressed]}>
-              <Ionicons name="cube" size={17} color={DS.semantic.warning.fg} />
-              <Text style={styles.activeText}>
-                {activeTrips.length} trip{activeTrips.length === 1 ? '' : 's'} in progress
-              </Text>
-              <Ionicons name="chevron-forward" size={16} color={DS.semantic.warning.fg} />
-            </Pressable>
-          ) : null}
-
-          <Text style={styles.caveat}>
-            Pins show the town each transporter works from, not where their vehicle is now.
+          <Text style={styles.searchText} numberOfLines={1}>
+            Where to & for how much?
           </Text>
-        </ScrollView>
-      </View>
+          <Ionicons name="arrow-forward" size={18} color={DS.colors.textSoft} />
+        </Pressable>
+
+        {recentDestinations.length > 0 ? (
+          <View style={styles.recents}>
+            {recentDestinations.map((place, i) => (
+              <Pressable
+                key={place}
+                onPress={() =>
+                  router.push(
+                    asHref({ pathname: '/(tabs)/transport/request', params: { to: place } })
+                  )
+                }
+                accessibilityRole="button"
+                accessibilityLabel={`Send another load to ${place}`}
+                style={({ pressed }) => [
+                  styles.recent,
+                  i > 0 && styles.recentDivider,
+                  pressed && styles.pressedRow,
+                ]}>
+                <View style={styles.recentIcon}>
+                  <Ionicons name="time-outline" size={16} color={DS.colors.textMuted} />
+                </View>
+                <Text style={styles.recentText} numberOfLines={1}>
+                  {place}
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={DS.colors.textFaint} />
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
+        <View style={styles.modes}>
+          <ModeCard
+            image={ScreenImages.transport}
+            icon="cube"
+            label="Move a load"
+            caption={`${available.length} available`}
+            onPress={() => router.push(asHref('/(tabs)/transport/request'))}
+          />
+          <ModeCard
+            image={ScreenImages.crop}
+            icon="car-outline"
+            label="Offer transport"
+            caption="Register a vehicle"
+            onPress={() => router.push(asHref('/(tabs)/transport/register'))}
+          />
+        </View>
+
+        {activeTrips.length > 0 ? (
+          <Pressable
+            onPress={() => router.push(asHref('/(tabs)/transport/trips'))}
+            accessibilityRole="button"
+            accessibilityLabel={`${activeTrips.length} active ${activeTrips.length === 1 ? 'trip' : 'trips'}. Open my trips.`}
+            style={({ pressed }) => [styles.active, pressed && styles.pressed]}>
+            <View style={styles.activeIcon}>
+              <Ionicons name="cube" size={16} color={DS.semantic.warning.onSolid} />
+            </View>
+            <Text style={styles.activeText} numberOfLines={1}>
+              {activeTrips.length} trip{activeTrips.length === 1 ? '' : 's'} in progress
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color={DS.semantic.warning.fg} />
+          </Pressable>
+        ) : null}
+
+        <Text style={styles.caveat}>
+          Pins show the town each transporter works from, not where their vehicle is now.
+        </Text>
+      </BottomPanel>
 
       <Sidebar
         visible={menuOpen}
@@ -284,42 +313,46 @@ export default function TransportHubScreen() {
   );
 }
 
-function ModeTab({
+function ModeCard({
+  image,
   icon,
   label,
   caption,
-  active,
   onPress,
 }: {
+  image: ImageSourcePropType;
   icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
   caption: string;
-  active?: boolean;
   onPress: () => void;
 }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityState={{ selected: Boolean(active) }}
       accessibilityLabel={`${label}. ${caption}`}
-      style={({ pressed }) => [styles.mode, active && styles.modeActive, pressed && styles.pressed]}>
-      <View style={styles.modeTop}>
-        <Ionicons
-          name={icon}
-          size={20}
-          color={active ? DS.colors.primaryDark : DS.colors.textMuted}
-        />
-        {active ? (
-          <Ionicons name="checkmark-circle" size={14} color={DS.colors.primary} />
-        ) : null}
+      style={({ pressed }) => [styles.mode, pressed && styles.pressed]}>
+      <Image
+        source={image}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        transition={200}
+        cachePolicy="memory-disk"
+      />
+      <View style={styles.modeScrim} />
+
+      <View style={styles.modeIcon}>
+        <Ionicons name={icon} size={17} color={DS.colors.primary} />
       </View>
-      <Text style={[styles.modeLabel, active && styles.modeLabelActive]} numberOfLines={1}>
-        {label}
-      </Text>
-      <Text style={styles.modeCaption} numberOfLines={1}>
-        {caption}
-      </Text>
+
+      <View>
+        <Text style={styles.modeLabel} numberOfLines={1}>
+          {label}
+        </Text>
+        <Text style={styles.modeCaption} numberOfLines={1}>
+          {caption}
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -334,8 +367,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
     paddingHorizontal: DS.spacing.md,
-    // Clears the sheet below.
-    paddingBottom: 300,
+    // Clears the panel at its resting height, so the recentre control is never
+    // underneath it.
+    paddingBottom: '48%',
   },
   overlayTop: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm },
   circle: {
@@ -367,33 +401,8 @@ const styles = StyleSheet.create({
     color: DS.colors.text,
   },
 
-  sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    maxHeight: '62%',
-    backgroundColor: DS.colors.surface,
-    borderTopLeftRadius: DS.radius.xxl,
-    borderTopRightRadius: DS.radius.xxl,
-    ...DS.shadow.elevated,
-  },
-  grabber: {
-    alignSelf: 'center',
-    width: 38,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: DS.colors.borderStrong,
-    marginTop: DS.spacing.sm,
-  },
-  sheetBody: {
-    padding: DS.spacing.md,
-    paddingTop: DS.spacing.sm + 4,
-    gap: DS.spacing.sm + 4,
-  },
-
   banner: {
-    height: 68,
+    height: 76,
     borderRadius: DS.radius.lg,
     overflow: 'hidden',
     justifyContent: 'flex-end',
@@ -405,49 +414,44 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(15, 23, 42, 0.62)',
   },
+  bannerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    padding: DS.spacing.sm + 4,
+  },
+  bannerDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: DS.semantic.success.solid,
+  },
   bannerText: {
-    padding: DS.spacing.sm + 2,
+    flex: 1,
     fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.textInverse,
-  },
-
-  modes: { flexDirection: 'row', gap: DS.spacing.sm },
-  mode: {
-    flex: 1,
-    gap: 1,
-    borderRadius: DS.radius.lg,
-    borderWidth: DS.layout.hairline,
-    borderColor: DS.colors.border,
-    padding: DS.spacing.sm + 2,
-  },
-  modeActive: { backgroundColor: DS.colors.primaryBg, borderColor: DS.colors.primary },
-  modeTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  modeLabel: {
-    fontSize: DS.typography.caption.fontSize,
-    fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.text,
-  },
-  modeLabelActive: { color: DS.colors.primaryDark },
-  modeCaption: {
-    fontSize: 10,
-    fontFamily: DS.fontFamily.regular,
-    color: DS.colors.textMuted,
   },
 
   search: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: DS.spacing.sm + 2,
-    minHeight: 56,
-    paddingHorizontal: DS.spacing.md,
-    borderRadius: DS.radius.lg,
+    minHeight: 64,
+    paddingLeft: 6,
+    paddingRight: DS.spacing.md,
+    borderRadius: DS.radius.full,
     backgroundColor: DS.colors.surfaceMuted,
+    borderWidth: DS.layout.hairline,
+    borderColor: DS.colors.border,
+  },
+  searchIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: DS.radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: DS.colors.primary,
   },
   searchText: {
     flex: 1,
@@ -456,19 +460,72 @@ const styles = StyleSheet.create({
     color: DS.colors.text,
   },
 
+  recents: {
+    borderRadius: DS.radius.lg,
+    borderWidth: DS.layout.hairline,
+    borderColor: DS.colors.border,
+    overflow: 'hidden',
+  },
   recent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: DS.spacing.sm + 2,
     minHeight: DS.layout.touchTarget,
-    paddingHorizontal: DS.spacing.xs,
-    borderRadius: DS.radius.md,
+    paddingHorizontal: DS.spacing.sm + 4,
+  },
+  recentDivider: {
+    borderTopWidth: DS.layout.hairline,
+    borderTopColor: DS.colors.borderLight,
+  },
+  recentIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: DS.radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: DS.colors.surfaceMuted,
   },
   recentText: {
     flex: 1,
     fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.text,
+  },
+
+  modes: { flexDirection: 'row', gap: DS.spacing.sm + 4 },
+  mode: {
+    flex: 1,
+    height: 116,
+    borderRadius: DS.radius.lg,
+    overflow: 'hidden',
+    justifyContent: 'space-between',
+    padding: DS.spacing.sm + 2,
+    backgroundColor: DS.colors.surfaceMuted,
+  },
+  // 0.66 gives white 5.75:1 against the brightest frame either photograph can
+  // present, which is what the two lines here need.
+  modeScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 23, 42, 0.66)',
+  },
+  modeIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: DS.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: DS.colors.surface,
+  },
+  modeLabel: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textInverse,
+  },
+  modeCaption: {
+    fontSize: 11,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textInverse,
+    marginTop: 1,
   },
 
   active: {
@@ -480,6 +537,14 @@ const styles = StyleSheet.create({
     borderWidth: DS.layout.hairline,
     borderColor: DS.semantic.warning.border,
     padding: DS.spacing.sm + 2,
+  },
+  activeIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: DS.radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: DS.semantic.warning.solid,
   },
   activeText: {
     flex: 1,

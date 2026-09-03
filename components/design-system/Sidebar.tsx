@@ -19,6 +19,8 @@ import type { IconName } from '@/types/icons';
 
 export interface SidebarItem {
   key: string;
+  /** Starts a new group: a rule is drawn above this item. */
+  startsGroup?: boolean;
   label: string;
   icon: IconName;
   /** Shown on the right — a count, or a word like "New". */
@@ -54,6 +56,11 @@ export interface SidebarProps {
  *
  * The panel honours the safe area on all four sides. It sits under the status
  * bar, so without the top inset the first row lands beneath the clock.
+ *
+ * The current place is marked with a bar as well as a fill, because a tinted
+ * row and an untinted one are two greens apart and that is not a distinction
+ * everybody can make. `startsGroup` draws a rule above an item, so a list of
+ * nine reads as sections rather than as one column of nine.
  */
 export function Sidebar({ visible, onClose, items, header, footer }: SidebarProps) {
   const insets = useSafeAreaInsets();
@@ -108,7 +115,7 @@ export function Sidebar({ visible, onClose, items, header, footer }: SidebarProp
             },
           ]}>
           <View style={styles.headerRow}>
-            <View style={styles.flex}>{header}</View>
+            <View style={styles.headerPanel}>{header}</View>
             <Pressable
               onPress={onClose}
               accessibilityRole="button"
@@ -136,9 +143,13 @@ export function Sidebar({ visible, onClose, items, header, footer }: SidebarProp
                 accessibilityLabel={item.badge ? `${item.label}, ${item.badge}` : item.label}
                 style={({ pressed }) => [
                   styles.item,
+                  item.startsGroup && styles.itemGroupStart,
                   item.active && styles.itemActive,
                   pressed && styles.pressedRow,
                 ]}>
+                {/* A bar, not just a fill: the current place should be legible
+                    without depending on telling two greens apart. */}
+                {item.active ? <View style={styles.activeBar} /> : null}
                 <Ionicons
                   name={item.icon}
                   size={19}
@@ -177,7 +188,6 @@ export function Sidebar({ visible, onClose, items, header, footer }: SidebarProp
 
 const styles = StyleSheet.create({
   root: { flex: 1, flexDirection: 'row', backgroundColor: DS.colors.overlay },
-  flex: { flex: 1 },
   panel: {
     height: '100%',
     backgroundColor: DS.colors.surface,
@@ -192,7 +202,13 @@ const styles = StyleSheet.create({
     gap: DS.spacing.sm,
     paddingHorizontal: DS.spacing.md,
     paddingTop: DS.spacing.md,
-    paddingBottom: DS.spacing.sm,
+    paddingBottom: DS.spacing.md,
+  },
+  headerPanel: {
+    flex: 1,
+    backgroundColor: DS.colors.primaryBg,
+    borderRadius: DS.radius.lg,
+    padding: DS.spacing.sm + 2,
   },
   close: {
     width: 38,
@@ -210,14 +226,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: DS.spacing.sm + 4,
-    minHeight: DS.layout.touchTarget,
+    minHeight: 52,
     paddingHorizontal: DS.spacing.sm + 4,
     borderRadius: DS.radius.md,
+    overflow: 'hidden',
+  },
+  itemGroupStart: {
+    borderTopWidth: DS.layout.hairline,
+    borderTopColor: DS.colors.borderLight,
+    marginTop: DS.spacing.sm,
+    paddingTop: DS.spacing.xs,
+    borderRadius: 0,
   },
   itemActive: { backgroundColor: DS.colors.primaryBg },
+  activeBar: {
+    position: 'absolute',
+    left: 0,
+    top: 8,
+    bottom: 8,
+    width: 3,
+    borderRadius: 2,
+    backgroundColor: DS.colors.primary,
+  },
   itemLabel: {
     flex: 1,
-    fontSize: DS.typography.bodySm.fontSize,
+    fontSize: DS.typography.body.fontSize,
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.text,
   },
