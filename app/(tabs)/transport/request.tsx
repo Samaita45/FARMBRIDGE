@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -13,12 +13,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Input } from '@/components/design-system';
-import { matchPlace, PlaceField } from '@/components/forms/place-field';
+import { matchPlace } from '@/components/forms/place-field';
+import { PriceField } from '@/components/transport/price-field';
+import { RouteFields } from '@/components/transport/route-fields';
 import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
 import { useLocation } from '@/hooks/useLocation';
 import { asHref } from '@/lib/href';
-import { estimateDistanceKm } from '@/services/transportDb';
+import { TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
+import { estimateDistanceKm, estimatePrice } from '@/services/transportDb';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
 import {
   GOODS_CATEGORIES,
@@ -27,7 +30,13 @@ import {
 } from '@/types/transport';
 
 /**
- * The trip details.
+ * The order: where, for how much, and what is being moved.
+ *
+ * This is what inDrive's "Where to & for how much?" opens onto, and it is the
+ * only screen in the flow that asks for anything. Route and price sit at the
+ * top because they are the two things a farmer beside a loaded bakkie already
+ * knows; the load details follow, because a transporter cannot agree to two
+ * tonnes of tomatoes without being told it is two tonnes of tomatoes.
  *
  * Pickup and destination now go through a field that knows Zimbabwean towns,
  * because everything after this screen depends on resolving them: the route
@@ -40,10 +49,17 @@ import {
 export default function TransportRequestScreen() {
   const { location } = useLocation();
   const { showToast } = useToast();
+  // Tapping a recent destination on the hub arrives with it already filled in.
+  const { to } = useLocalSearchParams<{ to?: string }>();
+
   const setRequest = useTransportStore((s: TransportState) => s.setRequest);
+  const setOffer = useTransportStore((s: TransportState) => s.setOffer);
+  const storedOffer = useTransportStore((s: TransportState) => s.offeredPriceUSD);
 
   const [pickup, setPickup] = useState(location.label);
-  const [destination, setDestination] = useState('');
+  const [destination, setDestination] = useState(to ?? '');
+  const [price, setPrice] = useState<number | null>(storedOffer);
+  const [note, setNote] = useState('');
   const [goods, setGoods] = useState('');
   const [weight, setWeight] = useState('500');
   const [category, setCategory] = useState<GoodsCategory>('Fresh Produce');
@@ -57,6 +73,20 @@ export default function TransportRequestScreen() {
     () => estimateDistanceKm(pickup, destination),
     [pickup, destination]
   );
+
+  /*
+    The mean of what the available transporters would charge for this distance
+    at their own published rates. Arithmetic on numbers already in the app, not
+    a figure tuned to move the offer one way or the other.
+  */
+  const suggested = useMemo(() => {
+    if (distanceKm === null) return null;
+    const free = TRANSPORT_PROVIDERS.filter((p) => p.isAvailable);
+    if (free.length === 0) return null;
+    return Math.round(
+      free.reduce((sum, p) => sum + estimatePrice(p, distanceKm), 0) / free.length
+    );
+  }, [distanceKm]);
 
   const errors = {
     pickup: !pickup.trim()
@@ -72,6 +102,7 @@ export default function TransportRequestScreen() {
     goods: goods.trim() ? undefined : 'Say what is being moved',
     weight: Number(weight) > 0 ? undefined : 'Enter a weight in kilograms',
     date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? undefined : 'Use the format YYYY-MM-DD',
+    price: price !== null && price > 0 ? undefined : 'Name a price',
   };
   const valid = Object.values(errors).every((e) => !e);
 
@@ -81,7 +112,7 @@ export default function TransportRequestScreen() {
 
   const onContinue = () => {
     setTouched(true);
-    if (!valid || distanceKm === null) {
+    if (!valid || distanceKm === null || price === null) {
       showToast('Fill in the highlighted fields', 'warning');
       return;
     }
@@ -100,6 +131,7 @@ export default function TransportRequestScreen() {
       },
       distanceKm
     );
+    setOffer(price, note.trim());
     router.push(asHref('/(tabs)/transport/providers'));
   };
 
@@ -112,25 +144,15 @@ export default function TransportRequestScreen() {
           contentContainerStyle={styles.body}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
-          <Text style={styles.step}>Step 1 of 3 · Trip details</Text>
+          <Text style={styles.step}>Step 1 of 3 · Your order</Text>
 
-          <PlaceField
-            label="Pickup"
-            value={pickup}
-            onChangeText={setPickup}
-            placeholder="Harare, Mbare Musika"
-            required
-            error={touched ? errors.pickup : undefined}
-            hint="Add the exact spot after the town, so the driver knows where to pull in."
-          />
-
-          <PlaceField
-            label="Destination"
-            value={destination}
-            onChangeText={setDestination}
-            placeholder="Bulawayo, Renkini"
-            required
-            error={touched ? errors.destination : undefined}
+          <RouteFields
+            pickup={pickup}
+            destination={destination}
+            onPickupChange={setPickup}
+            onDestinationChange={setDestination}
+            pickupError={touched ? errors.pickup : undefined}
+            destinationError={touched ? errors.destination : undefined}
           />
 
           {distanceKm !== null ? (
@@ -141,6 +163,15 @@ export default function TransportRequestScreen() {
               </Text>
             </View>
           ) : null}
+
+          <PriceField
+            value={price}
+            onChange={setPrice}
+            suggested={suggested}
+            error={touched ? errors.price : undefined}
+          />
+
+          <View style={styles.divider} />
 
           <Input
             label="What are you transporting?"
@@ -205,6 +236,15 @@ export default function TransportRequestScreen() {
             placeholder="1"
           />
 
+          <Input
+            label="Anything they should know"
+            value={note}
+            onChangeText={setNote}
+            placeholder="Loading at the gate, needs a tarpaulin, ready from 7am…"
+            multiline
+            numberOfLines={3}
+          />
+
           <View>
             <Text style={styles.fieldLabel}>Special requirements</Text>
             <View style={styles.chips}>
@@ -250,6 +290,7 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
+  divider: { height: DS.layout.hairline, backgroundColor: DS.colors.borderLight },
 
   distance: {
     flexDirection: 'row',

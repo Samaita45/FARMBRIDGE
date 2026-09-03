@@ -2,83 +2,64 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/design-system';
-import { FadeInView } from '@/components/design-system/FadeInView';
-import { matchPlace } from '@/components/forms/place-field';
-import { NearbyMap } from '@/components/transport/nearby-map';
-import { PriceField } from '@/components/transport/price-field';
-import { RouteFields } from '@/components/transport/route-fields';
+import { Sidebar, type SidebarItem } from '@/components/design-system';
+import { FullMap } from '@/components/transport/full-map';
 import { TransportLocked } from '@/components/transport/transport-locked';
-import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
-import { useToast } from '@/components/ui/toast-provider';
+import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { DS } from '@/constants/design-system';
 import { ScreenImages } from '@/constants/images';
+import { whatsAppUrl } from '@/constants/support';
 import { TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
 import { useLocation, type LocationSource } from '@/hooks/useLocation';
+import { useProfileAvatar } from '@/hooks/useProfileAvatar';
 import { asHref } from '@/lib/href';
-import { estimateDistanceKm, estimatePrice, getBookings } from '@/services/transportDb';
+import { getBookings } from '@/services/transportDb';
 import { selectIsSubscribed, useAuthStore, type AuthState } from '@/stores/authStore';
-import { useTransportStore, type TransportState } from '@/stores/transportStore';
 import type { TransportBooking } from '@/types/transport';
 
 const LOCATION_CAPTION: Record<LocationSource, string> = {
-  gps: 'YOUR LOCATION',
-  profile: 'FROM YOUR PROFILE',
-  default: 'DEFAULT LOCATION',
+  gps: 'Your location',
+  profile: 'From your profile',
+  default: 'Default location',
 };
 
 /**
- * The transport hub, built around inDrive's idea: you say where, you say what
- * you will pay, and then you go and find someone who will take it.
+ * The transport home, laid out as inDrive lays out its own: the map is the
+ * screen, a menu button sits over it, and everything you do lives in a sheet
+ * along the bottom.
  *
- * WHAT CHANGED. The hub was a banner and three links, and naming a price
- * happened four screens later — after the app had already quoted one at you.
- * Route and price are the first two things now, because they are the two things
- * a farmer standing beside a loaded bakkie already knows.
+ * WHY THE FORM WENT AWAY. The previous version put the route, the price and a
+ * note straight onto the home screen. That is the whole order on a page you
+ * arrive at, which is a lot to face before you have decided you want anything.
+ * inDrive asks one question — "Where to & for how much?" — and opens the form
+ * once you have answered it, and the reason it works is that the question is
+ * also the answer to "what is this app for". The order form still exists; it is
+ * one tap in.
  *
- * WHERE IT STOPS SHORT OF inDrive, AND WHY. In inDrive the offer goes out and
- * drivers respond inside the app. FarmBridge has no server and no transporter
- * is signed in, so nothing here can receive a reply. Rather than animate offers
- * arriving from people who have never seen the request, the offer travels with
- * you: the next screens rank transporters by how their own published rate
- * compares to your price, so it is clear who is worth calling, and contacting
- * them carries the number.
+ * THE TRUCK PHOTOGRAPH STAYS. inDrive has no photograph here, but you asked for
+ * it kept, so it heads the sheet — which is also the one place on a map-first
+ * screen where an image does not fight the map for attention.
  *
- * The truck photograph stays where it was, at the top.
+ * RECENT DESTINATIONS ARE REAL TRIPS. inDrive lists saved and recent places
+ * under the search field. These come from bookings actually made on this
+ * device, most recent first, deduplicated. When there are none the row is
+ * absent rather than filled with suggestions nobody asked for.
  */
 export default function TransportHubScreen() {
+  const insets = useSafeAreaInsets();
   const isSubscribed = useAuthStore(selectIsSubscribed);
   const user = useAuthStore((s: AuthState) => s.user);
-  const { showToast } = useToast();
-  const { location, source, permission, refresh } = useLocation();
+  const { location, source, refresh } = useLocation();
+  const { avatarUri, initials } = useProfileAvatar();
 
-  const setRequest = useTransportStore((s: TransportState) => s.setRequest);
-  const setOffer = useTransportStore((s: TransportState) => s.setOffer);
-  const storedRequest = useTransportStore((s: TransportState) => s.request);
-  const storedOffer = useTransportStore((s: TransportState) => s.offeredPriceUSD);
-
-  const [activeTrips, setActiveTrips] = useState<TransportBooking[]>([]);
-  const [pickup, setPickup] = useState(storedRequest?.pickup ?? location.label);
-  const [destination, setDestination] = useState(storedRequest?.destination ?? '');
-  const [price, setPrice] = useState<number | null>(storedOffer);
-  const [note, setNote] = useState('');
-  const [touched, setTouched] = useState(false);
+  const [bookings, setBookings] = useState<TransportBooking[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const loadTrips = useCallback(async () => {
-    const trips = await getBookings(user?.id ?? 'guest');
-    setActiveTrips(trips.filter((t) => ['pending', 'confirmed', 'in_transit'].includes(t.status)));
+    setBookings(await getBookings(user?.id ?? 'guest'));
   }, [user?.id]);
 
   useFocusEffect(
@@ -88,454 +69,458 @@ export default function TransportHubScreen() {
   );
 
   const available = useMemo(() => TRANSPORT_PROVIDERS.filter((t) => t.isAvailable), []);
-  const distanceKm = useMemo(
-    () => estimateDistanceKm(pickup, destination),
-    [pickup, destination]
+  const activeTrips = useMemo(
+    () => bookings.filter((t) => ['pending', 'confirmed', 'in_transit'].includes(t.status)),
+    [bookings]
   );
 
-  /*
-    The mean of what the available transporters would charge for this distance
-    at their own published rates. Arithmetic on numbers already in the app, not
-    a figure tuned to move the offer one way or the other.
-  */
-  const suggested = useMemo(() => {
-    if (distanceKm === null || available.length === 0) return null;
-    const total = available.reduce((sum, p) => sum + estimatePrice(p, distanceKm), 0);
-    return Math.round(total / available.length);
-  }, [distanceKm, available]);
+  /** Destinations from trips actually booked here, newest first, no repeats. */
+  const recentDestinations = useMemo(() => {
+    const seen: string[] = [];
+    for (const b of bookings) {
+      if (b.destination && !seen.includes(b.destination)) seen.push(b.destination);
+      if (seen.length === 3) break;
+    }
+    return seen;
+  }, [bookings]);
 
   if (!isSubscribed) return <TransportLocked />;
 
-  const firstName = user?.name?.split(' ')[0] ?? 'there';
-
-  const errors = {
-    pickup: !pickup.trim()
-      ? 'Where is the load now?'
-      : !matchPlace(pickup)
-        ? 'Include a town we know'
-        : undefined,
-    destination: !destination.trim()
-      ? 'Where is it going?'
-      : !matchPlace(destination)
-        ? 'Include a town we know'
-        : undefined,
-    price: price !== null && price > 0 ? undefined : 'Name a price',
-  };
-  const valid = Object.values(errors).every((e) => !e);
-
-  const findTransporters = () => {
-    setTouched(true);
-    if (!valid || distanceKm === null || price === null) {
-      showToast('Fill in the route and your price', 'warning');
-      return;
-    }
-
-    // Carries what has been entered so far; the load details are still asked
-    // for on the next screen, and nothing gets typed twice.
-    setRequest(
-      {
-        pickup: pickup.trim(),
-        destination: destination.trim(),
-        goodsDescription: storedRequest?.goodsDescription ?? '',
-        weightKg: storedRequest?.weightKg ?? 500,
-        category: storedRequest?.category ?? 'Fresh Produce',
-        preferredDate: storedRequest?.preferredDate ?? new Date().toISOString().slice(0, 10),
-        preferredTime: storedRequest?.preferredTime ?? '08:00',
-        loads: storedRequest?.loads ?? 1,
-        specialRequirements: storedRequest?.specialRequirements ?? [],
-      },
-      distanceKm
-    );
-    setOffer(price, note.trim());
-    router.push(asHref('/(tabs)/transport/request'));
-  };
+  const menuItems: SidebarItem[] = [
+    {
+      key: 'move',
+      label: 'Move a load',
+      icon: 'cube-outline',
+      active: true,
+      onPress: () => router.push(asHref('/(tabs)/transport/request')),
+    },
+    {
+      key: 'trips',
+      label: 'My trips',
+      icon: 'time-outline',
+      badge: activeTrips.length > 0 ? String(activeTrips.length) : undefined,
+      onPress: () => router.push(asHref('/(tabs)/transport/trips')),
+    },
+    {
+      key: 'transporters',
+      label: 'All transporters',
+      icon: 'people-outline',
+      onPress: () => router.push(asHref('/(tabs)/transport/providers')),
+    },
+    {
+      key: 'notifications',
+      label: 'Notifications',
+      icon: 'notifications-outline',
+      onPress: () => router.push(asHref('/notifications')),
+    },
+    {
+      key: 'settings',
+      label: 'Settings',
+      icon: 'settings-outline',
+      onPress: () => router.push(asHref('/settings')),
+    },
+    {
+      key: 'support',
+      label: 'Help and support',
+      icon: 'logo-whatsapp',
+      onPress: () =>
+        void Linking.openURL(whatsAppUrl('Hi, I need help with FarmBridge transport.')),
+    },
+  ];
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={styles.body}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
-          <View style={styles.locationRow}>
-            <Pressable
-              onPress={() => void refresh()}
-              accessibilityRole="button"
-              accessibilityLabel={`${LOCATION_CAPTION[source]}: ${location.label}. Tap to locate again.`}
-              style={styles.locationPress}>
-              <View style={styles.locationIcon}>
-                <Ionicons
-                  name={source === 'gps' ? 'location' : 'location-outline'}
-                  size={16}
-                  color={DS.colors.primary}
-                />
-              </View>
-              <View style={styles.flex}>
-                <Text style={styles.locationLabel}>
-                  {LOCATION_CAPTION[source]}
-                  {permission === 'denied' && source !== 'gps' ? ' · no permission' : ''}
-                </Text>
-                <Text style={styles.locationValue} numberOfLines={1}>
-                  {location.label}
-                </Text>
-              </View>
-            </Pressable>
+    <View style={styles.root}>
+      <FullMap centre={location} providers={available} />
 
+      {/* Over the map: the menu, the location pill, and the recentre control. */}
+      <View style={[styles.overlay, { paddingTop: insets.top + DS.spacing.sm }]} pointerEvents="box-none">
+        <View style={styles.overlayTop} pointerEvents="box-none">
+          <Pressable
+            onPress={() => setMenuOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Open the transport menu"
+            style={({ pressed }) => [styles.circle, pressed && styles.pressed]}>
+            <Ionicons name="menu" size={22} color={DS.colors.text} />
+          </Pressable>
+
+          <View style={styles.pill}>
+            <Text style={styles.pillLabel}>{LOCATION_CAPTION[source]}</Text>
+            <Text style={styles.pillValue} numberOfLines={1}>
+              {location.label}
+            </Text>
+          </View>
+        </View>
+
+        <Pressable
+          onPress={() => void refresh()}
+          accessibilityRole="button"
+          accessibilityLabel="Centre the map on my location"
+          style={({ pressed }) => [styles.circle, styles.recentre, pressed && styles.pressed]}>
+          <Ionicons name="navigate" size={20} color={DS.colors.primary} />
+        </Pressable>
+      </View>
+
+      <View style={[styles.sheet, { paddingBottom: insets.bottom + DS.spacing.sm }]}>
+        <View style={styles.grabber} />
+
+        <ScrollView
+          contentContainerStyle={styles.sheetBody}
+          showsVerticalScrollIndicator={false}>
+          {/* The truck photograph, kept. */}
+          <View style={styles.banner}>
+            <Image
+              source={ScreenImages.transport}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              transition={220}
+            />
+            <View style={styles.bannerScrim} />
+            <Text style={styles.bannerText} numberOfLines={1}>
+              {available.length} transporters free now
+            </Text>
+          </View>
+
+          <View style={styles.modes}>
+            <ModeTab
+              icon="cube"
+              label="Move a load"
+              caption={`${available.length} available`}
+              active
+              onPress={() => router.push(asHref('/(tabs)/transport/request'))}
+            />
+            <ModeTab
+              icon="car-outline"
+              label="Offer transport"
+              caption="Register a vehicle"
+              onPress={() => router.push(asHref('/(tabs)/transport/register'))}
+            />
+          </View>
+
+          {/* inDrive's one question, and the reason the form is not on this screen. */}
+          <Pressable
+            onPress={() => router.push(asHref('/(tabs)/transport/request'))}
+            accessibilityRole="button"
+            accessibilityLabel="Where to, and for how much? Opens the order form."
+            style={({ pressed }) => [styles.search, pressed && styles.pressed]}>
+            <Ionicons name="search" size={20} color={DS.colors.text} />
+            <Text style={styles.searchText}>Where to & for how much?</Text>
+          </Pressable>
+
+          {recentDestinations.map((place) => (
+            <Pressable
+              key={place}
+              onPress={() =>
+                router.push(
+                  asHref({ pathname: '/(tabs)/transport/request', params: { to: place } })
+                )
+              }
+              accessibilityRole="button"
+              accessibilityLabel={`Send another load to ${place}`}
+              style={({ pressed }) => [styles.recent, pressed && styles.pressedRow]}>
+              <Ionicons name="location-outline" size={19} color={DS.colors.textMuted} />
+              <Text style={styles.recentText} numberOfLines={1}>
+                {place}
+              </Text>
+            </Pressable>
+          ))}
+
+          {activeTrips.length > 0 ? (
             <Pressable
               onPress={() => router.push(asHref('/(tabs)/transport/trips'))}
               accessibilityRole="button"
-              accessibilityLabel={
-                activeTrips.length > 0 ? `My trips, ${activeTrips.length} active` : 'My trips'
-              }
-              style={styles.tripsBtn}>
-              <Ionicons name="cube-outline" size={20} color={DS.colors.text} />
-              {activeTrips.length > 0 ? (
-                <View style={styles.tripsBadge}>
-                  <Text style={styles.tripsBadgeText}>
-                    {activeTrips.length > 9 ? '9+' : activeTrips.length}
-                  </Text>
-                </View>
-              ) : null}
+              accessibilityLabel={`${activeTrips.length} active ${activeTrips.length === 1 ? 'trip' : 'trips'}. Open my trips.`}
+              style={({ pressed }) => [styles.active, pressed && styles.pressed]}>
+              <Ionicons name="cube" size={17} color={DS.semantic.warning.fg} />
+              <Text style={styles.activeText}>
+                {activeTrips.length} trip{activeTrips.length === 1 ? '' : 's'} in progress
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={DS.semantic.warning.fg} />
             </Pressable>
-          </View>
+          ) : null}
 
-          {/* The truck photograph, kept where it was. */}
-          <FadeInView delay={0}>
-            <View style={styles.banner}>
-              <Image
-                source={ScreenImages.transport}
-                style={StyleSheet.absoluteFill}
-                contentFit="cover"
-                transition={220}
-              />
-              <View style={styles.bannerScrim} />
-              <View style={styles.bannerBody}>
-                <Text style={styles.bannerTitle} numberOfLines={2}>
-                  Hi {firstName}, moving a harvest?
-                </Text>
-                <Text style={styles.bannerSub}>Set your route and name your price.</Text>
-              </View>
-            </View>
-          </FadeInView>
-
-          <FadeInView delay={1}>
-            <View style={styles.composer}>
-              <RouteFields
-                pickup={pickup}
-                destination={destination}
-                onPickupChange={setPickup}
-                onDestinationChange={setDestination}
-                pickupError={touched ? errors.pickup : undefined}
-                destinationError={touched ? errors.destination : undefined}
-              />
-
-              {distanceKm !== null ? (
-                <View style={styles.distance}>
-                  <Ionicons name="navigate-outline" size={15} color={DS.colors.primary} />
-                  <Text style={styles.distanceText}>
-                    About {distanceKm} km by road — an estimate between town centres.
-                  </Text>
-                </View>
-              ) : null}
-
-              <View style={styles.divider} />
-
-              <PriceField
-                value={price}
-                onChange={setPrice}
-                suggested={suggested}
-                error={touched ? errors.price : undefined}
-              />
-
-              <View>
-                <Text style={styles.noteLabel}>Anything they should know</Text>
-                <TextInput
-                  style={styles.note}
-                  value={note}
-                  onChangeText={setNote}
-                  placeholder="Loading at the gate, needs a tarpaulin, ready from 7am…"
-                  placeholderTextColor={DS.colors.textMuted}
-                  multiline
-                  maxLength={200}
-                  accessibilityLabel="A note for the transporter"
-                  maxFontSizeMultiplier={DS.layout.maxFontScale}
-                />
-              </View>
-
-              <Button title="Find transporters" size="lg" onPress={findTransporters} />
-            </View>
-          </FadeInView>
-
-          <FadeInView delay={2}>
-            <View style={styles.section}>
-              <View style={styles.sectionHead}>
-                <Text style={styles.sectionTitle}>Who is around</Text>
-                <Text style={styles.sectionCount}>{available.length} free now</Text>
-              </View>
-              <NearbyMap centre={location} providers={available} />
-            </View>
-          </FadeInView>
-
-          <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>Transporters nearby</Text>
-            <Pressable
-              onPress={() => router.push(asHref('/(tabs)/transport/register'))}
-              accessibilityRole="button"
-              accessibilityLabel="Offer transport with your own vehicle"
-              hitSlop={8}>
-              <Text style={styles.link}>Offer transport</Text>
-            </Pressable>
-          </View>
-
-          {available.slice(0, 4).map((provider) => (
-            <Pressable
-              key={provider.id}
-              onPress={() => router.push(asHref('/(tabs)/transport/providers'))}
-              accessibilityRole="button"
-              accessibilityLabel={`${provider.name}, ${VEHICLE_LABELS[provider.vehicleType]}, ${provider.capacity} tonnes, $${provider.pricePerKm} per kilometre. Available.`}
-              style={({ pressed }) => [styles.provider, pressed && styles.pressedRow]}>
-              <View style={styles.providerAvatar}>
-                <VehicleIcon type={provider.vehicleType} size={20} />
-              </View>
-              <View style={styles.flex}>
-                <Text style={styles.providerName} numberOfLines={1}>
-                  {provider.name}
-                </Text>
-                <Text style={styles.providerMeta} numberOfLines={1}>
-                  {VEHICLE_LABELS[provider.vehicleType]} · {provider.capacity}t · {provider.location}
-                </Text>
-              </View>
-              <View style={styles.providerRight}>
-                <Text style={styles.providerRate}>${provider.pricePerKm}/km</Text>
-                <View style={styles.availableBadge}>
-                  <View style={styles.availableDot} />
-                  <Text style={styles.availableText}>Available</Text>
-                </View>
-              </View>
-            </Pressable>
-          ))}
+          <Text style={styles.caveat}>
+            Pins show the town each transporter works from, not where their vehicle is now.
+          </Text>
         </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </View>
+
+      <Sidebar
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        items={menuItems}
+        header={
+          <Pressable
+            onPress={() => router.push(asHref('/(tabs)/profile'))}
+            accessibilityRole="button"
+            accessibilityLabel="Open your profile"
+            style={styles.menuHeader}>
+            <ProfileAvatar uri={avatarUri} initials={initials} size={46} embedded showCameraBadge={false} />
+            <View style={styles.flex}>
+              <Text style={styles.menuName} numberOfLines={1}>
+                {user?.name ?? 'Guest'}
+              </Text>
+              <Text style={styles.menuMeta} numberOfLines={1}>
+                {bookings.length} {bookings.length === 1 ? 'trip' : 'trips'} booked
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={DS.colors.textFaint} />
+          </Pressable>
+        }
+        footer={
+          <Pressable
+            onPress={() => {
+              setMenuOpen(false);
+              router.push(asHref('/(tabs)/transport/register'));
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Transporter mode: register your vehicle and take jobs"
+            style={({ pressed }) => [styles.driverMode, pressed && styles.pressed]}>
+            <Ionicons name="car-sport-outline" size={19} color={DS.colors.textInverse} />
+            <Text style={styles.driverModeText}>Transporter mode</Text>
+          </Pressable>
+        }
+      />
+    </View>
+  );
+}
+
+function ModeTab({
+  icon,
+  label,
+  caption,
+  active,
+  onPress,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  caption: string;
+  active?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: Boolean(active) }}
+      accessibilityLabel={`${label}. ${caption}`}
+      style={({ pressed }) => [styles.mode, active && styles.modeActive, pressed && styles.pressed]}>
+      <View style={styles.modeTop}>
+        <Ionicons
+          name={icon}
+          size={20}
+          color={active ? DS.colors.primaryDark : DS.colors.textMuted}
+        />
+        {active ? (
+          <Ionicons name="checkmark-circle" size={14} color={DS.colors.primary} />
+        ) : null}
+      </View>
+      <Text style={[styles.modeLabel, active && styles.modeLabelActive]} numberOfLines={1}>
+        {label}
+      </Text>
+      <Text style={styles.modeCaption} numberOfLines={1}>
+        {caption}
+      </Text>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: DS.colors.background },
+  root: { flex: 1, backgroundColor: DS.colors.surfaceMuted },
   flex: { flex: 1 },
+  pressed: { opacity: 0.85 },
   pressedRow: { backgroundColor: DS.colors.surfaceMuted },
 
-  body: {
-    padding: DS.spacing.md,
-    paddingBottom: DS.spacing.xl,
-    gap: DS.spacing.md,
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'space-between',
+    paddingHorizontal: DS.spacing.md,
+    // Clears the sheet below.
+    paddingBottom: 300,
   },
-
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm },
-  locationPress: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: DS.spacing.sm + 2,
-  },
-  locationIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: DS.radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: DS.colors.primaryBg,
-  },
-  locationLabel: {
-    fontSize: 10,
-    fontFamily: DS.fontFamily.regular,
-    color: DS.colors.textSoft,
-    letterSpacing: 0.4,
-  },
-  locationValue: {
-    fontSize: DS.typography.bodySm.fontSize,
-    fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.text,
-  },
-  tripsBtn: {
-    width: 42,
-    height: 42,
+  overlayTop: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm },
+  circle: {
+    width: 44,
+    height: 44,
     borderRadius: DS.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: DS.colors.surface,
-    borderWidth: DS.layout.hairline,
-    borderColor: DS.colors.border,
+    ...DS.shadow.card,
   },
-  tripsBadge: {
-    position: 'absolute',
-    top: -1,
-    right: -1,
-    minWidth: 18,
-    height: 18,
+  recentre: { alignSelf: 'flex-end' },
+  pill: {
+    flexShrink: 1,
+    backgroundColor: DS.colors.surface,
     borderRadius: DS.radius.full,
-    paddingHorizontal: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: DS.semantic.danger.solid,
-    borderWidth: 2,
-    borderColor: DS.colors.background,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    ...DS.shadow.card,
   },
-  tripsBadgeText: {
-    fontSize: 9,
-    fontFamily: DS.fontFamily.bold,
-    color: DS.semantic.danger.onSolid,
+  pillLabel: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textSoft,
+  },
+  pillValue: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+
+  sheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    maxHeight: '62%',
+    backgroundColor: DS.colors.surface,
+    borderTopLeftRadius: DS.radius.xxl,
+    borderTopRightRadius: DS.radius.xxl,
+    ...DS.shadow.elevated,
+  },
+  grabber: {
+    alignSelf: 'center',
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: DS.colors.borderStrong,
+    marginTop: DS.spacing.sm,
+  },
+  sheetBody: {
+    padding: DS.spacing.md,
+    paddingTop: DS.spacing.sm + 4,
+    gap: DS.spacing.sm + 4,
   },
 
   banner: {
-    height: 132,
-    borderRadius: DS.radius.xl,
+    height: 68,
+    borderRadius: DS.radius.lg,
     overflow: 'hidden',
     justifyContent: 'flex-end',
     backgroundColor: DS.colors.surfaceMuted,
   },
+  // 0.62, not 0.55: against the brightest frame of the photograph the label
+  // measured 4.00:1 at 0.55, and 5.03 here.
   bannerScrim: {
     ...StyleSheet.absoluteFillObject,
-    top: '30%',
-    backgroundColor: 'rgba(15, 23, 42, 0.68)',
+    backgroundColor: 'rgba(15, 23, 42, 0.62)',
   },
-  bannerBody: { padding: DS.spacing.md, gap: 2 },
-  bannerTitle: {
-    fontSize: DS.typography.h2.fontSize,
-    lineHeight: DS.typography.h2.lineHeight,
-    fontFamily: DS.fontFamily.display,
-    color: DS.colors.textInverse,
-  },
-  bannerSub: {
-    fontSize: DS.typography.caption.fontSize,
-    fontFamily: DS.fontFamily.regular,
+  bannerText: {
+    padding: DS.spacing.sm + 2,
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
     color: DS.colors.textInverse,
   },
 
-  composer: {
-    gap: DS.spacing.md,
-    backgroundColor: DS.colors.surface,
-    borderRadius: DS.radius.xl,
+  modes: { flexDirection: 'row', gap: DS.spacing.sm },
+  mode: {
+    flex: 1,
+    gap: 1,
+    borderRadius: DS.radius.lg,
     borderWidth: DS.layout.hairline,
     borderColor: DS.colors.border,
-    padding: DS.spacing.md,
+    padding: DS.spacing.sm + 2,
   },
-  distance: {
+  modeActive: { backgroundColor: DS.colors.primaryBg, borderColor: DS.colors.primary },
+  modeTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: DS.spacing.sm,
-    backgroundColor: DS.colors.primaryBg,
-    borderRadius: DS.radius.md,
-    paddingHorizontal: DS.spacing.sm + 4,
-    paddingVertical: DS.spacing.sm,
+    justifyContent: 'space-between',
+    marginBottom: 4,
   },
-  distanceText: {
-    flex: 1,
-    fontSize: 11,
-    lineHeight: 16,
-    fontFamily: DS.fontFamily.regular,
-    color: DS.colors.primaryDark,
-  },
-  divider: { height: DS.layout.hairline, backgroundColor: DS.colors.borderLight },
-
-  noteLabel: {
+  modeLabel: {
     fontSize: DS.typography.caption.fontSize,
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.text,
-    marginBottom: 8,
   },
-  note: {
-    minHeight: 76,
-    textAlignVertical: 'top',
-    borderRadius: DS.radius.md,
-    borderWidth: DS.layout.hairline,
-    borderColor: DS.colors.borderControl,
-    padding: DS.spacing.sm + 4,
-    fontSize: DS.typography.bodySm.fontSize,
-    lineHeight: 20,
-    fontFamily: DS.fontFamily.regular,
-    color: DS.colors.text,
-  },
-
-  section: { gap: DS.spacing.sm },
-  sectionHead: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    gap: DS.spacing.sm,
-  },
-  sectionCount: {
-    fontSize: DS.typography.caption.fontSize,
+  modeLabelActive: { color: DS.colors.primaryDark },
+  modeCaption: {
+    fontSize: 10,
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
-  sectionRow: {
+
+  search: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: DS.spacing.sm,
-    marginTop: DS.spacing.xs,
+    gap: DS.spacing.sm + 2,
+    minHeight: 56,
+    paddingHorizontal: DS.spacing.md,
+    borderRadius: DS.radius.lg,
+    backgroundColor: DS.colors.surfaceMuted,
   },
-  sectionTitle: {
-    flexShrink: 1,
+  searchText: {
+    flex: 1,
     fontSize: DS.typography.h3.fontSize,
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.text,
   },
-  link: {
-    fontSize: DS.typography.caption.fontSize,
-    fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.primary,
-    paddingVertical: 6,
-  },
 
-  provider: {
+  recent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: DS.spacing.sm + 4,
-    backgroundColor: DS.colors.surface,
-    borderRadius: DS.radius.lg,
-    borderWidth: DS.layout.hairline,
-    borderColor: DS.colors.border,
-    padding: DS.spacing.sm + 4,
-  },
-  providerAvatar: {
-    width: 40,
-    height: 40,
+    gap: DS.spacing.sm + 2,
+    minHeight: DS.layout.touchTarget,
+    paddingHorizontal: DS.spacing.xs,
     borderRadius: DS.radius.md,
-    backgroundColor: DS.colors.primaryBg,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  providerName: {
+  recentText: {
+    flex: 1,
     fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.text,
   },
-  providerMeta: {
+
+  active: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DS.spacing.sm,
+    backgroundColor: DS.semantic.warning.bg,
+    borderRadius: DS.radius.md,
+    borderWidth: DS.layout.hairline,
+    borderColor: DS.semantic.warning.border,
+    padding: DS.spacing.sm + 2,
+  },
+  activeText: {
+    flex: 1,
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.semantic.warning.fg,
+  },
+
+  caveat: {
+    fontSize: 10,
+    lineHeight: 15,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textSoft,
+  },
+
+  menuHeader: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm + 2 },
+  menuName: {
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  menuMeta: {
     fontSize: DS.typography.caption.fontSize,
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
     marginTop: 1,
   },
-  providerRight: { alignItems: 'flex-end', gap: 4 },
-  providerRate: {
-    fontSize: DS.typography.caption.fontSize,
+
+  driverMode: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: DS.spacing.sm,
+    minHeight: 52,
+    borderRadius: DS.radius.full,
+    backgroundColor: DS.colors.primary,
+    marginVertical: DS.spacing.sm,
+  },
+  driverModeText: {
+    fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.text,
-  },
-  availableBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  availableDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: DS.semantic.success.solid,
-  },
-  availableText: {
-    fontSize: 10,
-    fontFamily: DS.fontFamily.regular,
-    color: DS.semantic.success.fg,
+    color: DS.colors.textInverse,
   },
 });
