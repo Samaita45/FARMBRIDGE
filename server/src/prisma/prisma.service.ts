@@ -20,6 +20,12 @@ const TENANT_SCOPED_MODELS = new Set<string>([
   'Order',
   'Payment',
   'AuditLog',
+  'TransporterProfile',
+  'TransportRequest',
+  'TransportBid',
+  'TransportBooking',
+  'TransporterLocation',
+  'TransportPricingConfig',
 ]);
 
 /** Operations that read or write rows and therefore need a tenant filter. */

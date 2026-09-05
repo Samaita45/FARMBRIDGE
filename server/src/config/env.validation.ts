@@ -33,6 +33,11 @@ class EnvironmentVariables {
 
   @IsOptional() @IsIn(['mock', 'paynow'])
   PAYMENT_PROVIDER?: string;
+
+  /// Places, Routes and Geocoding. Optional so local API still boots.
+  /// Maps endpoints fail closed when this is empty. Never put this in the app.
+  @IsOptional() @IsString()
+  GOOGLE_MAPS_SERVER_API_KEY?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {

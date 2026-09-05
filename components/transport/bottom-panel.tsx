@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   Animated,
   PanResponder,
@@ -19,6 +19,28 @@ interface BottomPanelProps {
   /** How much it covers when resting. The rest is map. */
   peekRatio?: number;
   paddingBottom?: number;
+  /**
+   * Height of the scene this panel sits in — the tab page, not the phone.
+   * Window height includes the status bar and the tab bar, so a ratio of that
+   * makes the sheet cover the menu.
+   */
+  sceneHeight?: number;
+  /** Pixels that must stay clear at the top (status bar + menu + recenter). */
+  reserveTop?: number;
+}
+
+/** Shared with the hub so the recenter button sits just above the sheet. */
+export function computeSheetHeights(
+  sceneHeight: number,
+  peekRatio: number,
+  maxRatio: number,
+  reserveTop: number
+) {
+  const available = Math.max(sceneHeight, 1);
+  const cap = Math.max(200, available - reserveTop);
+  const maxHeight = Math.min(Math.round(available * maxRatio), cap);
+  const peekHeight = Math.min(Math.round(available * peekRatio), maxHeight);
+  return { peekHeight, maxHeight };
 }
 
 /**
@@ -45,10 +67,16 @@ export function BottomPanel({
   maxRatio = 0.72,
   peekRatio = 0.46,
   paddingBottom = 0,
+  sceneHeight,
+  reserveTop = 0,
 }: BottomPanelProps) {
-  const { height: screenHeight } = useWindowDimensions();
-  const maxHeight = Math.round(screenHeight * maxRatio);
-  const peekHeight = Math.round(screenHeight * peekRatio);
+  const { height: windowHeight } = useWindowDimensions();
+  const { peekHeight, maxHeight } = computeSheetHeights(
+    sceneHeight && sceneHeight > 0 ? sceneHeight : windowHeight,
+    peekRatio,
+    maxRatio,
+    reserveTop
+  );
 
   const [expanded, setExpanded] = useState(false);
   const [contentHeight, setContentHeight] = useState(0);
@@ -56,9 +84,17 @@ export function BottomPanel({
   // The panel never grows past what it holds, so a short sheet does not open
   // onto empty space.
   const openHeight = Math.min(maxHeight, Math.max(peekHeight, contentHeight));
+  const collapsedHeight =
+    contentHeight > 0 ? Math.min(peekHeight, contentHeight) : peekHeight;
 
-  const height = useRef(new Animated.Value(peekHeight)).current;
-  const start = useRef(peekHeight);
+  const height = useRef(new Animated.Value(collapsedHeight)).current;
+  const start = useRef(collapsedHeight);
+
+  useEffect(() => {
+    if (expanded) return;
+    height.setValue(collapsedHeight);
+    start.current = collapsedHeight;
+  }, [collapsedHeight, expanded, height]);
 
   const settle = (to: number, nextExpanded: boolean) => {
     setExpanded(nextExpanded);
@@ -72,7 +108,7 @@ export function BottomPanel({
   };
 
   const toggle = () =>
-    expanded ? settle(peekHeight, false) : settle(openHeight, true);
+    expanded ? settle(collapsedHeight, false) : settle(openHeight, true);
 
   const responder = useMemo(
     () =>
@@ -86,21 +122,21 @@ export function BottomPanel({
         },
         onPanResponderMove: (_e, g) => {
           // Dragging up grows the panel, so the delta is inverted.
-          const next = Math.min(openHeight, Math.max(peekHeight * 0.7, start.current - g.dy));
+          const next = Math.min(openHeight, Math.max(collapsedHeight * 0.7, start.current - g.dy));
           height.setValue(next);
         },
         onPanResponderRelease: (_e, g) => {
           const current = start.current - g.dy;
-          const midpoint = (peekHeight + openHeight) / 2;
-          // A flick decides regardless of where it ended.
+          const midpoint = (collapsedHeight + openHeight) / 2;
           if (g.vy < -0.5) return settle(openHeight, true);
-          if (g.vy > 0.5) return settle(peekHeight, false);
-          settle(current > midpoint ? openHeight : peekHeight, current > midpoint);
+          if (g.vy > 0.5) return settle(collapsedHeight, false);
+          settle(current > midpoint ? openHeight : collapsedHeight, current > midpoint);
         },
-        onPanResponderTerminate: () => settle(expanded ? openHeight : peekHeight, expanded),
+        onPanResponderTerminate: () =>
+          settle(expanded ? openHeight : collapsedHeight, expanded),
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [openHeight, peekHeight, expanded]
+    [openHeight, collapsedHeight, expanded]
   );
 
   const onContentLayout = (e: LayoutChangeEvent) => {
@@ -125,7 +161,9 @@ export function BottomPanel({
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
-        <View onLayout={onContentLayout}>{children}</View>
+        <View onLayout={onContentLayout} style={styles.body}>
+          {children}
+        </View>
       </ScrollView>
     </Animated.View>
   );
@@ -133,10 +171,9 @@ export function BottomPanel({
 
 const styles = StyleSheet.create({
   panel: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
+    width: '100%',
+    zIndex: 20,
+    elevation: 20,
     backgroundColor: DS.colors.surface,
     borderTopLeftRadius: DS.radius.xxl,
     borderTopRightRadius: DS.radius.xxl,
@@ -154,5 +191,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: DS.colors.borderStrong,
   },
-  scroll: { paddingHorizontal: DS.spacing.md, paddingBottom: DS.spacing.md },
+  scroll: { paddingHorizontal: DS.spacing.md, paddingBottom: DS.spacing.sm },
+  body: { gap: DS.spacing.md },
 });

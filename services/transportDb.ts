@@ -42,6 +42,24 @@ export async function initTransportTables(): Promise<void> {
       createdAt TEXT NOT NULL
     );
   `);
+  await addBookingColumn(db, 'pickupLat', 'REAL');
+  await addBookingColumn(db, 'pickupLng', 'REAL');
+  await addBookingColumn(db, 'destinationLat', 'REAL');
+  await addBookingColumn(db, 'destinationLng', 'REAL');
+  await addBookingColumn(db, 'durationSeconds', 'REAL');
+  await addBookingColumn(db, 'routePolyline', 'TEXT');
+}
+
+async function addBookingColumn(
+  db: Awaited<ReturnType<typeof getDatabase>>,
+  name: string,
+  type: string
+): Promise<void> {
+  try {
+    await db.execAsync(`ALTER TABLE transport_bookings ADD COLUMN ${name} ${type}`);
+  } catch {
+    // Column already exists on later launches.
+  }
 }
 
 /**
@@ -63,7 +81,13 @@ export function estimateDistanceKm(pickup: string, destination: string): number 
   const from = findPlace(pickup);
   const to = findPlace(destination);
   if (!from || !to) return null;
+  return estimateDistanceKmFromCoords(from, to);
+}
 
+export function estimateDistanceKmFromCoords(
+  from: { latitude: number; longitude: number },
+  to: { latitude: number; longitude: number }
+): number {
   const straight = distanceKmBetween(from, to);
   // Same town: still a real trip across it, so never quote zero.
   return Math.max(5, Math.round(straight * ROAD_FACTOR));
@@ -83,8 +107,9 @@ export async function insertBooking(booking: TransportBooking): Promise<void> {
     `INSERT INTO transport_bookings (
       id, userId, providerId, providerName, providerPhone, vehicleType,
       pickup, destination, goodsDescription, weightKg, category, preferredDate,
-      distanceKm, agreedPriceUSD, counterPriceUSD, status, paymentMethod, createdAt
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      distanceKm, agreedPriceUSD, counterPriceUSD, status, paymentMethod, createdAt,
+      pickupLat, pickupLng, destinationLat, destinationLng, durationSeconds, routePolyline
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     booking.id,
     booking.userId,
     booking.providerId,
@@ -102,7 +127,13 @@ export async function insertBooking(booking: TransportBooking): Promise<void> {
     booking.counterPriceUSD ?? null,
     booking.status,
     booking.paymentMethod,
-    booking.createdAt
+    booking.createdAt,
+    booking.pickupLat ?? null,
+    booking.pickupLng ?? null,
+    booking.destinationLat ?? null,
+    booking.destinationLng ?? null,
+    booking.durationSeconds ?? null,
+    booking.routePolyline ?? null
   );
 }
 
@@ -164,6 +195,12 @@ function rowToBooking(row: Record<string, unknown>): TransportBooking {
     vehicleType: row.vehicleType as TransportBooking['vehicleType'],
     pickup: String(row.pickup),
     destination: String(row.destination),
+    pickupLat: row.pickupLat != null ? Number(row.pickupLat) : undefined,
+    pickupLng: row.pickupLng != null ? Number(row.pickupLng) : undefined,
+    destinationLat: row.destinationLat != null ? Number(row.destinationLat) : undefined,
+    destinationLng: row.destinationLng != null ? Number(row.destinationLng) : undefined,
+    durationSeconds: row.durationSeconds != null ? Number(row.durationSeconds) : undefined,
+    routePolyline: row.routePolyline != null ? String(row.routePolyline) : undefined,
     goodsDescription: String(row.goodsDescription),
     weightKg: Number(row.weightKg),
     category: row.category as TransportBooking['category'],

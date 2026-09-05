@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   ChipTabs,
@@ -24,12 +24,14 @@ import { PostCard } from '@/components/community/post-card';
 import { DS } from '@/constants/design-system';
 import { SUCCESS_STORIES, TRENDING_TOPICS } from '@/constants/community-data';
 import { asHref } from '@/lib/href';
+import { extraTopPad } from '@/lib/platform-ui';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useCommunityStore, type CommunityState } from '@/stores/communityStore';
 import type { CommunityPost, FeedFilter } from '@/types/community';
 import { FEED_FILTERS } from '@/types/community';
 
 export default function CommunityHubScreen() {
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s: AuthState) => s.user);
   const hydrate = useCommunityStore((s: CommunityState) => s.hydrate);
   const isHydrated = useCommunityStore((s: CommunityState) => s.isHydrated);
@@ -65,6 +67,7 @@ export default function CommunityHubScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
+      {extraTopPad(insets.top) > 0 ? <View style={{ height: extraTopPad(insets.top) }} /> : null}
       <TabScreenHeader
         title="Community"
         subtitle={`${user?.province ?? 'Zimbabwe'} · Farmers helping farmers`}

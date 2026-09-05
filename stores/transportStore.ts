@@ -12,6 +12,8 @@ export interface TransportState {
   offeredPriceUSD: number | null;
   /** Anything the transporter should know before they agree — access, timing, the load. */
   note: string;
+  durationSeconds: number | null;
+  routePolyline: string | null;
   setRequest: (request: TransportRequest, distanceKm: number) => void;
   setOffer: (priceUSD: number | null, note?: string) => void;
   selectProvider: (providerId: string, askingPriceUSD: number) => void;
@@ -34,13 +36,22 @@ const defaultRequest: TransportRequest = {
 export const useTransportStore = create<TransportState>((set) => ({
   request: null,
   distanceKm: 0,
+  durationSeconds: null,
+  routePolyline: null,
   selectedProviderId: null,
   askingPriceUSD: 0,
   counterPriceUSD: null,
   offeredPriceUSD: null,
   note: '',
   setRequest: (request, distanceKm) =>
-    set({ request, distanceKm, selectedProviderId: null, counterPriceUSD: null }),
+    set({
+      request,
+      distanceKm,
+      durationSeconds: request.durationSeconds ?? null,
+      routePolyline: request.routePolyline ?? null,
+      selectedProviderId: null,
+      counterPriceUSD: null,
+    }),
   setOffer: (offeredPriceUSD, note) =>
     set((s) => ({ offeredPriceUSD, note: note ?? s.note })),
   selectProvider: (providerId, askingPriceUSD) =>
@@ -50,6 +61,8 @@ export const useTransportStore = create<TransportState>((set) => ({
     set({
       request: null,
       distanceKm: 0,
+      durationSeconds: null,
+      routePolyline: null,
       selectedProviderId: null,
       askingPriceUSD: 0,
       counterPriceUSD: null,

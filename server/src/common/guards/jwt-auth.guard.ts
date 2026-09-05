@@ -40,6 +40,10 @@ export class JwtAuthGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
+    // Socket.IO authenticates in the gateway handshake. This guard reads
+    // Express headers and must not run on the upgrade or on @SubscribeMessage.
+    if (context.getType() !== 'http') return true;
+
     const request = context.switchToHttp().getRequest<Request>();
     const token = this.extractToken(request);
     if (!token) throw new UnauthorizedException('Authentication required.');

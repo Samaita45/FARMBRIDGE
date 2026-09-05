@@ -5,10 +5,10 @@ import { useCallback, useMemo, useState } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Sidebar, type SidebarItem } from '@/components/design-system';
+import { Button, Sidebar, type SidebarItem } from '@/components/design-system';
+import { LocationSearchField } from '@/components/maps/location-search-field';
 import { BottomPanel } from '@/components/transport/bottom-panel';
 import { FullMap } from '@/components/transport/full-map';
-import { TransportLocked } from '@/components/transport/transport-locked';
 import { VehicleIcon } from '@/components/transport/vehicle-icon';
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { DS } from '@/constants/design-system';
@@ -20,7 +20,7 @@ import { useProfileAvatar } from '@/hooks/useProfileAvatar';
 import { asHref } from '@/lib/href';
 import { topChrome } from '@/lib/platform-ui';
 import { getBookings } from '@/services/transportDb';
-import { selectIsSubscribed, useAuthStore, type AuthState } from '@/stores/authStore';
+import { useAuthStore, type AuthState } from '@/stores/authStore';
 import type { TransportBooking } from '@/types/transport';
 
 const MENU_SIZE = 48;
@@ -45,9 +45,8 @@ function openRequest(to?: string) {
  */
 export default function TransportHubScreen() {
   const insets = useSafeAreaInsets();
-  const isSubscribed = useAuthStore(selectIsSubscribed);
   const user = useAuthStore((s: AuthState) => s.user);
-  const { location, refresh } = useLocation();
+  const { location, refresh, loading: locating, permission } = useLocation();
   const { avatarUri, initials } = useProfileAvatar();
 
   const [bookings, setBookings] = useState<TransportBooking[]>([]);
@@ -55,6 +54,13 @@ export default function TransportHubScreen() {
   const [focusKey, setFocusKey] = useState(0);
   const [sceneHeight, setSceneHeight] = useState(0);
   const [mode, setMode] = useState<HubMode>('haul');
+  const [destination, setDestination] = useState('');
+
+  const mapState = locating
+    ? 'loading'
+    : permission === 'denied' || permission === 'unavailable'
+      ? 'unavailable'
+      : 'ready';
 
   const top = topChrome(insets.top);
 
@@ -64,8 +70,8 @@ export default function TransportHubScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (isSubscribed) void loadTrips();
-    }, [isSubscribed, loadTrips])
+      void loadTrips();
+    }, [loadTrips])
   );
 
   const shortcuts = useMemo(() => {
@@ -97,8 +103,6 @@ export default function TransportHubScreen() {
     }
     openRequest(to);
   };
-
-  if (!isSubscribed) return <TransportLocked />;
 
   const menuItems: SidebarItem[] = [
     {
@@ -148,7 +152,7 @@ export default function TransportHubScreen() {
         if (Math.abs(next - sceneHeight) > 1) setSceneHeight(next);
       }}>
       <View style={styles.mapBox}>
-        <FullMap centre={location} focusKey={focusKey} />
+        <FullMap centre={location} focusKey={focusKey} state={mapState} />
 
         <View
           style={[styles.mapChrome, { paddingTop: top + DS.spacing.sm }]}
@@ -229,18 +233,35 @@ export default function TransportHubScreen() {
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={() => goPrimary()}
-          accessibilityRole="button"
-          accessibilityLabel={
-            mode === 'haul' ? 'Where to? Opens the order form.' : 'Offer a vehicle'
-          }
-          style={({ pressed }) => [styles.search, pressed && styles.searchPressed]}>
-          <Ionicons name="search" size={22} color={DS.colors.text} />
-          <Text style={styles.searchText}>
-            {mode === 'haul' ? 'Where to?' : 'Offer a vehicle'}
-          </Text>
-        </Pressable>
+        {mode === 'haul' ? (
+          <View>
+            <LocationSearchField
+              label="Where to?"
+              value={destination}
+              onChangeText={setDestination}
+              role="destination"
+              placeholder="Town, market, or farm"
+            />
+            {destination.trim() ? (
+              <Button
+                title="Request this trip"
+                size="sm"
+                onPress={() => openRequest(destination.trim())}
+                accessibilityLabel="Open the transport order for this destination"
+                style={styles.requestBtn}
+              />
+            ) : null}
+          </View>
+        ) : (
+          <Pressable
+            onPress={() => goPrimary()}
+            accessibilityRole="button"
+            accessibilityLabel="Offer a vehicle"
+            style={({ pressed }) => [styles.search, pressed && styles.searchPressed]}>
+            <Ionicons name="search" size={22} color={DS.colors.text} />
+            <Text style={styles.searchText}>Offer a vehicle</Text>
+          </Pressable>
+        )}
 
         <View style={styles.recents}>
           {shortcuts.map((place, i) => (
@@ -423,6 +444,7 @@ const styles = StyleSheet.create({
     borderWidth: DS.layout.hairline,
     borderColor: DS.colors.border,
   },
+  requestBtn: { marginTop: DS.spacing.sm },
   searchPressed: { backgroundColor: DS.colors.primaryMid },
   searchText: {
     flex: 1,

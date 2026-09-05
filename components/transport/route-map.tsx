@@ -1,76 +1,87 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { locate, Maps, regionFor } from '@/components/transport/maps';
+import { FarmMap } from '@/components/maps/farm-map';
+import { locate } from '@/components/transport/maps';
 import { DS } from '@/constants/design-system';
+import { decodePolyline } from '@/lib/polyline';
+import type { GeoPoint } from '@/types/geo';
 
 /**
- * A map of the trip's route.
+ * Route preview for the existing transport screens.
  *
- * WHAT IT CAN AND CANNOT DO. Pickup and destination are free text, and there is
- * no geocoder, so a location is placed only when its text matches a known
- * province or provincial capital. When it does not, the map is not drawn at all
- * rather than dropping a pin somewhere plausible — a marker in the wrong place
- * is worse than no marker on a screen about moving goods.
- *
- * The straight line between two points is a bearing, not a road route, and the
- * caption says so. Turn-by-turn routing needs a directions API.
- *
- * The native module is loaded defensively in `./maps`: if react-native-maps is
- * unavailable the component renders the same route summary without the map, so
- * a missing dependency can never take the screen down.
+ * Screens keep importing this component. Coordinates and a road polyline are
+ * optional: when they are missing the gazetteer still places the pins, and a
+ * dashed bearing is drawn instead of a road. A marker is never invented.
  */
 
 interface RouteMapProps {
   pickup: string;
   destination: string;
+  pickupCoord?: GeoPoint | null;
+  destinationCoord?: GeoPoint | null;
+  routePolyline?: string | null;
   distanceKm?: number;
+  durationSeconds?: number | null;
   height?: number;
 }
 
-export function RouteMap({ pickup, destination, distanceKm, height = 180 }: RouteMapProps) {
-  const from = locate(pickup);
-  const to = locate(destination);
-  const canDrawMap = Maps !== null && from !== null && to !== null;
+export function RouteMap({
+  pickup,
+  destination,
+  pickupCoord,
+  destinationCoord,
+  routePolyline,
+  distanceKm,
+  durationSeconds,
+  height = 180,
+}: RouteMapProps) {
+  const fromGazetteer = locate(pickup);
+  const toGazetteer = locate(destination);
+  const from = pickupCoord ?? (fromGazetteer
+    ? { latitude: fromGazetteer.latitude, longitude: fromGazetteer.longitude }
+    : null);
+  const to = destinationCoord ?? (toGazetteer
+    ? { latitude: toGazetteer.latitude, longitude: toGazetteer.longitude }
+    : null);
+
+  const road = routePolyline ? decodePolyline(routePolyline) : [];
+  const canDraw = from !== null && to !== null;
+  const isRoad = road.length >= 2;
+  const eta = formatDuration(durationSeconds);
 
   return (
     <View style={styles.wrap}>
-      {canDrawMap && Maps ? (
-        <View style={[styles.mapBox, { height }]}>
-          <Maps.default
-            style={StyleSheet.absoluteFill}
-            // Non-interactive: this is a route preview inside a scrolling form,
-            // and a pannable map would fight the scroll gesture.
-            scrollEnabled={false}
-            zoomEnabled={false}
-            rotateEnabled={false}
-            pitchEnabled={false}
-            toolbarEnabled={false}
-            initialRegion={regionFor(from!, to!)}
-            accessibilityLabel={`Route map from ${from!.label} to ${to!.label}`}>
-            <Maps.Marker
-              coordinate={{ latitude: from!.latitude, longitude: from!.longitude }}
-              title="Pickup"
-              description={pickup}
-              pinColor={DS.colors.primary}
-            />
-            <Maps.Marker
-              coordinate={{ latitude: to!.latitude, longitude: to!.longitude }}
-              title="Destination"
-              description={destination}
-              pinColor={DS.semantic.success.solid}
-            />
-            <Maps.Polyline
-              coordinates={[
-                { latitude: from!.latitude, longitude: from!.longitude },
-                { latitude: to!.latitude, longitude: to!.longitude },
-              ]}
-              strokeColor={DS.colors.primary}
-              strokeWidth={3}
-              lineDashPattern={[6, 6]}
-            />
-          </Maps.default>
-        </View>
+      {canDraw && from && to ? (
+        <FarmMap
+          centre={{
+            latitude: (from.latitude + to.latitude) / 2,
+            longitude: (from.longitude + to.longitude) / 2,
+          }}
+          markers={[
+            {
+              id: 'pickup',
+              kind: 'pickup',
+              latitude: from.latitude,
+              longitude: from.longitude,
+              title: 'Pickup',
+              description: pickup,
+            },
+            {
+              id: 'destination',
+              kind: 'destination',
+              latitude: to.latitude,
+              longitude: to.longitude,
+              title: 'Destination',
+              description: destination,
+            },
+          ]}
+          route={isRoad ? road : [from, to]}
+          showsUserLocation={false}
+          interactive={false}
+          height={height}
+          accessibilityLabel={`Route map from ${pickup} to ${destination}`}
+        />
       ) : null}
 
       <View style={styles.summary}>
@@ -83,7 +94,11 @@ export function RouteMap({ pickup, destination, distanceKm, height = 180 }: Rout
 
         <View style={styles.connector}>
           <View style={styles.connectorLine} />
-          {distanceKm ? <Text style={styles.distance}>~{distanceKm} km</Text> : null}
+          {distanceKm ? (
+            <Text style={styles.distance}>
+              ~{distanceKm} km{eta ? ` · ${eta}` : ''}
+            </Text>
+          ) : null}
           <View style={styles.connectorLine} />
         </View>
 
@@ -98,13 +113,24 @@ export function RouteMap({ pickup, destination, distanceKm, height = 180 }: Rout
       <View style={styles.note}>
         <Ionicons name="information-circle-outline" size={12} color={DS.colors.textSoft} />
         <Text style={styles.noteText}>
-          {canDrawMap
-            ? 'Straight-line preview between town centres, not a road route.'
-            : 'Enter a town or province to see the route on a map.'}
+          {!canDraw
+            ? 'Enter a town or pick a place to see the route on a map.'
+            : isRoad
+              ? 'Road route from the server. Times are estimates.'
+              : 'Straight-line preview between known points, not a road route.'}
         </Text>
       </View>
     </View>
   );
+}
+
+function formatDuration(seconds?: number | null): string | null {
+  if (!seconds || seconds <= 0) return null;
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.round((seconds % 3600) / 60);
+  if (hours <= 0) return `about ${minutes} min`;
+  if (minutes === 0) return `about ${hours} h`;
+  return `about ${hours} h ${minutes} min`;
 }
 
 const styles = StyleSheet.create({
@@ -115,13 +141,6 @@ const styles = StyleSheet.create({
     borderColor: DS.colors.border,
     overflow: 'hidden',
   },
-  mapBox: {
-    width: '100%',
-    backgroundColor: DS.colors.surfaceMuted,
-    borderBottomWidth: 1,
-    borderBottomColor: DS.colors.border,
-  },
-
   summary: { padding: DS.spacing.sm + 4, gap: 4 },
   leg: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm },
   dot: { width: 9, height: 9, borderRadius: 5 },

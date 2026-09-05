@@ -11,6 +11,8 @@
 import { PrismaClient, Role } from '@prisma/client';
 import * as argon2 from 'argon2';
 
+import { DEFAULT_PRICING_CONFIG } from '../src/transport/pricing/default-pricing';
+
 const prisma = new PrismaClient();
 
 const DEFAULT_TENANT_ID = '018f3a7c-4c1e-7a2b-9f4d-5e6a7b8c9d01';
@@ -68,6 +70,16 @@ async function main(): Promise<void> {
 
   await prisma.exchangeRate.create({
     data: { base: 'USD', quote: 'ZWG', rate: 26.5, source: 'seed', effectiveAt: new Date() },
+  });
+
+  await prisma.transportPricingConfig.upsert({
+    where: { tenantId: tenant.id },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      currency: 'USD',
+      config: DEFAULT_PRICING_CONFIG,
+    },
   });
 
   console.log(`Tenant: ${tenant.id} (${tenant.slug})`);

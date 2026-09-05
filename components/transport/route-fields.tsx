@@ -1,13 +1,16 @@
 import { StyleSheet, View } from 'react-native';
 
-import { PlaceField } from '@/components/forms/place-field';
+import { LocationSearchField } from '@/components/maps/location-search-field';
 import { DS } from '@/constants/design-system';
+import type { ResolvedPlace } from '@/types/geo';
 
 interface RouteFieldsProps {
   pickup: string;
   destination: string;
   onPickupChange: (text: string) => void;
   onDestinationChange: (text: string) => void;
+  onPickupResolved?: (place: ResolvedPlace | null) => void;
+  onDestinationResolved?: (place: ResolvedPlace | null) => void;
   pickupError?: string;
   destinationError?: string;
 }
@@ -29,6 +32,8 @@ export function RouteFields({
   destination,
   onPickupChange,
   onDestinationChange,
+  onPickupResolved,
+  onDestinationResolved,
   pickupError,
   destinationError,
 }: RouteFieldsProps) {
@@ -41,18 +46,23 @@ export function RouteFields({
       </View>
 
       <View style={styles.fields}>
-        <PlaceField
+        <LocationSearchField
           label="Pick up from"
           value={pickup}
           onChangeText={onPickupChange}
+          onResolved={onPickupResolved}
+          role="pickup"
           placeholder="Harare, Mbare Musika"
           required
           error={pickupError}
+          allowCurrentLocation
         />
-        <PlaceField
+        <LocationSearchField
           label="Deliver to"
           value={destination}
           onChangeText={onDestinationChange}
+          onResolved={onDestinationResolved}
+          role="destination"
           placeholder="Bulawayo, Renkini"
           required
           error={destinationError}

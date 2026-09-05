@@ -7,6 +7,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 
 import { AppModule } from './app.module';
+import { FarmBridgeIoAdapter } from './realtime/io.adapter';
 
 async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
@@ -41,6 +42,8 @@ async function bootstrap(): Promise<void> {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
     maxAge: 600,
   });
+
+  app.useWebSocketAdapter(new FarmBridgeIoAdapter(app, origins));
 
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 

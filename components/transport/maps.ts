@@ -56,10 +56,24 @@ export function locate(text: string): Point | null {
 
 /** A region that fits both points with a margin, never narrower than a town. */
 export function regionFor(from: Point, to: Point) {
+  return regionForPoints([from, to]);
+}
+
+/** Fits any set of coordinates, with a town-sized floor so a short hop still reads. */
+export function regionForPoints(points: { latitude: number; longitude: number }[]) {
+  if (points.length === 0) {
+    return { latitude: -17.8292, longitude: 31.0522, latitudeDelta: 0.6, longitudeDelta: 0.6 };
+  }
+  const lats = points.map((p) => p.latitude);
+  const lngs = points.map((p) => p.longitude);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
   return {
-    latitude: (from.latitude + to.latitude) / 2,
-    longitude: (from.longitude + to.longitude) / 2,
-    latitudeDelta: Math.max(Math.abs(from.latitude - to.latitude) * 1.6, 0.6),
-    longitudeDelta: Math.max(Math.abs(from.longitude - to.longitude) * 1.6, 0.6),
+    latitude: (minLat + maxLat) / 2,
+    longitude: (minLng + maxLng) / 2,
+    latitudeDelta: Math.max(Math.abs(maxLat - minLat) * 1.6, 0.6),
+    longitudeDelta: Math.max(Math.abs(maxLng - minLng) * 1.6, 0.6),
   };
 }

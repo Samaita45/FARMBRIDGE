@@ -38,6 +38,12 @@ model Tenant {
   orders       Order[]
   payments     Payment[]
   auditLogs    AuditLog[]
+  transportRequests      TransportRequest[]
+  transportBids          TransportBid[]
+  transportBookings      TransportBooking[]
+  transporterProfiles    TransporterProfile[]
+  transporterLocations   TransporterLocation[]
+  transportPricingConfig TransportPricingConfig?
 
   @@map("tenants")
 }
@@ -97,6 +103,12 @@ model User {
   products      Product[]
   orders        Order[]
   payments      Payment[]
+  transporterProfile   TransporterProfile?
+  transportRequests    TransportRequest[]  @relation("TransportCustomerRequests")
+  transportBids        TransportBid[]
+  customerBookings     TransportBooking[]  @relation("TransportCustomerBookings")
+  assignedBookings     TransportBooking[]  @relation("TransportAssignedBookings")
+  transporterLocations TransporterLocation[]
 
   // Email and phone are unique per tenant, not globally: the same person may
   // legitimately exist in two tenants.
@@ -360,4 +372,201 @@ model AuditLog {
   @@index([actorId, createdAt])
   @@index([action, createdAt])
   @@map("audit_logs")
+}
+
+// ─── Transport ───────────────────────────────────────────────────────────────
+
+enum TransportLifecycleStatus {
+  REQUESTED
+  BIDDING
+  ACCEPTED
+  DRIVER_ASSIGNED
+  GOODS_COLLECTED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum TransportBidStatus {
+  OPEN
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum TransportVehicleType {
+  BAKKIE
+  TRUCK
+  LORRY
+  TRACTOR
+}
+
+enum TransportUrgency {
+  STANDARD
+  SAME_DAY
+  EXPRESS
+}
+
+model TransporterProfile {
+  id       String @id @default(uuid())
+  tenantId String
+  userId   String @unique
+
+  vehicleType       TransportVehicleType
+  regNumber         String
+  capacityKg        Float
+  coverageProvinces String[] @default([])
+  isAvailable       Boolean  @default(true)
+  verified          Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, isAvailable])
+  @@map("transporter_profiles")
+}
+
+/// Customer haul request. Coordinates are stored with the address so later
+/// pricing, routing and tracking do not re-geocode free text.
+model TransportRequest {
+  id         String @id @default(uuid())
+  tenantId   String
+  customerId String
+
+  pickupAddress      String
+  pickupLat          Float
+  pickupLng          Float
+  destinationAddress String
+  destinationLat     Float
+  destinationLng     Float
+
+  distanceMeters  Int
+  durationSeconds Int
+  routePolyline   String?
+
+  goodsDescription String
+  goodsType        String
+  weightKg         Float
+  vehicleType      TransportVehicleType?
+  urgency          TransportUrgency      @default(STANDARD)
+  extras           String[]              @default([])
+
+  estimatedPriceUsdCents Int
+  pricingBreakdown       Json?
+
+  status      TransportLifecycleStatus @default(REQUESTED)
+  preferredAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer User              @relation("TransportCustomerRequests", fields: [customerId], references: [id], onDelete: Cascade)
+  bids     TransportBid[]
+  booking  TransportBooking?
+
+  @@index([tenantId, status])
+  @@index([tenantId, customerId])
+  @@map("transport_requests")
+}
+
+model TransportBid {
+  id            String @id @default(uuid())
+  tenantId      String
+  requestId     String
+  transporterId String
+
+  amountUsdCents Int
+  note           String?
+  etaMinutes     Int?
+  status         TransportBidStatus @default(OPEN)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  request     TransportRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  transporter User             @relation(fields: [transporterId], references: [id], onDelete: Cascade)
+
+  @@unique([requestId, transporterId])
+  @@index([tenantId, requestId])
+  @@map("transport_bids")
+}
+
+model TransportBooking {
+  id            String @id @default(uuid())
+  tenantId      String
+  requestId     String @unique
+  customerId    String
+  transporterId String
+  acceptedBidId String?
+
+  pickupAddress      String
+  pickupLat          Float
+  pickupLng          Float
+  destinationAddress String
+  destinationLat     Float
+  destinationLng     Float
+
+  distanceMeters  Int
+  durationSeconds Int
+  routePolyline   String?
+
+  agreedPriceUsdCents Int
+  status              TransportLifecycleStatus @default(ACCEPTED)
+
+  goodsCollectedAt DateTime?
+  deliveredAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  request     TransportRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  customer    User             @relation("TransportCustomerBookings", fields: [customerId], references: [id], onDelete: Cascade)
+  transporter User             @relation("TransportAssignedBookings", fields: [transporterId], references: [id], onDelete: Cascade)
+  locations   TransporterLocation[]
+
+  @@index([tenantId, customerId])
+  @@index([tenantId, transporterId])
+  @@index([tenantId, status])
+  @@map("transport_bookings")
+}
+
+model TransporterLocation {
+  id            String @id @default(uuid())
+  tenantId      String
+  transporterId String
+  bookingId     String?
+
+  latitude  Float
+  longitude Float
+  recordedAt DateTime @default(now())
+
+  tenant      Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  transporter User              @relation(fields: [transporterId], references: [id], onDelete: Cascade)
+  booking     TransportBooking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, transporterId, recordedAt])
+  @@index([bookingId, recordedAt])
+  @@map("transporter_locations")
+}
+
+/// Per-tenant rate card. There is no single hardcoded haul price.
+model TransportPricingConfig {
+  id       String @id @default(uuid())
+  tenantId String @unique
+
+  currency String @default("USD")
+  config   Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("transport_pricing_configs")
 }

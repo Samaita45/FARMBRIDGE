@@ -59,7 +59,19 @@ export default function QuoteScreen() {
         <RouteMap
           pickup={request.pickup}
           destination={request.destination}
+          pickupCoord={
+            request.pickupLat != null && request.pickupLng != null
+              ? { latitude: request.pickupLat, longitude: request.pickupLng }
+              : undefined
+          }
+          destinationCoord={
+            request.destinationLat != null && request.destinationLng != null
+              ? { latitude: request.destinationLat, longitude: request.destinationLng }
+              : undefined
+          }
+          routePolyline={request.routePolyline}
           distanceKm={distanceKm}
+          durationSeconds={request.durationSeconds}
         />
 
         <TransporterRow provider={provider} estimatedPrice={askingPriceUSD} selected static />

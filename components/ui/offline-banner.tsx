@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
+import { topChrome } from '@/lib/platform-ui';
 import { flushSyncQueue } from '@/services/syncService';
 
 export function OfflineBanner() {
@@ -50,14 +51,14 @@ export function OfflineBanner() {
 
   if (flashOnline) {
     return (
-      <View style={[s.banner, s.online, { paddingTop: insets.top }]}>
+      <View style={[s.banner, s.online, { paddingTop: topChrome(insets.top) }]}>
         <Text style={[s.text, s.textOnline]}>Connected</Text>
       </View>
     );
   }
   if (!offline) return null;
   return (
-    <View style={[s.banner, s.offline, { paddingTop: insets.top }]}>
+    <View style={[s.banner, s.offline, { paddingTop: topChrome(insets.top) }]}>
       <Text style={[s.text, s.textOffline]}>
         {"You're offline — showing cached data"}
       </Text>

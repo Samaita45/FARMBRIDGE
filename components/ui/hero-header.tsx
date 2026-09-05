@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DS } from '@/constants/design-system';
 import type { IconName } from '@/types/icons';
+import { topChrome } from '@/lib/platform-ui';
 
 interface HeroHeaderProps {
   title: string;
@@ -49,7 +50,7 @@ export function HeroHeader({
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.root, { height: height + insets.top }]}>
+    <View style={[styles.root, { height: height + topChrome(insets.top) }]}>
       <Image source={image} style={StyleSheet.absoluteFill} contentFit="cover" transition={220} />
 
       {/*
@@ -61,7 +62,7 @@ export function HeroHeader({
       <View style={styles.scrimBottom} pointerEvents="none" />
 
       {showBack ? (
-        <View style={[styles.backRow, { top: insets.top + DS.spacing.sm }]}>
+        <View style={[styles.backRow, { top: topChrome(insets.top) + DS.spacing.sm }]}>
           <Pressable
             onPress={onBack ?? (() => router.back())}
             accessibilityRole="button"

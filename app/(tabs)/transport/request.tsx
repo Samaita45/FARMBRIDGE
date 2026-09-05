@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -21,8 +21,10 @@ import { DS } from '@/constants/design-system';
 import { useLocation } from '@/hooks/useLocation';
 import { asHref } from '@/lib/href';
 import { TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
-import { estimateDistanceKm, estimatePrice } from '@/services/transportDb';
+import { mapsApi } from '@/services/api/maps.api';
+import { estimateDistanceKm, estimateDistanceKmFromCoords, estimatePrice } from '@/services/transportDb';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
+import type { ResolvedPlace, RouteEstimate } from '@/types/geo';
 import {
   GOODS_CATEGORIES,
   SPECIAL_REQUIREMENTS,
@@ -58,6 +60,9 @@ export default function TransportRequestScreen() {
 
   const [pickup, setPickup] = useState(location.label);
   const [destination, setDestination] = useState(to ?? '');
+  const [pickupPlace, setPickupPlace] = useState<ResolvedPlace | null>(null);
+  const [destinationPlace, setDestinationPlace] = useState<ResolvedPlace | null>(null);
+  const [routeEstimate, setRouteEstimate] = useState<RouteEstimate | null>(null);
   const [price, setPrice] = useState<number | null>(storedOffer);
   const [note, setNote] = useState('');
   const [goods, setGoods] = useState('');
@@ -69,10 +74,30 @@ export default function TransportRequestScreen() {
   const [special, setSpecial] = useState<string[]>([]);
   const [touched, setTouched] = useState(false);
 
-  const distanceKm = useMemo(
-    () => estimateDistanceKm(pickup, destination),
-    [pickup, destination]
-  );
+  useEffect(() => {
+    if (!pickupPlace || !destinationPlace) {
+      setRouteEstimate(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void mapsApi.route(pickupPlace, destinationPlace).then((route) => {
+        if (!cancelled) setRouteEstimate(route);
+      });
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [pickupPlace, destinationPlace]);
+
+  const distanceKm = useMemo(() => {
+    if (routeEstimate) return routeEstimate.distanceKm;
+    if (pickupPlace && destinationPlace) {
+      return estimateDistanceKmFromCoords(pickupPlace, destinationPlace);
+    }
+    return estimateDistanceKm(pickup, destination);
+  }, [routeEstimate, pickupPlace, destinationPlace, pickup, destination]);
 
   /*
     The mean of what the available transporters would charge for this distance
@@ -91,14 +116,14 @@ export default function TransportRequestScreen() {
   const errors = {
     pickup: !pickup.trim()
       ? 'Where is the load now?'
-      : !matchPlace(pickup)
-        ? 'Include a town we know, so the distance can be worked out'
-        : undefined,
+      : pickupPlace || matchPlace(pickup)
+        ? undefined
+        : 'Include a town we know, or pick a place from the list',
     destination: !destination.trim()
       ? 'Where is it going?'
-      : !matchPlace(destination)
-        ? 'Include a town we know, so the distance can be worked out'
-        : undefined,
+      : destinationPlace || matchPlace(destination)
+        ? undefined
+        : 'Include a town we know, or pick a place from the list',
     goods: goods.trim() ? undefined : 'Say what is being moved',
     weight: Number(weight) > 0 ? undefined : 'Enter a weight in kilograms',
     date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? undefined : 'Use the format YYYY-MM-DD',
@@ -121,6 +146,12 @@ export default function TransportRequestScreen() {
       {
         pickup: pickup.trim(),
         destination: destination.trim(),
+        pickupLat: pickupPlace?.latitude,
+        pickupLng: pickupPlace?.longitude,
+        destinationLat: destinationPlace?.latitude,
+        destinationLng: destinationPlace?.longitude,
+        durationSeconds: routeEstimate?.durationSeconds,
+        routePolyline: routeEstimate?.polyline,
         goodsDescription: goods.trim(),
         weightKg: Number(weight),
         category,
@@ -151,6 +182,8 @@ export default function TransportRequestScreen() {
             destination={destination}
             onPickupChange={setPickup}
             onDestinationChange={setDestination}
+            onPickupResolved={setPickupPlace}
+            onDestinationResolved={setDestinationPlace}
             pickupError={touched ? errors.pickup : undefined}
             destinationError={touched ? errors.destination : undefined}
           />
@@ -159,7 +192,13 @@ export default function TransportRequestScreen() {
             <View style={styles.distance}>
               <Ionicons name="navigate-outline" size={16} color={DS.colors.primary} />
               <Text style={styles.distanceText}>
-                About {distanceKm} km by road. Quotes are built from this, and it is an estimate.
+                About {distanceKm} km
+                {routeEstimate?.durationSeconds
+                  ? ` · about ${Math.round(routeEstimate.durationSeconds / 60)} min`
+                  : ''}
+                {routeEstimate?.source === 'routes'
+                  ? '. Road distance from the route service.'
+                  : ' by road. Quotes are built from this, and it is an estimate.'}
               </Text>
             </View>
           ) : null}

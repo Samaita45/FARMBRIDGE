@@ -33,6 +33,8 @@ export class PermissionsGuard implements CanActivate {
 
     if (!required || required.length === 0) return true;
 
+    if (context.getType() !== 'http') return true;
+
     const mode =
       this.reflector.getAllAndOverride<'all' | 'any'>(PERMISSIONS_MODE_KEY, [
         context.getHandler(),

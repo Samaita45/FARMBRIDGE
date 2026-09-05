@@ -11,6 +11,7 @@ import { DS } from '@/constants/design-system';
 import { whatsAppUrl } from '@/constants/support';
 import { PAYMENT_METHODS, TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
 import { asHref } from '@/lib/href';
+import { transportApi } from '@/services/api/transport.api';
 import { insertBooking } from '@/services/transportDb';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
@@ -63,6 +64,12 @@ export default function ConfirmScreen() {
         vehicleType: provider.vehicleType,
         pickup: request.pickup,
         destination: request.destination,
+        pickupLat: request.pickupLat,
+        pickupLng: request.pickupLng,
+        destinationLat: request.destinationLat,
+        destinationLng: request.destinationLng,
+        durationSeconds: request.durationSeconds,
+        routePolyline: request.routePolyline,
         goodsDescription: request.goodsDescription,
         weightKg: request.weightKg,
         category: request.category,
@@ -78,6 +85,30 @@ export default function ConfirmScreen() {
         createdAt: new Date().toISOString(),
       };
       await insertBooking(booking);
+      if (
+        request.pickupLat != null &&
+        request.pickupLng != null &&
+        request.destinationLat != null &&
+        request.destinationLng != null
+      ) {
+        try {
+          await transportApi.createRequest({
+            pickupAddress: request.pickup,
+            pickupLat: request.pickupLat,
+            pickupLng: request.pickupLng,
+            destinationAddress: request.destination,
+            destinationLat: request.destinationLat,
+            destinationLng: request.destinationLng,
+            goodsDescription: request.goodsDescription,
+            goodsType: request.category,
+            weightKg: request.weightKg,
+            extras: request.specialRequirements,
+            preferredAt: `${request.preferredDate}T${request.preferredTime}:00`,
+          });
+        } catch {
+          // The on-device booking is already saved. The API is optional.
+        }
+      }
       setReference(id);
       showToast('Request sent — call the transporter to confirm', 'success');
     } catch {
@@ -161,7 +192,19 @@ export default function ConfirmScreen() {
       <RouteMap
         pickup={request.pickup}
         destination={request.destination}
+        pickupCoord={
+          request.pickupLat != null && request.pickupLng != null
+            ? { latitude: request.pickupLat, longitude: request.pickupLng }
+            : undefined
+        }
+        destinationCoord={
+          request.destinationLat != null && request.destinationLng != null
+            ? { latitude: request.destinationLat, longitude: request.destinationLng }
+            : undefined
+        }
+        routePolyline={request.routePolyline}
         distanceKm={distanceKm}
+        durationSeconds={request.durationSeconds}
       />
 
       <Card style={styles.card}>

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card, TabScreenHeader } from '@/components/design-system';
 import { ProductCard } from '@/components/market/product-card';
@@ -12,14 +12,17 @@ import {
   PAYMENT_METHODS,
   SUBSCRIPTION_PLANS,
 } from '@/constants/zimbabwe-data';
+import { extraTopPad } from '@/lib/platform-ui';
 
 export function MarketLocked() {
+  const insets = useSafeAreaInsets();
   const preview = getFeaturedProducts(4);
   const farmerPlan = SUBSCRIPTION_PLANS.find((p) => p.id === 'farmer');
   const businessPlan = SUBSCRIPTION_PLANS.find((p) => p.id === 'business');
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
+      {extraTopPad(insets.top) > 0 ? <View style={{ height: extraTopPad(insets.top) }} /> : null}
       <TabScreenHeader
         title="Marketplace"
         subtitle={`${MARKET_PRODUCTS.length}+ products · Subscribe to unlock`}

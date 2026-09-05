@@ -6,6 +6,7 @@ import { Button, Card, EmptyState, LoadingState } from '@/components/design-syst
 import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
 import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
+import { openExternalNavigation } from '@/lib/external-maps';
 import { getBookings, updateBookingStatus } from '@/services/transportDb';
 import { useAuthStore } from '@/stores/authStore';
 import type { BookingStatus, TransportBooking } from '@/types/transport';
@@ -101,7 +102,28 @@ export default function TripsScreen() {
 
           <Text style={styles.meta}>
             {item.preferredDate} · ${item.agreedPriceUSD} · {item.paymentMethod}
+            {item.distanceKm ? ` · ~${item.distanceKm} km` : ''}
+            {item.durationSeconds
+              ? ` · about ${Math.round(item.durationSeconds / 60)} min`
+              : ''}
           </Text>
+
+          {tab === 'active' && item.pickupLat != null && item.pickupLng != null ? (
+            <Button
+              title="Navigate to pickup"
+              variant="ghost"
+              size="sm"
+              icon="navigate-outline"
+              onPress={() =>
+                void openExternalNavigation(
+                  { latitude: item.pickupLat!, longitude: item.pickupLng! },
+                  item.pickup
+                )
+              }
+              accessibilityLabel={`Navigate to pickup for trip ${item.id}`}
+              style={styles.action}
+            />
+          ) : null}
 
           {tab === 'active' && next ? (
             <Button

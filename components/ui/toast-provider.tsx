@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DS } from '@/constants/design-system';
+import { topChrome } from '@/lib/platform-ui';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -94,7 +95,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {/* ── Toast container — absolute, always on top ── */}
       <View
         pointerEvents="box-none"
-        style={[t.container, { top: insets.top + 12 }]}>
+        style={[t.container, { top: topChrome(insets.top) + 12 }]}>
         {toasts.map((toast) => (
           <ToastItem key={toast.id} toast={toast} onDismiss={() => dismiss(toast.id)} />
         ))}

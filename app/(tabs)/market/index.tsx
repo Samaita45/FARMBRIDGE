@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/design-system';
 import {
@@ -18,6 +18,7 @@ import { DS } from '@/constants/design-system';
 import { imageSourceFor } from '@/constants/produce-imagery';
 import { MARKET_CATEGORIES, MARKET_PRODUCTS } from '@/constants/zimbabwe-data';
 import { asHref } from '@/lib/href';
+import { extraTopPad } from '@/lib/platform-ui';
 import { selectIsSubscribed, useAuthStore, type AuthState } from '@/stores/authStore';
 import { useCartStore, type CartState } from '@/stores/cartStore';
 import type { MarketProduct } from '@/types';
@@ -35,6 +36,7 @@ import type { MarketProduct } from '@/types';
  * money they may not have much of.
  */
 export default function MarketplaceScreen() {
+  const insets = useSafeAreaInsets();
   const isSubscribed = useAuthStore(selectIsSubscribed);
   const user = useAuthStore((s: AuthState) => s.user);
   const cartCount = useCartStore((s: CartState) => s.getItemCount());
@@ -97,6 +99,7 @@ export default function MarketplaceScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
+      {extraTopPad(insets.top) > 0 ? <View style={{ height: extraTopPad(insets.top) }} /> : null}
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text style={styles.title} maxFontSizeMultiplier={DS.layout.maxFontScale}>

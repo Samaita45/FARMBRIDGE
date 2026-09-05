@@ -16,6 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DS } from '@/constants/design-system';
+import { topChrome } from '@/lib/platform-ui';
 import type { IconName } from '@/types/icons';
 
 export interface SidebarItem {
@@ -101,6 +102,7 @@ export function Sidebar({
 }: SidebarProps) {
   const insets = useSafeAreaInsets();
   const anim = useRef(new Animated.Value(0)).current;
+  const pending = useRef<(() => void) | null>(null);
 
   const screenWidth = Dimensions.get('window').width;
   const width = Math.min(320, screenWidth * 0.86);
@@ -125,12 +127,35 @@ export function Sidebar({
 
   const translateX = anim.interpolate({ inputRange: [0, 1], outputRange: [-width, 0] });
 
+  /**
+   * Closing a Modal and pushing a route in the same tick is a no-op: the
+   * navigator is still covered, so every row looks dead. Hold the destination
+   * and run it after the fade — `onDismiss` on iOS, a short wait on Android.
+   */
+  const flush = () => {
+    const action = pending.current;
+    pending.current = null;
+    action?.();
+  };
+
+  const go = (action?: () => void) => {
+    pending.current = action ?? null;
+    onClose();
+  };
+
+  useEffect(() => {
+    if (visible || !pending.current) return;
+    const t = setTimeout(flush, DS.motion.slow);
+    return () => clearTimeout(t);
+  }, [visible]);
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="fade"
       statusBarTranslucent
+      onDismiss={flush}
       onRequestClose={onClose}>
       <View style={styles.root}>
         <Pressable
@@ -143,12 +168,12 @@ export function Sidebar({
         <Animated.View
           style={[
             styles.panel,
-            { width, paddingTop: insets.top, transform: [{ translateX }] },
+            { width, paddingTop: topChrome(insets.top), transform: [{ translateX }] },
           ]}>
           {profile ? (
             <>
               <Pressable
-                onPress={profile.onPress}
+                onPress={() => go(profile.onPress)}
                 disabled={!profile.onPress}
                 accessibilityRole={profile.onPress ? 'button' : 'summary'}
                 accessibilityLabel={profile.name}
@@ -174,12 +199,7 @@ export function Sidebar({
             {items.map((item) => (
               <Pressable
                 key={item.key}
-                onPress={() => {
-                  // Close first: the destination should not appear behind a
-                  // panel that is still sliding away.
-                  onClose();
-                  item.onPress();
-                }}
+                onPress={() => go(item.onPress)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: Boolean(item.active) }}
                 accessibilityLabel={item.label}
@@ -218,10 +238,7 @@ export function Sidebar({
 
               {primaryAction ? (
                 <Pressable
-                  onPress={() => {
-                    onClose();
-                    primaryAction.onPress();
-                  }}
+                  onPress={() => go(primaryAction.onPress)}
                   accessibilityRole="button"
                   accessibilityLabel={primaryAction.label}
                   style={({ pressed }) => [styles.action, pressed && styles.pressed]}>
