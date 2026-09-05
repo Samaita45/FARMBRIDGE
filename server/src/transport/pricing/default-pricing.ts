@@ -1,9 +1,21 @@
-export interface VehicleRate {
+/*
+  DECLARED AS TYPE ALIASES, NOT INTERFACES, AND THAT IS LOad-BEARING.
+
+  This shape is written straight into a Prisma `Json` column. Prisma's
+  `InputJsonValue` requires an index signature, and TypeScript gives implicit
+  index signatures to type aliases but NOT to interfaces — so as an interface
+  this was rejected at the assignment and the seed could not run at all,
+  leaving every tenant without a rate card.
+
+  Keep them as aliases, or the seed breaks again the next time someone tidies
+  them into interfaces.
+*/
+export type VehicleRate = {
   baseUsdCents: number;
   perKmUsdCents: number;
-}
+};
 
-export interface PricingConfig {
+export type PricingConfig = {
   vehicles: Record<string, VehicleRate>;
   weight: {
     freeKg: number;
@@ -12,7 +24,7 @@ export interface PricingConfig {
   goods: Record<string, { multiplierBps: number }>;
   urgency: Record<string, { multiplierBps: number }>;
   extras: Record<string, { usdCents: number }>;
-}
+};
 
 /**
  * Seed rate card. Tenants override this row; nothing in the app assumes a

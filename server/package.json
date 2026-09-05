@@ -2,7 +2,7 @@
   "name": "farmbridge-api",
   "version": "0.1.0",
   "private": true,
-  "description": "FarmBridge API — auth, RBAC, tenancy, audit and payments",
+  "description": "FarmBridge API \u2014 auth, RBAC, tenancy, audit and payments",
   "scripts": {
     "build": "nest build",
     "start": "nest start",
@@ -18,7 +18,8 @@
     "db:harden": "psql \"$DATABASE_URL\" -f prisma/sql/audit-immutability.sql",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
-    "prisma:seed": "prisma db seed"
+    "prisma:seed": "prisma db seed",
+    "test:transport-e2e": "node scripts/transport-e2e.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.3",

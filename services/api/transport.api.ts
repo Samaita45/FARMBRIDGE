@@ -105,7 +105,13 @@ export const transportApi = {
   async quote(input: PricingQuoteInput): Promise<PricingQuote | null> {
     if (!IS_API_ENABLED) return null;
     try {
-      return await api.post<PricingQuote>('/transport/pricing/quote', input);
+      // Wrapped as { quote }, like every other endpoint here. Reading the body
+      // as the quote itself yields undefined cents and a NaN price on screen.
+      const data = await api.post<{ quote: PricingQuote }>(
+        '/transport/pricing/quote',
+        input
+      );
+      return data.quote ?? null;
     } catch {
       return null;
     }
