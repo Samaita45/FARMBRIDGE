@@ -8,6 +8,7 @@ import {
 } from '@/services/authService';
 import { upsertUserCache } from '@/services/database';
 import type { User, UserRole } from '@/types';
+import { disconnectRealtime } from '@/services/realtime';
 
 export interface AuthState {
   user: User | null;
@@ -34,6 +35,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user, isAuthenticated: true, isLoading: false });
   },
   logout: async () => {
+    /*
+      The socket authenticates once, at the handshake, so it does not notice a
+      logout on its own — it would stay open and authenticated as the previous
+      user until the server dropped it. Closed first, before the tokens it was
+      holding are cleared.
+    */
+    disconnectRealtime();
     await logoutUser();
     set({ user: null, isAuthenticated: false });
   },

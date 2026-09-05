@@ -104,6 +104,24 @@ async function refreshTokens(): Promise<StoredTokens | null> {
   return refreshInFlight;
 }
 
+/**
+ * A currently-valid access token, refreshing first if it is about to expire.
+ *
+ * The socket needs this: a WebSocket authenticates once at the handshake, so
+ * connecting with a token that expires in ten seconds gives a connection the
+ * server drops ten seconds later. Shares the same in-flight refresh as HTTP,
+ * so a reconnect during a refresh waits for that one rather than starting a
+ * second and racing the rotation.
+ */
+export async function getValidAccessToken(): Promise<string | null> {
+  let tokens = await getStoredTokens();
+  if (!tokens) return null;
+  if (tokens.expiresAt - Date.now() < 30_000) {
+    tokens = (await refreshTokens()) ?? tokens;
+  }
+  return tokens.accessToken;
+}
+
 async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
