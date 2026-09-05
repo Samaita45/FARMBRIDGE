@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: DS.colors.text },
   flex: { flex: 1 },
   bg: { flex: 1 },
-  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 23, 42, 0.55)' },
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.55)' },
   safe: { flex: 1 },
   backRow: { paddingHorizontal: DS.spacing.md, paddingTop: DS.spacing.sm },
   scroll: {

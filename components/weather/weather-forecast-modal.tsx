@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   bar: { position: 'absolute', top: 0, bottom: 0, borderRadius: 3, overflow: 'visible' },
-  barFill: { ...StyleSheet.absoluteFillObject, borderRadius: 3 },
+  barFill: { ...StyleSheet.absoluteFill, borderRadius: 3 },
   marker: {
     position: 'absolute',
     top: -2.5,

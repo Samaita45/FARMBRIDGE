@@ -208,11 +208,11 @@ const styles = StyleSheet.create({
   },
   // Slides in behind the knob, so progress is visible rather than implied.
   fill: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: DS.colors.primaryBg,
   },
   labelWrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

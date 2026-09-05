@@ -9,6 +9,7 @@ import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { DS } from '@/constants/design-system';
 import { ScreenImages } from '@/constants/images';
 import { asHref } from '@/lib/href';
+import { topChrome } from '@/lib/platform-ui';
 import { useAuthStore } from '@/stores/authStore';
 
 interface HomeHeaderProps {
@@ -71,7 +72,7 @@ export function HomeHeader({
       {/* Uniform, not bottom-weighted: text runs the full height of this header. */}
       <View style={styles.scrim} />
 
-      <View style={[styles.content, { paddingTop: insets.top + DS.spacing.sm }]}>
+      <View style={[styles.content, { paddingTop: topChrome(insets.top) + DS.spacing.sm }]}>
         <View style={styles.topRow}>
           <View style={styles.identity}>
             <Text style={styles.greeting} maxFontSizeMultiplier={DS.layout.maxFontScale}>
@@ -182,7 +183,7 @@ const styles = StyleSheet.create({
   // 0.68 over the photograph. Against the brightest frame the image can present
   // that is 6.19:1 for full white and 4.65:1 for the dimmed captions below —
   // 0.62 left those two at 4.15 and 3.89.
-  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 23, 42, 0.68)' },
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.68)' },
   pressed: { opacity: 0.85 },
 
   content: {

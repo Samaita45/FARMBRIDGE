@@ -135,7 +135,7 @@ function place(
 }
 
 const styles = StyleSheet.create({
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: DS.colors.overlay },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: DS.colors.overlay },
   panel: {
     position: 'absolute',
     backgroundColor: DS.colors.surface,

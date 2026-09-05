@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.92 },
   scrim: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     top: '35%',
     backgroundColor: 'rgba(15, 23, 42, 0.68)',
   },

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DS } from '@/constants/design-system';
 import { ScreenImages } from '@/constants/images';
+import { topChrome } from '@/lib/platform-ui';
 
 interface ProfileScreenHeaderProps {
   label?: string;
@@ -59,7 +60,7 @@ export function ProfileScreenHeader({
         {/* 0.68: white clears 6.19:1 against the brightest frame. */}
         <View style={styles.scrim} />
 
-        <View style={[styles.photoBody, { paddingTop: insets.top + DS.spacing.sm }]}>
+        <View style={[styles.photoBody, { paddingTop: topChrome(insets.top) + DS.spacing.sm }]}>
           <View style={styles.topRow}>
             <Text style={styles.label}>{label.toUpperCase()}</Text>
             {action}
@@ -99,7 +100,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingBottom: DS.spacing.xl + DS.spacing.md,
   },
-  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 23, 42, 0.68)' },
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.68)' },
   photoBody: { paddingHorizontal: DS.spacing.lg },
 
   topRow: {

@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   heroScrim: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     top: '55%',
     backgroundColor: 'rgba(15, 23, 42, 0.55)',
   },
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
 
   // ── Page two ──────────────────────────────────────────────────────────────
   choicePage: { backgroundColor: DS.colors.text },
-  choiceScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 23, 42, 0.55)' },
+  choiceScrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.55)' },
   choiceSafe: { flex: 1, justifyContent: 'space-between', padding: DS.spacing.md },
 
   choiceBrand: {

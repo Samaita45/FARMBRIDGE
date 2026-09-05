@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   },
 
   soldOut: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(15, 23, 42, 0.55)',

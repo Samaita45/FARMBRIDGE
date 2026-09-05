@@ -1,11 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Card } from '@/components/design-system';
 import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
 import { DS } from '@/constants/design-system';
+import { ScreenImages } from '@/constants/images';
 import { SUBSCRIPTION_PLANS, TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
+import { extraTopPad } from '@/lib/platform-ui';
 
 /**
  * The transport paywall.
@@ -23,12 +26,21 @@ const INCLUDED = [
 ];
 
 export function TransportLocked() {
+  const insets = useSafeAreaInsets();
   const plan = SUBSCRIPTION_PLANS.find((p) => p.id === 'farmer');
   const preview = TRANSPORT_PROVIDERS.slice(0, 3);
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
+      {extraTopPad(insets.top) > 0 ? <View style={{ height: extraTopPad(insets.top) }} /> : null}
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <Image
+          source={ScreenImages.transport}
+          style={styles.hero}
+          contentFit="cover"
+          transition={220}
+          accessibilityLabel="Truck on a farm road"
+        />
         <View style={styles.header}>
           <Text style={styles.title}>Transport</Text>
           <Text style={styles.subtitle}>Move your harvest safely and affordably</Text>
@@ -105,6 +117,12 @@ export function TransportLocked() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: DS.colors.background },
   body: { padding: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.md },
+  hero: {
+    height: 160,
+    width: '100%',
+    borderRadius: DS.radius.lg,
+    backgroundColor: DS.colors.surfaceMuted,
+  },
   flex: { flex: 1 },
 
   header: { gap: 2 },
@@ -155,7 +173,7 @@ const styles = StyleSheet.create({
     color: DS.colors.textFaint,
   },
   previewFade: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: DS.colors.background,
     opacity: 0.55,
     borderRadius: DS.radius.lg,

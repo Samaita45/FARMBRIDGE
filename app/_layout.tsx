@@ -9,9 +9,9 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -146,6 +146,8 @@ export default function RootLayout() {
                 options={{ headerShown: true, title: 'Notifications' }}
               />
             </Stack>
+            {/* `translucent` went in SDK 57 — under edge-to-edge, which this
+                app enables, the bar is translucent already. */}
             <StatusBar style="dark" />
         </ThemeProvider>
       </ToastProvider>

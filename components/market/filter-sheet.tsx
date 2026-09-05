@@ -235,7 +235,7 @@ function Toggle({
 }
 
 const styles = StyleSheet.create({
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: DS.colors.overlay },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: DS.colors.overlay },
   sheet: {
     position: 'absolute',
     left: 0,

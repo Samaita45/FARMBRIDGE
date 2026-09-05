@@ -31,7 +31,7 @@ export function ScanOverlay({ active, label = 'Analyzing crop…' }: ScanOverlay
 
 const styles = StyleSheet.create({
   wrap: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(15,23,42,0.55)',
     alignItems: 'center',
     justifyContent: 'center',

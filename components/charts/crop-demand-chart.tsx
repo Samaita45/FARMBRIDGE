@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   swatch: { width: 10, height: 10, borderRadius: 2 },
 
   plot: { height: CHART_HEIGHT + 22, marginTop: DS.spacing.xs },
-  grid: { ...StyleSheet.absoluteFillObject },
+  grid: { ...StyleSheet.absoluteFill },
   gridLine: {
     position: 'absolute',
     left: 0,

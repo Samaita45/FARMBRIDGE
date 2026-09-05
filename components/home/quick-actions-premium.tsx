@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   // Uniform rather than bottom-weighted: these tiles are short and the label
   // sits low, so a gradient band would leave the second line on unpredictable
   // ground. 0.66 gives white 5.75:1 against the brightest frame.
-  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15, 23, 42, 0.66)' },
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.66)' },
 
   iconWrap: {
     width: 34,
