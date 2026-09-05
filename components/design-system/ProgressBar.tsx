@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { DS } from '@/constants/design-system';
@@ -41,7 +41,7 @@ export function ProgressBar({
   const safe = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
   const pct = Math.round(safe * 100);
 
-  const width = useRef(new Animated.Value(safe)).current;
+  const [width] = useState(() => new Animated.Value(safe));
 
   useEffect(() => {
     Animated.timing(width, {

@@ -62,8 +62,8 @@ export function SlideToAct({
   const [trackWidth, setTrackWidth] = useState(0);
   const travel = Math.max(0, trackWidth - KNOB - PADDING * 2);
 
-  const x = useRef(new Animated.Value(0)).current;
-  const hint = useRef(new Animated.Value(0)).current;
+  const [x] = useState(() => new Animated.Value(0));
+  const [hint] = useState(() => new Animated.Value(0));
   const offset = useRef(0);
   const finished = useRef(false);
   const [nudging, setNudging] = useState(true);

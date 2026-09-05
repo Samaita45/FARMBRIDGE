@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useState, createContext, type ReactNode, useContext } from 'react';
 import {
   Animated,
   Pressable,
@@ -51,8 +51,8 @@ function ToastItem({
   toast: ToastMessage;
   onDismiss: () => void;
 }) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(-20)).current;
+  const [opacity] = useState(() => new Animated.Value(0));
+  const [translateY] = useState(() => new Animated.Value(-20));
 
   // Slide in
   Animated.parallel([

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Animated,
   Pressable,
@@ -54,7 +54,18 @@ export function Toggle({
   accessibilityLabel,
   style,
 }: ToggleProps) {
-  const pos = useRef(new Animated.Value(value ? 1 : 0)).current;
+  /*
+    A lazy `useState` initialiser, not `useRef(...).current`.
+
+    Reading `.current` during render is what the React Compiler rejects, and it
+    is right to: a ref is not part of the render output and reading one is how a
+    component ends up not updating when it should. `useState` with an
+    initialiser creates the Animated.Value exactly once and hands back the same
+    instance every render — stable in the way a ref was being used for, without
+    the read. `useMemo` would not do: React is permitted to discard a memo, and
+    a new Animated.Value mid-animation would drop the driver.
+  */
+  const [pos] = useState(() => new Animated.Value(value ? 1 : 0));
 
   useEffect(() => {
     Animated.spring(pos, {

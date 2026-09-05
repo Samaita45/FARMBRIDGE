@@ -24,19 +24,36 @@ export default function EditFarmScreen() {
   const [activeCrops, setActiveCrops] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Hoisted so the declared and inferred dependencies are the same value: with
+  // `user?.id` in the array the compiler infers the whole `user` object.
+  const userId = user?.id;
+
   const load = useCallback(async () => {
-    if (!user?.id) return;
+    if (!userId) return;
     const [profile, plans] = await Promise.all([
-      getFarmProfile(user.id),
-      getCropPlans(user.id, 'active'),
+      getFarmProfile(userId),
+      getCropPlans(userId, 'active'),
     ]);
     setFarm(profile);
     setActiveCrops(plans.map((p) => p.cropName));
-  }, [user?.id]);
+  }, [userId]);
 
+  // Fetched in the effect with a cancellation guard, so neither write lands
+  // after the screen has gone.
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!userId) return;
+    let cancelled = false;
+    void Promise.all([getFarmProfile(userId), getCropPlans(userId, 'active')]).then(
+      ([profile, plans]) => {
+        if (cancelled) return;
+        setFarm(profile);
+        setActiveCrops(plans.map((p) => p.cropName));
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const save = async () => {
     if (!user?.id) return;

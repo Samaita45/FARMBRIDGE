@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Animated,
   BackHandler,
@@ -66,7 +66,7 @@ export function Sheet({
   style,
 }: SheetProps) {
   const insets = useSafeAreaInsets();
-  const anim = useRef(new Animated.Value(0)).current;
+  const [anim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     Animated.timing(anim, {

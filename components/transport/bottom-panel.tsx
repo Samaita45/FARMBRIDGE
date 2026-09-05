@@ -87,7 +87,7 @@ export function BottomPanel({
   const collapsedHeight =
     contentHeight > 0 ? Math.min(peekHeight, contentHeight) : peekHeight;
 
-  const height = useRef(new Animated.Value(collapsedHeight)).current;
+  const [height] = useState(() => new Animated.Value(collapsedHeight));
   const start = useRef(collapsedHeight);
 
   useEffect(() => {

@@ -22,14 +22,35 @@ export default function ExpenseScreen() {
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
 
-  const load = useCallback(async () => {
-    if (!user?.id) return;
-    setEntries(await getExpenses(user.id));
-  }, [user?.id]);
+  /*
+    Hoisted so the declared dependency and the one the compiler infers are the
+    same value. With `user?.id` in the array the compiler infers `user` — a
+    coarser dependency than the source claims — and refuses to optimise the
+    component at all.
+  */
+  const userId = user?.id;
 
+  const load = useCallback(async () => {
+    if (!userId) return;
+    setEntries(await getExpenses(userId));
+  }, [userId]);
+
+  /*
+    The fetch runs in the effect rather than through `load`, with a cancellation
+    guard. Two reasons: calling a state-setting callback straight from an effect
+    is what the compiler flags, and without the guard a slow read that resolves
+    after the screen has gone writes state to an unmounted component.
+  */
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!userId) return;
+    let cancelled = false;
+    void getExpenses(userId).then((rows) => {
+      if (!cancelled) setEntries(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const add = async () => {
     if (!user?.id || !amount) {

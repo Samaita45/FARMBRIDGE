@@ -24,14 +24,27 @@ export default function OrdersScreen() {
   const { showToast } = useToast();
   const [orders, setOrders] = useState<MarketOrder[]>([]);
 
-  const load = useCallback(async () => {
-    if (!user?.id) return;
-    setOrders(await getOrders(user.id));
-  }, [user?.id]);
+  // Hoisted so the declared and inferred dependencies are the same value: with
+  // `user?.id` in the array the compiler infers the whole `user` object.
+  const userId = user?.id;
 
+  const load = useCallback(async () => {
+    if (!userId) return;
+    setOrders(await getOrders(userId));
+  }, [userId]);
+
+  // Fetched in the effect with a cancellation guard, so a slow read cannot
+  // write state after the screen has gone.
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!userId) return;
+    let cancelled = false;
+    void getOrders(userId).then((rows) => {
+      if (!cancelled) setOrders(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const reorder = (order: MarketOrder) => {
     let added = 0;

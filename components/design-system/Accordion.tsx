@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Animated,
   Easing,
@@ -51,7 +51,7 @@ export function AccordionItem({
   const [everOpened, setEverOpened] = useState(defaultOpen);
   const [height, setHeight] = useState(0);
 
-  const anim = useRef(new Animated.Value(defaultOpen ? 1 : 0)).current;
+  const [anim] = useState(() => new Animated.Value(defaultOpen ? 1 : 0));
 
   useEffect(() => {
     Animated.timing(anim, {
