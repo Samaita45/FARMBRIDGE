@@ -70,7 +70,47 @@ export interface CreateTransportRequestInput {
  * Used only when the API is on. Local SQLite bookings continue to work
  * without these calls.
  */
+export interface PricingQuoteInput {
+  distanceKm: number;
+  weightKg: number;
+  goodsType: string;
+  vehicleType?: 'BAKKIE' | 'TRUCK' | 'LORRY' | 'TRACTOR';
+  urgency?: 'STANDARD' | 'SAME_DAY' | 'EXPRESS';
+  extras?: string[];
+}
+
+export interface PricingQuote {
+  estimatedPriceUsdCents: number;
+  breakdown: {
+    vehicleType: string;
+    baseUsdCents: number;
+    distanceUsdCents: number;
+    weightUsdCents: number;
+    extrasUsdCents: number;
+    goodsMultiplierBps: number;
+    urgencyMultiplierBps: number;
+    distanceKm: number;
+  };
+}
+
 export const transportApi = {
+  /**
+   * What the backend thinks this load should cost.
+   *
+   * The rate table lives on the server, so it can be changed for a season or a
+   * corridor without shipping an app update — which is the whole reason not to
+   * price on the device. Returns null when the API is off, and the caller falls
+   * back to the on-device estimator rather than showing nothing.
+   */
+  async quote(input: PricingQuoteInput): Promise<PricingQuote | null> {
+    if (!IS_API_ENABLED) return null;
+    try {
+      return await api.post<PricingQuote>('/transport/pricing/quote', input);
+    } catch {
+      return null;
+    }
+  },
+
   async createRequest(input: CreateTransportRequestInput): Promise<ServerTransportRequest | null> {
     if (!IS_API_ENABLED) return null;
     const data = await api.post<{ request: ServerTransportRequest }>('/transport/requests', input);

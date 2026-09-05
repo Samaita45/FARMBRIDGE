@@ -22,6 +22,7 @@ import { useLocation } from '@/hooks/useLocation';
 import { asHref } from '@/lib/href';
 import { TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
 import { mapsApi } from '@/services/api/maps.api';
+import { transportApi } from '@/services/api/transport.api';
 import { estimateDistanceKm, estimateDistanceKmFromCoords, estimatePrice } from '@/services/transportDb';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
 import type { ResolvedPlace, RouteEstimate } from '@/types/geo';
@@ -104,7 +105,13 @@ export default function TransportRequestScreen() {
     at their own published rates. Arithmetic on numbers already in the app, not
     a figure tuned to move the offer one way or the other.
   */
-  const suggested = useMemo(() => {
+  /*
+    The on-device figure: the mean of what the available transporters would
+    charge at their own published rates. It is the fallback, not the answer —
+    it knows nothing about the weight, the goods or the urgency, because the
+    catalogue it reads has no rates for those.
+  */
+  const localSuggestion = useMemo(() => {
     if (distanceKm === null) return null;
     const free = TRANSPORT_PROVIDERS.filter((p) => p.isAvailable);
     if (free.length === 0) return null;
@@ -112,6 +119,55 @@ export default function TransportRequestScreen() {
       free.reduce((sum, p) => sum + estimatePrice(p, distanceKm), 0) / free.length
     );
   }, [distanceKm]);
+
+  /*
+    The backend's price, which is the one that counts when there is a backend.
+    Its rate table lives on the server so a season or a corridor can be repriced
+    without shipping an app update, and unlike the local figure it accounts for
+    weight, goods type and urgency.
+
+    STORED AGAINST THE INPUTS IT WAS QUOTED FOR. A quote for 400kg must never be
+    shown beside a form that now says 4000kg, and a slow reply can easily land
+    after a fast one. Holding the key alongside the figure makes a stale quote
+    unusable rather than merely unlikely — the comparison below discards it.
+  */
+  const quoteKey =
+    distanceKm !== null && Number(weight) > 0
+      ? `${distanceKm}|${Number(weight)}|${category}`
+      : null;
+
+  const [quoted, setQuoted] = useState<{ key: string; usd: number } | null>(null);
+
+  useEffect(() => {
+    if (!quoteKey || distanceKm === null) return;
+    let cancelled = false;
+
+    // Debounced: weight and category are edited character by character, and
+    // each keystroke would otherwise be a request.
+    const timer = setTimeout(() => {
+      void transportApi
+        .quote({
+          distanceKm,
+          weightKg: Number(weight),
+          goodsType: category,
+        })
+        .then((quote) => {
+          if (cancelled || !quote) return;
+          setQuoted({ key: quoteKey, usd: Math.round(quote.estimatedPriceUsdCents / 100) });
+        });
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [quoteKey, distanceKm, weight, category]);
+
+  const serverSuggestion = quoted && quoted.key === quoteKey ? quoted.usd : null;
+
+  // Server first, on-device second. Never nothing, so the field always has a
+  // figure to offer even with no backend and no signal.
+  const suggested = serverSuggestion ?? localSuggestion;
 
   const errors = {
     pickup: !pickup.trim()

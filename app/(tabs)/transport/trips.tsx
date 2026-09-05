@@ -6,6 +6,7 @@ import { Button, Card, EmptyState, LoadingState } from '@/components/design-syst
 import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
 import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
+import { useRealtimeEvent } from '@/hooks/useRealtime';
 import { openExternalNavigation } from '@/lib/external-maps';
 import { getBookings, updateBookingStatus } from '@/services/transportDb';
 import { useAuthStore } from '@/stores/authStore';
@@ -46,6 +47,24 @@ export default function TripsScreen() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  /*
+    A status change on the server means this list is stale.
+
+    It reloads rather than patching the row from the payload: the socket carries
+    the new status, but a booking also changes other things when it advances —
+    an assigned transporter, a collection time — and trusting one field from a
+    socket is how a list ends up disagreeing with the database. The event is the
+    signal to refetch, not the new state.
+  */
+  useRealtimeEvent('transport:status:updated', () => {
+    void load();
+  });
+
+  // Someone accepting a bid creates the booking this screen exists to show.
+  useRealtimeEvent('transport:booking:accepted', () => {
+    void load();
+  });
 
   const active = trips.filter((t) => ['pending', 'confirmed', 'in_transit'].includes(t.status));
   const history = trips.filter((t) => ['delivered', 'cancelled'].includes(t.status));
