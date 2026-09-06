@@ -13,6 +13,11 @@ interface SubscriptionModalProps {
   onClose: () => void;
 }
 
+/** Thirty days out, at module scope: the clock is impure and render must not read it. */
+function thirtyDaysFromNow(): string {
+  return new Date(Date.now() + 30 * 86_400_000).toISOString();
+}
+
 export function SubscriptionModal({ visible, onClose }: SubscriptionModalProps) {
   const user = useAuthStore((s) => s.user);
   const updateSubscription = useAuthStore((s) => s.updateSubscription);
@@ -32,7 +37,7 @@ export function SubscriptionModal({ visible, onClose }: SubscriptionModalProps) 
       showToast('Payments are not available yet — we will notify you at launch', 'info');
       return;
     }
-    const expires = new Date(Date.now() + 30 * 86400000).toISOString();
+    const expires = thirtyDaysFromNow();
     updateSubscription(planId, true, expires);
     showToast('Development build: plan enabled locally without payment', 'warning');
     onClose();

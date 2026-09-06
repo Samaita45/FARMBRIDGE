@@ -86,22 +86,34 @@ export function LocationSearchField({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [local?.name, value, role]);
 
+  /*
+    Whether suggestions should show is derived below rather than cleared here.
+    Clearing state in an effect body is what the React Compiler rejects, and
+    deriving it is better anyway: a stale list cannot outlive the keystroke that
+    invalidated it, because it is never shown for a query that does not want it.
+  */
+  const wantsRemote = value.trim().length >= 3 && !local;
+  const suggestions = wantsRemote ? remote : [];
+
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
     const query = value.trim();
-    if (query.length < 3 || local) {
-      setRemote([]);
-      return;
-    }
+    if (!wantsRemote) return;
     timer.current = setTimeout(() => {
       void mapsApi.autocomplete(query, session.current).then(setRemote);
     }, 380);
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [value, local]);
+  }, [value, local, wantsRemote]);
 
-  const useCurrent = async () => {
+  /*
+    Named as a handler, not a hook. It was `useCurrent`, which the linter reads
+    as a custom hook being called inside a Pressable's onPress — a rules-of-hooks
+    violation — and which misleads anyone reading it into thinking there is a
+    hook here. It is an ordinary async function.
+  */
+  const applyCurrentLocation = async () => {
     await refresh();
     const address = location.label;
     lastResolved.current = address;
@@ -140,7 +152,7 @@ export function LocationSearchField({
 
       {allowCurrentLocation && permission !== 'denied' ? (
         <Pressable
-          onPress={() => void useCurrent()}
+          onPress={() => void applyCurrentLocation()}
           accessibilityRole="button"
           accessibilityLabel="Use my current location"
           style={({ pressed }) => [styles.current, pressed && styles.pressed]}>
@@ -149,9 +161,9 @@ export function LocationSearchField({
         </Pressable>
       ) : null}
 
-      {remote.length > 0 ? (
+      {suggestions.length > 0 ? (
         <View style={styles.remote}>
-          {remote.map((item) => (
+          {suggestions.map((item) => (
             <Pressable
               key={item.placeId}
               onPress={() => void pickRemote(item)}

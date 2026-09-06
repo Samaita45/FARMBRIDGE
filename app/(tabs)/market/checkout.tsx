@@ -32,6 +32,18 @@ import type { MarketOrder } from '@/types/market';
  * order is written as awaiting payment — never as paid. The screen says so
  * rather than implying a transaction occurred.
  */
+/**
+ * A human-readable order reference.
+ *
+ * Module scope, because `Date.now()` is impure and the compiler will not have
+ * it inside a component body — rightly, since a render must be repeatable.
+ * Generating the reference is a side effect of placing an order, not of
+ * drawing the screen.
+ */
+function newOrderReference(): string {
+  return `ORD-${Date.now().toString(36).toUpperCase()}`;
+}
+
 export default function CheckoutScreen() {
   const { showToast } = useToast();
   const user = useAuthStore((s: AuthState) => s.user);
@@ -75,7 +87,7 @@ export default function CheckoutScreen() {
   const placeOrder = async () => {
     setPlacing(true);
     try {
-      const reference = `ORD-${Date.now().toString(36).toUpperCase()}`;
+      const reference = newOrderReference();
       const order: MarketOrder = {
         id: reference,
         userId: user?.id ?? 'guest',

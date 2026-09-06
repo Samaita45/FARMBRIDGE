@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useToast } from '@/components/ui/toast-provider';
@@ -27,11 +27,6 @@ export default function OrdersScreen() {
   // Hoisted so the declared and inferred dependencies are the same value: with
   // `user?.id` in the array the compiler infers the whole `user` object.
   const userId = user?.id;
-
-  const load = useCallback(async () => {
-    if (!userId) return;
-    setOrders(await getOrders(userId));
-  }, [userId]);
 
   // Fetched in the effect with a cancellation guard, so a slow read cannot
   // write state after the screen has gone.

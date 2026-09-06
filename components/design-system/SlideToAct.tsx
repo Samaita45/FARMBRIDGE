@@ -92,8 +92,16 @@ export function SlideToAct({
     });
   };
 
+  /*
+    The rule below fires because this factory mentions refs and the compiler
+    cannot tell when they are read. Every read here happens inside a gesture
+    callback, which cannot run until a finger is on the knob — long after render.
+    Rebuilding the responder instead would be worse: a PanResponder replaced
+    mid-drag drops the gesture.
+  */
   const responder = useMemo(
     () =>
+      // eslint-disable-next-line react-hooks/refs
       PanResponder.create({
         // Not on touch-down: the pager must keep a plain swipe across the page.
         onMoveShouldSetPanResponder: (_e, g) =>

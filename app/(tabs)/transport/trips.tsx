@@ -35,18 +35,36 @@ export default function TripsScreen() {
   const [trips, setTrips] = useState<TransportBooking[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Hoisted so the declared dependency matches the one the compiler infers.
+  const uid = user?.id ?? 'guest';
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setTrips(await getBookings(user?.id ?? 'guest'));
+      setTrips(await getBookings(uid));
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [uid]);
 
+  /*
+    `load` stays for the realtime handlers below and for pull-to-refresh. The
+    mount read runs here so no state-setting callback is invoked straight from
+    an effect, and the guard stops a write landing after the screen has gone.
+  */
   useEffect(() => {
-    void load();
-  }, [load]);
+    let cancelled = false;
+    void (async () => {
+      const rows = await getBookings(uid);
+      if (!cancelled) {
+        setTrips(rows);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [uid]);
 
   /*
     A status change on the server means this list is stale.

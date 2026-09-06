@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -35,20 +35,34 @@ export default function FinancialsHubScreen() {
   const [monthly, setMonthly] = useState<MonthlyFinanceSummary[]>([]);
   const [expenses, setExpenses] = useState<ExpenseEntry[]>([]);
 
-  const load = useCallback(async () => {
-    const uid = user?.id ?? 'guest';
-    await seedDemoFinancials(uid);
-    const [t, m, e] = await Promise.all([
-      getSeasonTotals(uid),
-      getMonthlySummaries(uid),
-      getExpenses(uid),
-    ]);
-    setTotals(t);
-    setMonthly(m);
-    setExpenses(e);
-  }, [user?.id]);
+  // Hoisted so the declared dependency matches the one the compiler infers:
+  // with `user?.id` in the array it infers the whole `user` object.
+  const uid = user?.id ?? 'guest';
 
-  useEffect(() => { void load(); }, [load]);
+  /*
+    Read on mount, behind a cancellation guard so a slow query cannot write
+    state after the screen has gone. Done here rather than through a memoized
+    callback because calling a state-setting callback straight from an effect is
+    what the React Compiler rejects.
+  */
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      await seedDemoFinancials(uid);
+      const [t, m, e] = await Promise.all([
+        getSeasonTotals(uid),
+        getMonthlySummaries(uid),
+        getExpenses(uid),
+      ]);
+      if (cancelled) return;
+      setTotals(t);
+      setMonthly(m);
+      setExpenses(e);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [uid]);
 
   const fmt = (usd: number) =>
     currency === 'USD'

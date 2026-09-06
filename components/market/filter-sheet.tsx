@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -68,10 +68,15 @@ interface FilterSheetProps {
 export function FilterSheet({ visible, categories, value, onClose, onApply }: FilterSheetProps) {
   const [draft, setDraft] = useState<MarketFilters>(value);
 
-  // Re-seed whenever the sheet opens, so it always reflects what is applied.
-  useEffect(() => {
-    if (visible) setDraft(value);
-  }, [visible, value]);
+  /*
+    Re-seeded whenever the sheet opens, so it always reflects what is applied.
+
+    Done by remounting rather than by setting state inside an effect: the parent
+    gives this component a key that changes with `visible`, so opening the sheet
+    produces a fresh component whose initial state is the current filters. Same
+    result, no synchronous setState in an effect, and no window in which the
+    draft and the applied filters disagree.
+  */
 
   const set = <K extends keyof MarketFilters>(key: K, v: MarketFilters[K]) =>
     setDraft((d) => ({ ...d, [key]: v }));

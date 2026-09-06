@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   PanResponder,
   StyleSheet,
@@ -51,30 +51,52 @@ export function RangeSlider({
 }: RangeSliderProps) {
   const [width, setWidth] = useState(0);
 
-  // Kept in refs so the responder closures always read current values without
-  // being recreated on every render.
+  /*
+    The responders are created once and never rebuilt — a PanResponder swapped
+    mid-drag loses the gesture — so they cannot close over props directly or
+    they would read whatever the values were on first render. Everything they
+    need lives in a ref that is refreshed after each commit.
+
+    The refresh is an effect, not a bare assignment during render. Writing to a
+    ref while rendering is what the React Compiler rejects, and it is right to:
+    render must be free of side effects for it to be safely re-run. Running
+    after commit is soon enough, because a gesture can only arrive after paint.
+  */
   const bounds = useRef({ min, max, low, high, width: 0 });
-  bounds.current = { min, max, low, high, width };
+  const onChangeRef = useRef(onChange);
+
+  useEffect(() => {
+    bounds.current = { min, max, low, high, width };
+    onChangeRef.current = onChange;
+  });
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
     setWidth(e.nativeEvent.layout.width);
   }, []);
 
   const usable = Math.max(1, width - THUMB);
-  const ratio = (value: number) => {
-    const span = bounds.current.max - bounds.current.min;
-    return span <= 0 ? 0 : (value - bounds.current.min) / span;
+
+  /*
+    Pure, and takes its bounds as arguments. It used to read `bounds.current`,
+    which was a genuine ref read during render — this function positions the
+    thumbs on every frame as well as being used inside the gesture. Render
+    passes the props; the gesture passes the ref's snapshot.
+  */
+  const ratio = (value: number, lo: number, hi: number) => {
+    const span = hi - lo;
+    return span <= 0 ? 0 : (value - lo) / span;
   };
 
-  const snap = (value: number) => {
+  // Both are only ever called from inside a gesture handler, and take the
+  // snapshot the handler already read rather than reaching for the ref again.
+  const snap = (value: number, lo: number, hi: number) => {
     const stepped = Math.round(value / step) * step;
-    return Math.min(bounds.current.max, Math.max(bounds.current.min, stepped));
+    return Math.min(hi, Math.max(lo, stepped));
   };
 
-  const valueAt = (x: number) => {
-    const b = bounds.current;
+  const valueAt = (x: number, b: { min: number; max: number; width: number }) => {
     const pct = Math.min(1, Math.max(0, x / Math.max(1, b.width - THUMB)));
-    return snap(b.min + pct * (b.max - b.min));
+    return snap(b.min + pct * (b.max - b.min), b.min, b.max);
   };
 
   const makeResponder = (which: 'low' | 'high') =>
@@ -85,22 +107,36 @@ export function RangeSlider({
       onPanResponderTerminationRequest: () => false,
       onPanResponderMove: (_evt, gesture) => {
         const b = bounds.current;
-        const startX = ratio(which === 'low' ? b.low : b.high) * (b.width - THUMB);
-        const next = valueAt(startX + gesture.dx);
+        const startX = ratio(which === 'low' ? b.low : b.high, b.min, b.max) * (b.width - THUMB);
+        const next = valueAt(startX + gesture.dx, b);
 
+        // Through the ref, so a re-rendered parent's newer handler is used
+        // rather than the one captured when the responder was built.
         if (which === 'low') {
-          onChange(Math.min(next, b.high), b.high);
+          onChangeRef.current(Math.min(next, b.high), b.high);
         } else {
-          onChange(b.low, Math.max(next, b.low));
+          onChangeRef.current(b.low, Math.max(next, b.low));
         }
       },
     });
 
-  const lowResponder = useRef(makeResponder('low')).current;
-  const highResponder = useRef(makeResponder('high')).current;
+  /*
+    Built once. A PanResponder replaced mid-drag loses the gesture, so these
+    must not be rebuilt on re-render.
 
-  const lowX = ratio(low) * usable;
-  const highX = ratio(high) * usable;
+    The rule below fires because `makeResponder` mentions refs, and the compiler
+    cannot tell when they are read. Here they are only read inside
+    `onPanResponderMove`, which cannot run until a finger is on the screen —
+    long after render. The initialiser itself touches no ref.
+  */
+  // eslint-disable-next-line react-hooks/refs
+  const [lowResponder] = useState(() => makeResponder('low'));
+  // eslint-disable-next-line react-hooks/refs
+  const [highResponder] = useState(() => makeResponder('high'));
+
+  // Positioned from props, not from the ref.
+  const lowX = ratio(low, min, max) * usable;
+  const highX = ratio(high, min, max) * usable;
 
   return (
     <View style={style}>

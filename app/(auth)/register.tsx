@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import {
   ImageBackground,
   KeyboardAvoidingView,
@@ -41,7 +41,6 @@ export default function RegisterScreen() {
     handleSubmit,
     setValue,
     setError,
-    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -56,7 +55,14 @@ export default function RegisterScreen() {
     },
   });
 
-  const role = watch('role') as UserRole;
+  /*
+    `useWatch` rather than `watch`. `watch` hands back a function, which the
+    React Compiler cannot memoize without risking stale UI — so it gives up on
+    optimising the whole component. `useWatch` subscribes to the one field and
+    returns its value, which also re-renders less: `watch` re-runs the component
+    on every change to any field.
+  */
+  const role = useWatch({ control, name: 'role' }) as UserRole;
 
   const onSubmit = async (data: RegisterFormData) => {
     setLoading(true);

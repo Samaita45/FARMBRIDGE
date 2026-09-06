@@ -61,6 +61,14 @@ export function Popover({ anchor, children, width = 240, style }: PopoverProps) 
   return (
     <>
       <View ref={ref} collapsable={false} style={style}>
+        {/*
+          `show` is handed to the anchor during render but only ever called from
+          its press handler, where measuring the ref is exactly right — a
+          popover has to know where its anchor ended up on screen. The compiler
+          sees a ref-reading function crossing a render boundary and cannot tell
+          the difference.
+        */}
+        {/* eslint-disable-next-line react-hooks/refs */}
         {anchor(show)}
       </View>
 

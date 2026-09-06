@@ -172,7 +172,9 @@ export function Button({
 
   const press = (next: number) => {
     if (reducedMotion || isDisabled) return;
-    scale.value = withTiming(next, { duration: DS.motion.fast });
+    // `.set()` rather than assigning `.value`: same effect, and it is the
+    // API the React Compiler recognises as a legitimate write.
+    scale.set(withTiming(next, { duration: DS.motion.fast }));
   };
 
   return (

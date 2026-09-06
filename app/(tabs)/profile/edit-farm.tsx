@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { PrimaryButton } from '@/components/ui/primary-button';
@@ -27,16 +27,6 @@ export default function EditFarmScreen() {
   // Hoisted so the declared and inferred dependencies are the same value: with
   // `user?.id` in the array the compiler infers the whole `user` object.
   const userId = user?.id;
-
-  const load = useCallback(async () => {
-    if (!userId) return;
-    const [profile, plans] = await Promise.all([
-      getFarmProfile(userId),
-      getCropPlans(userId, 'active'),
-    ]);
-    setFarm(profile);
-    setActiveCrops(plans.map((p) => p.cropName));
-  }, [userId]);
 
   // Fetched in the effect with a cancellation guard, so neither write lands
   // after the screen has gone.

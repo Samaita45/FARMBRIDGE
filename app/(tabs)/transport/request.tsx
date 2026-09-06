@@ -63,7 +63,7 @@ export default function TransportRequestScreen() {
   const [destination, setDestination] = useState(to ?? '');
   const [pickupPlace, setPickupPlace] = useState<ResolvedPlace | null>(null);
   const [destinationPlace, setDestinationPlace] = useState<ResolvedPlace | null>(null);
-  const [routeEstimate, setRouteEstimate] = useState<RouteEstimate | null>(null);
+  const [routed, setRouted] = useState<{ key: string; estimate: RouteEstimate } | null>(null);
   const [price, setPrice] = useState<number | null>(storedOffer);
   const [note, setNote] = useState('');
   const [goods, setGoods] = useState('');
@@ -75,22 +75,33 @@ export default function TransportRequestScreen() {
   const [special, setSpecial] = useState<string[]>([]);
   const [touched, setTouched] = useState(false);
 
+  /*
+    The estimate is stored against the pair it was computed for, and read back
+    only when that pair still matches. Two things fall out of that: there is no
+    state to clear when the route becomes incomplete — which is what the
+    compiler objected to — and a slow reply for an old pair can never be shown
+    beside a newer one.
+  */
+  const routeKey =
+    pickupPlace && destinationPlace
+      ? `${pickupPlace.latitude},${pickupPlace.longitude}|${destinationPlace.latitude},${destinationPlace.longitude}`
+      : null;
+
+  const routeEstimate = routed && routed.key === routeKey ? routed.estimate : null;
+
   useEffect(() => {
-    if (!pickupPlace || !destinationPlace) {
-      setRouteEstimate(null);
-      return;
-    }
+    if (!routeKey || !pickupPlace || !destinationPlace) return;
     let cancelled = false;
     const timer = setTimeout(() => {
       void mapsApi.route(pickupPlace, destinationPlace).then((route) => {
-        if (!cancelled) setRouteEstimate(route);
+        if (!cancelled && route) setRouted({ key: routeKey, estimate: route });
       });
     }, 400);
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [pickupPlace, destinationPlace]);
+  }, [routeKey, pickupPlace, destinationPlace]);
 
   const distanceKm = useMemo(() => {
     if (routeEstimate) return routeEstimate.distanceKm;

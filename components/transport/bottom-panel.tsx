@@ -110,8 +110,16 @@ export function BottomPanel({
   const toggle = () =>
     expanded ? settle(collapsedHeight, false) : settle(openHeight, true);
 
+  /*
+    The rule below fires because this factory mentions refs and the compiler
+    cannot tell when they are read. Every read here happens inside a gesture
+    callback, which cannot run until a finger is on the sheet — long after render.
+    Rebuilding the responder instead would be worse: a PanResponder replaced
+    mid-drag drops the gesture.
+  */
   const responder = useMemo(
     () =>
+      // eslint-disable-next-line react-hooks/refs
       PanResponder.create({
         onMoveShouldSetPanResponder: (_e, g) =>
           Math.abs(g.dy) > 4 && Math.abs(g.dy) > Math.abs(g.dx),

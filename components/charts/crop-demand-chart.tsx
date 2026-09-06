@@ -36,7 +36,7 @@ function monthLabels(): string[] {
 }
 
 export function CropDemandChart() {
-  const months = useMemo(monthLabels, []);
+  const months = useMemo(() => monthLabels(), []);
   const topCrops = useMemo(
     () => [...CROPS].sort((a, b) => b.monthlyDemandData[0] - a.monthlyDemandData[0]).slice(0, 8),
     []

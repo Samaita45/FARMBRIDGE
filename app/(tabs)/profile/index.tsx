@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Linking,
   Pressable,
@@ -53,24 +53,35 @@ export default function ProfileScreen() {
   const [plansOpen, setPlansOpen] = useState(false);
   const [avatarSaving, setAvatarSaving] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!user?.id) return;
-    await Promise.all([hydrateSettings(user.id), hydrateTutorials(user.id)]);
-    const [farmProfile, crops, orders, userPosts] = await Promise.all([
-      getFarmProfile(user.id),
-      getCropPlans(user.id, 'active'),
-      getOrders(user.id),
-      getUserPosts(),
-    ]);
-    setFarm(farmProfile);
-    setStats({
-      cropsPlanted: crops.length,
-      orders: orders.length,
-      forumPosts: userPosts.filter((p) => p.authorId === user.id).length,
-    });
-  }, [user?.id, hydrateSettings, hydrateTutorials]);
+  // Hoisted so the declared dependency matches the one the compiler infers.
+  const userId = user?.id;
 
-  useEffect(() => { void load(); }, [load]);
+  // Read inside the effect behind a cancellation guard: no state write lands
+  // after the screen has gone, and no state-setting callback is called from an
+  // effect body.
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    void (async () => {
+      await Promise.all([hydrateSettings(userId), hydrateTutorials(userId)]);
+      const [farmProfile, crops, orders, userPosts] = await Promise.all([
+        getFarmProfile(userId),
+        getCropPlans(userId, 'active'),
+        getOrders(userId),
+        getUserPosts(),
+      ]);
+      if (cancelled) return;
+      setFarm(farmProfile);
+      setStats({
+        cropsPlanted: crops.length,
+        orders: orders.length,
+        forumPosts: userPosts.filter((p) => p.authorId === userId).length,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, hydrateSettings, hydrateTutorials]);
 
   const plan = SUBSCRIPTION_PLANS.find((p) => p.id === (user?.subscription?.planId ?? 'basic'));
   const memberSince = user?.createdAt

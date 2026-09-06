@@ -334,6 +334,9 @@ export default function MarketSearchScreen() {
       )}
 
       <FilterSheet
+        // Remounts on open, so the draft is seeded from the applied filters
+        // without an effect writing state on the way in.
+        key={filterOpen ? 'open' : 'closed'}
         visible={filterOpen}
         categories={MARKET_CATEGORIES}
         value={filters}
