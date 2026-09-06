@@ -291,9 +291,22 @@ export default function TripsScreen() {
                 <>
                   <Text style={styles.awaitingTitle}>Booked through FarmBridge</Text>
                   {booked.map((b) => (
-                    <View key={b.id} style={styles.bookedRow}>
+                    <Pressable
+                      key={b.id}
+                      onPress={() =>
+                        router.push(
+                          asHref({ pathname: '/(tabs)/transport/track', params: { id: b.id } })
+                        )
+                      }
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        b.viewer === 'transporter'
+                          ? `Share your position on the trip to ${b.destinationAddress}`
+                          : `Track the trip from ${b.pickupAddress} to ${b.destinationAddress}`
+                      }
+                      style={({ pressed }) => [styles.bookedRow, pressed && styles.pressed]}>
                       <Ionicons
-                        name="checkmark-circle-outline"
+                        name="navigate-circle-outline"
                         size={18}
                         color={DS.semantic.success.fg}
                       />
@@ -307,7 +320,8 @@ export default function TripsScreen() {
                           {b.status.replace(/_/g, ' ').toLowerCase()}
                         </Text>
                       </View>
-                    </View>
+                      <Ionicons name="chevron-forward" size={16} color={DS.colors.textSoft} />
+                    </Pressable>
                   ))}
                 </>
               ) : null}

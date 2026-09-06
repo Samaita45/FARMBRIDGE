@@ -358,6 +358,8 @@ export class TransportService {
       metadata: { bidId, transporterId: bid.transporterId },
     });
 
+    // No `viewer` on a broadcast payload: one object goes to both parties, and
+    // a side stamped on it would be wrong for one of them.
     const payload = { booking: this.publicBooking(booking) };
     this.realtime.emitToUser(request.customerId, TRANSPORT_EVENTS.BOOKING_ACCEPTED, payload);
     this.realtime.emitToUser(bid.transporterId, TRANSPORT_EVENTS.BOOKING_ACCEPTED, payload);
@@ -420,6 +422,8 @@ export class TransportService {
       metadata: { from: booking.status, to: dto.status },
     });
 
+    // No `viewer` on a broadcast payload: one object goes to both parties, and
+    // a side stamped on it would be wrong for one of them.
     const payload = { booking: this.publicBooking(updated) };
     this.realtime.emitToBooking(updated.id, TRANSPORT_EVENTS.STATUS_UPDATED, payload);
     this.realtime.emitToUser(updated.customerId, TRANSPORT_EVENTS.STATUS_UPDATED, payload);
@@ -486,7 +490,7 @@ export class TransportService {
       },
       orderBy: { createdAt: 'desc' },
     });
-    return { bookings: bookings.map((row) => this.publicBooking(row)) };
+    return { bookings: bookings.map((row) => this.publicBooking(row, user.id)) };
   }
 
   async quote(user: AuthenticatedUser, dto: PricingQuoteDto) {
@@ -529,24 +533,45 @@ export class TransportService {
     };
   }
 
-  private publicBooking(row: {
-    id: string;
-    requestId: string;
-    status: TransportLifecycleStatus;
-    pickupAddress: string;
-    pickupLat: number;
-    pickupLng: number;
-    destinationAddress: string;
-    destinationLat: number;
-    destinationLng: number;
-    distanceMeters: number;
-    durationSeconds: number;
-    agreedPriceUsdCents: number;
-  }) {
+  /**
+   * A booking as one of its two parties may see it.
+   *
+   * `viewer` says which side the caller is on. The tracking screen behaves
+   * completely differently for each — one publishes a position, the other
+   * follows it — and the client cannot work that out for itself: its own user
+   * model has no transporter role, and comparing ids on the device would mean
+   * shipping both parties' ids to both parties to answer a question the server
+   * already knows the answer to.
+   */
+  private publicBooking(
+    row: {
+      id: string;
+      requestId: string;
+      status: TransportLifecycleStatus;
+      customerId: string;
+      transporterId: string;
+      pickupAddress: string;
+      pickupLat: number;
+      pickupLng: number;
+      destinationAddress: string;
+      destinationLat: number;
+      destinationLng: number;
+      distanceMeters: number;
+      durationSeconds: number;
+      agreedPriceUsdCents: number;
+    },
+    viewerId?: string,
+  ) {
     return {
       id: row.id,
       requestId: row.requestId,
       status: row.status,
+      viewer:
+        viewerId === row.transporterId
+          ? ('transporter' as const)
+          : viewerId === row.customerId
+            ? ('customer' as const)
+            : undefined,
       pickupAddress: row.pickupAddress,
       pickupLat: row.pickupLat,
       pickupLng: row.pickupLng,

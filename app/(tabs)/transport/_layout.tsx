@@ -13,6 +13,7 @@ export default function TransportLayout() {
       <Stack.Screen name="jobs" options={{ title: 'Loads near you' }} />
       <Stack.Screen name="job" options={{ title: 'Load details' }} />
       <Stack.Screen name="bids" options={{ title: 'Offers on your load' }} />
+      <Stack.Screen name="track" options={{ title: 'Track this trip' }} />
       <Stack.Screen name="negotiate" options={{ title: 'Negotiate price' }} />
       <Stack.Screen name="confirm" options={{ title: 'Booking confirmed' }} />
       <Stack.Screen name="register" options={{ title: 'Offer transport' }} />

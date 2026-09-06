@@ -218,6 +218,36 @@ if (bidId) {
     accepted.status < 300 ? `booking ${accepted.json.booking.status}` : `${accepted.status} ${accepted.text.slice(0, 200)}`
   );
   bookingId = accepted.json?.booking?.id;
+
+  /*
+    The tracking screen publishes a position for a transporter and follows one
+    for a customer, and it picks which from this field. Get it backwards and the
+    farmer's phone starts broadcasting their location — so both sides are
+    asserted, not just the happy one.
+  */
+  const mineFarmer = await call('/transport/bookings/active', { token: farmer });
+  const asCustomer = mineFarmer.json?.bookings?.find((b) => b.id === bookingId);
+  check(
+    'the customer is told they are the customer',
+    asCustomer?.viewer === 'customer',
+    `viewer ${JSON.stringify(asCustomer?.viewer)}`
+  );
+
+  const mineDriver = await call('/transport/bookings/active', { token: transporter });
+  const asDriver = mineDriver.json?.bookings?.find((b) => b.id === bookingId);
+  check(
+    'the transporter is told they are the transporter',
+    asDriver?.viewer === 'transporter',
+    `viewer ${JSON.stringify(asDriver?.viewer)}`
+  );
+
+  // An unrelated account has no active bookings to be a side of.
+  const mineBuyer = await call('/transport/bookings/active', { token: buyer });
+  check(
+    'a third party gets no booking to track',
+    !mineBuyer.json?.bookings?.some((b) => b.id === bookingId),
+    `saw ${mineBuyer.json?.bookings?.length ?? '?'} bookings`
+  );
 }
 
 // ── the rest of the lifecycle ──────────────────────────────────────────────

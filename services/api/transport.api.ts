@@ -43,6 +43,15 @@ export interface TransportBookingDto {
   id: string;
   requestId: string;
   status: TransportLifecycleStatus;
+  /**
+   * Which side of this booking you are on, decided by the server.
+   *
+   * The tracking screen does opposite things for each — a transporter publishes
+   * their position, a customer follows it — and the app cannot work it out
+   * itself: its user model has no transporter role. Absent on realtime
+   * broadcasts, where one payload goes to both parties.
+   */
+  viewer?: 'customer' | 'transporter';
   pickupAddress: string;
   destinationAddress: string;
   pickupLat: number;
