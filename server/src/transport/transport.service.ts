@@ -160,7 +160,19 @@ export class TransportService {
     const db = this.prisma.forTenant(user.tenantId);
     const request = await db.transportRequest.findFirst({
       where: { id },
-      include: { bids: true },
+      /*
+        The transporter's name comes with the bid. A customer is being asked to
+        choose between offers, and a list of UUIDs is not a choice — but only
+        the name and the account age go out. A bid is not a licence to read
+        somebody's profile.
+      */
+      include: {
+        bids: {
+          include: {
+            transporter: { select: { id: true, name: true, createdAt: true } },
+          },
+        },
+      },
     });
     if (!request) throw new NotFoundException('Not found.');
 
@@ -170,11 +182,25 @@ export class TransportService {
       throw new NotFoundException('Not found.');
     }
 
+    // A customer sees every offer; anyone else sees only their own.
+    const visible = isCustomer
+      ? request.bids
+      : request.bids.filter((bid) => bid.transporterId === user.id);
+
     return {
       request: this.publicRequest(request),
-      bids: isCustomer
-        ? request.bids
-        : request.bids.filter((bid) => bid.transporterId === user.id),
+      bids: visible.map((bid) => ({
+        id: bid.id,
+        requestId: bid.requestId,
+        transporterId: bid.transporterId,
+        transporterName: bid.transporter?.name ?? 'Transporter',
+        transporterSince: bid.transporter?.createdAt ?? null,
+        amountUsdCents: bid.amountUsdCents,
+        note: bid.note,
+        etaMinutes: bid.etaMinutes,
+        status: bid.status,
+        createdAt: bid.createdAt,
+      })),
     };
   }
 

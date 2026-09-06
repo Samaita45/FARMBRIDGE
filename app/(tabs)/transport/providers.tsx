@@ -6,9 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, EmptyState } from '@/components/design-system';
 import { RouteMap } from '@/components/transport/route-map';
 import { TransporterRow } from '@/components/transport/transporter-row';
+import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
 import { TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
 import { asHref } from '@/lib/href';
+import { IS_API_ENABLED } from '@/services/api/config';
+import { transportApi } from '@/services/api/transport.api';
 import { estimatePrice } from '@/services/transportDb';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
 import type { TransportProvider } from '@/types';
@@ -41,6 +44,14 @@ interface Quote {
  * Nobody here has seen your offer. There is no server, and the marking is
  * arithmetic on each transporter's own rate — the screen says so rather than
  * implying anyone has responded.
+ *
+ * THE TWO PATHS ARE NOW A CHOICE, NOT A SIDE EFFECT. This list is the offline
+ * path: known transporters, their published rates, and a phone call. The other
+ * path posts the load to the server and waits for real offers. Until now the
+ * app quietly did both — you picked a transporter here, and the confirm screen
+ * also posted the load to every transporter in the country, whose bids nothing
+ * would ever show you. One button, one outcome: ask the marketplace from here,
+ * or call somebody from below.
  */
 export default function ProvidersScreen() {
   const request = useTransportStore((s: TransportState) => s.request);
@@ -75,6 +86,47 @@ export default function ProvidersScreen() {
   const [choice, setChoice] = useState<Quote | null>(
     () => quotes.find((q) => q.provider.id === selectedId) ?? null
   );
+  const [posting, setPosting] = useState(false);
+  const { showToast } = useToast();
+
+  /*
+    The load can only go to the marketplace if we know where it starts and ends
+    as coordinates. A typed town name that matched nothing in the gazetteer
+    leaves no point to search around, and transporters find work by distance.
+  */
+  const canPost =
+    IS_API_ENABLED &&
+    request != null &&
+    request.pickupLat != null &&
+    request.pickupLng != null &&
+    request.destinationLat != null &&
+    request.destinationLng != null;
+
+  const postToMarketplace = async () => {
+    if (!request || !canPost) return;
+    setPosting(true);
+    try {
+      const created = await transportApi.createRequest({
+        pickupAddress: request.pickup,
+        pickupLat: request.pickupLat as number,
+        pickupLng: request.pickupLng as number,
+        destinationAddress: request.destination,
+        destinationLat: request.destinationLat as number,
+        destinationLng: request.destinationLng as number,
+        goodsDescription: request.goodsDescription,
+        goodsType: request.category,
+        weightKg: request.weightKg,
+        extras: request.specialRequirements,
+        preferredAt: `${request.preferredDate}T${request.preferredTime}:00`,
+      });
+      if (!created) throw new Error('no request');
+      router.push(asHref({ pathname: '/(tabs)/transport/bids', params: { id: created.id } }));
+    } catch {
+      showToast('Could not post the load. Choose a transporter below instead.', 'error');
+    } finally {
+      setPosting(false);
+    }
+  };
 
   const availableCount = quotes.filter((q) => q.provider.isAvailable).length;
   const withinOffer =
@@ -153,7 +205,27 @@ export default function ProvidersScreen() {
               </Text>
             </View>
 
-            <Text style={styles.sectionTitle}>Choose a transporter</Text>
+            {canPost ? (
+              <View style={styles.market}>
+                <Text style={styles.marketTitle}>Let transporters name their price</Text>
+                <Text style={styles.marketText}>
+                  Post this load and transporters near {request.pickup} send you offers.
+                  You choose, and nothing is agreed until you accept one.
+                </Text>
+                <Button
+                  title="Ask for offers"
+                  variant="outline"
+                  size="sm"
+                  loading={posting}
+                  onPress={() => void postToMarketplace()}
+                  accessibilityLabel="Post this load and ask transporters for offers"
+                />
+              </View>
+            ) : null}
+
+            <Text style={styles.sectionTitle}>
+              {canPost ? 'Or call a transporter yourself' : 'Choose a transporter'}
+            </Text>
             <Text style={styles.sectionNote}>
               {offer !== null
                 ? `${withinOffer} of ${availableCount} available transporters usually charge $${offer} or less for this trip. None of them has seen your offer — this is their own rate.`
@@ -232,6 +304,26 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textSoft,
+  },
+  market: {
+    gap: 6,
+    backgroundColor: DS.colors.primaryBg,
+    borderRadius: DS.radius.lg,
+    borderWidth: DS.layout.hairline,
+    borderColor: DS.colors.primaryMid,
+    padding: DS.spacing.md,
+  },
+  marketTitle: {
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  marketText: {
+    fontSize: DS.typography.caption.fontSize,
+    lineHeight: 18,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    marginBottom: 4,
   },
   sectionTitle: {
     fontSize: DS.typography.h2.fontSize,

@@ -11,7 +11,6 @@ import { DS } from '@/constants/design-system';
 import { whatsAppUrl } from '@/constants/support';
 import { PAYMENT_METHODS, TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
 import { asHref } from '@/lib/href';
-import { transportApi } from '@/services/api/transport.api';
 import { insertBooking } from '@/services/transportDb';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
@@ -85,30 +84,16 @@ export default function ConfirmScreen() {
         createdAt: new Date().toISOString(),
       };
       await insertBooking(booking);
-      if (
-        request.pickupLat != null &&
-        request.pickupLng != null &&
-        request.destinationLat != null &&
-        request.destinationLng != null
-      ) {
-        try {
-          await transportApi.createRequest({
-            pickupAddress: request.pickup,
-            pickupLat: request.pickupLat,
-            pickupLng: request.pickupLng,
-            destinationAddress: request.destination,
-            destinationLat: request.destinationLat,
-            destinationLng: request.destinationLng,
-            goodsDescription: request.goodsDescription,
-            goodsType: request.category,
-            weightKg: request.weightKg,
-            extras: request.specialRequirements,
-            preferredAt: `${request.preferredDate}T${request.preferredTime}:00`,
-          });
-        } catch {
-          // The on-device booking is already saved. The API is optional.
-        }
-      }
+      /*
+        THIS USED TO ALSO POST THE LOAD FOR BIDDING, AND SHOULD NOT HAVE.
+
+        You have just chosen one transporter and are about to phone them. Posting
+        the same load to the open marketplace at that moment invites offers from
+        everybody else on a job that is already spoken for — and until the offers
+        screen existed, no farmer would ever have seen those offers arrive or been
+        able to answer them. Asking the marketplace is now its own button on the
+        transporter list, which is where the two paths part.
+      */
       setReference(id);
       showToast('Request sent — call the transporter to confirm', 'success');
     } catch {

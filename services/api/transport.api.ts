@@ -27,10 +27,16 @@ export interface NearbyTransportRequest extends ServerTransportRequest {
 export interface TransportBidDto {
   id: string;
   requestId: string;
+  transporterId: string;
+  /** Who is offering. A customer choosing between UUIDs is not choosing. */
+  transporterName: string;
+  /** When they joined, as the only standing this app can honestly show yet. */
+  transporterSince?: string | null;
   amountUsdCents: number;
   note?: string | null;
   status: 'OPEN' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
   etaMinutes?: number | null;
+  createdAt?: string;
 }
 
 export interface TransportBookingDto {
@@ -127,6 +133,28 @@ export const transportApi = {
     if (!IS_API_ENABLED) return [];
     const data = await api.get<{ requests: ServerTransportRequest[] }>('/transport/requests');
     return data.requests ?? [];
+  },
+
+  /**
+   * One request and the bids on it.
+   *
+   * The server decides what comes back: a customer sees every bid, anyone else
+   * sees only their own. That filtering is not repeated here — a client that
+   * filters what it was sent is a client that can be told to stop.
+   */
+  async getRequest(
+    id: string
+  ): Promise<{ request: ServerTransportRequest; bids: TransportBidDto[] } | null> {
+    if (!IS_API_ENABLED) return null;
+    try {
+      const data = await api.get<{
+        request: ServerTransportRequest;
+        bids: TransportBidDto[];
+      }>(`/transport/requests/${id}`);
+      return data.request ? { request: data.request, bids: data.bids ?? [] } : null;
+    } catch {
+      return null;
+    }
   },
 
   async nearby(lat: number, lng: number, radiusKm = 50): Promise<NearbyTransportRequest[]> {

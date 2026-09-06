@@ -96,14 +96,6 @@ export default function TransportHubScreen() {
     return seen;
   }, [bookings, location]);
 
-  const goPrimary = (to?: string) => {
-    if (mode === 'offer') {
-      router.push(asHref('/(tabs)/transport/register'));
-      return;
-    }
-    openRequest(to);
-  };
-
   const menuItems: SidebarItem[] = [
     {
       key: 'haul',
@@ -122,6 +114,12 @@ export default function TransportHubScreen() {
       label: 'Transporters',
       icon: 'car-outline',
       onPress: () => router.push(asHref('/(tabs)/transport/providers')),
+    },
+    {
+      key: 'loads',
+      label: 'Loads near you',
+      icon: 'cube-outline',
+      onPress: () => router.push(asHref('/(tabs)/transport/jobs')),
     },
     {
       key: 'notifications',
@@ -253,35 +251,57 @@ export default function TransportHubScreen() {
             ) : null}
           </View>
         ) : (
-          <Pressable
-            onPress={() => goPrimary()}
-            accessibilityRole="button"
-            accessibilityLabel="Offer a vehicle"
-            style={({ pressed }) => [styles.search, pressed && styles.searchPressed]}>
-            <Ionicons name="search" size={22} color={DS.colors.text} />
-            <Text style={styles.searchText}>Offer a vehicle</Text>
-          </Pressable>
+          <View>
+            {/*
+              A transporter opens this app to find work, not to fill in a form.
+              Registering the vehicle is a one-off and sits below as the outline;
+              the loads are the reason they came.
+            */}
+            <Pressable
+              onPress={() => router.push(asHref('/(tabs)/transport/jobs'))}
+              accessibilityRole="button"
+              accessibilityLabel="Find loads near you"
+              style={({ pressed }) => [styles.search, pressed && styles.searchPressed]}>
+              <Ionicons name="search" size={22} color={DS.colors.text} />
+              <Text style={styles.searchText}>Find loads near you</Text>
+            </Pressable>
+            <Button
+              title="Offer a vehicle"
+              variant="outline"
+              size="sm"
+              onPress={() => router.push(asHref('/(tabs)/transport/register'))}
+              accessibilityLabel="Register a vehicle to carry loads"
+              style={styles.requestBtn}
+            />
+          </View>
         )}
 
-        <View style={styles.recents}>
-          {shortcuts.map((place, i) => (
-            <Pressable
-              key={place}
-              onPress={() => goPrimary(place)}
-              accessibilityRole="button"
-              accessibilityLabel={`Send a load to ${place}`}
-              style={({ pressed }) => [
-                styles.recent,
-                i > 0 && styles.recentDivider,
-                pressed && styles.pressedRow,
-              ]}>
-              <Ionicons name="location-outline" size={20} color={DS.colors.textSoft} />
-              <Text style={styles.recentText} numberOfLines={1}>
-                {place}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        {/*
+          Towns you have sent loads to. They were shown in Offer mode too, where
+          tapping "Gweru" opened the vehicle registration form instead — a row
+          that named one thing and did another.
+        */}
+        {mode === 'haul' ? (
+          <View style={styles.recents}>
+            {shortcuts.map((place, i) => (
+              <Pressable
+                key={place}
+                onPress={() => openRequest(place)}
+                accessibilityRole="button"
+                accessibilityLabel={`Send a load to ${place}`}
+                style={({ pressed }) => [
+                  styles.recent,
+                  i > 0 && styles.recentDivider,
+                  pressed && styles.pressedRow,
+                ]}>
+                <Ionicons name="location-outline" size={20} color={DS.colors.textSoft} />
+                <Text style={styles.recentText} numberOfLines={1}>
+                  {place}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
       </BottomPanel>
 
       <Sidebar

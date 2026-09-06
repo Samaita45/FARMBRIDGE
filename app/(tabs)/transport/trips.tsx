@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
@@ -8,6 +9,12 @@ import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
 import { useRealtimeEvent } from '@/hooks/useRealtime';
 import { openExternalNavigation } from '@/lib/external-maps';
+import { asHref } from '@/lib/href';
+import {
+  transportApi,
+  type ServerTransportRequest,
+  type TransportBookingDto,
+} from '@/services/api/transport.api';
 import { getBookings, updateBookingStatus } from '@/services/transportDb';
 import { useAuthStore } from '@/stores/authStore';
 import type { BookingStatus, TransportBooking } from '@/types/transport';
@@ -28,12 +35,55 @@ const NEXT_STATUS: Partial<Record<BookingStatus, BookingStatus>> = {
   in_transit: 'delivered',
 };
 
+/**
+ * Loads posted to the marketplace that have not become a booking yet.
+ *
+ * Returns nothing at all when the API is off or unreachable — this section is
+ * an addition to a screen that has always worked offline, and it must not be
+ * able to break it.
+ */
+async function openRequests(): Promise<ServerTransportRequest[]> {
+  try {
+    const rows = await transportApi.listMine();
+    return rows.filter((r) => r.status === 'REQUESTED' || r.status === 'BIDDING');
+  } catch {
+    return [];
+  }
+}
+
+/** Bookings the server holds for this account. Silent when it is unreachable. */
+async function serverBookings(): Promise<TransportBookingDto[]> {
+  try {
+    return await transportApi.activeBookings();
+  } catch {
+    return [];
+  }
+}
+
 export default function TripsScreen() {
   const { showToast } = useToast();
   const user = useAuthStore((s) => s.user);
   const [tab, setTab] = useState<TripTab>('active');
   const [trips, setTrips] = useState<TransportBooking[]>([]);
   const [loading, setLoading] = useState(true);
+  /*
+    Loads posted to the marketplace that nobody has been booked for yet.
+
+    They are not trips — there is no transporter and no price — but they are the
+    only trace of a load you posted, and without them here you could post one,
+    close the app, and never find your way back to the offers.
+  */
+  const [awaiting, setAwaiting] = useState<ServerTransportRequest[]>([]);
+  /*
+    Bookings that came from accepting an offer.
+
+    They are not in the local database — nobody typed them into this device —
+    so without this the farmer accepts a bid, is sent here, and finds the screen
+    empty. Kept as a separate list rather than mapped into TransportBooking,
+    because a server booking has no payment method and no vehicle type, and
+    filling those in with defaults would be inventing them.
+  */
+  const [booked, setBooked] = useState<TransportBookingDto[]>([]);
 
   // Hoisted so the declared dependency matches the one the compiler infers.
   const uid = user?.id ?? 'guest';
@@ -42,6 +92,9 @@ export default function TripsScreen() {
     setLoading(true);
     try {
       setTrips(await getBookings(uid));
+      const [posted, remote] = await Promise.all([openRequests(), serverBookings()]);
+      setAwaiting(posted);
+      setBooked(remote);
     } finally {
       setLoading(false);
     }
@@ -60,11 +113,23 @@ export default function TripsScreen() {
         setTrips(rows);
         setLoading(false);
       }
+      // After the local rows, so a slow or absent network never delays the
+      // list that works offline.
+      const [posted, remote] = await Promise.all([openRequests(), serverBookings()]);
+      if (!cancelled) {
+        setAwaiting(posted);
+        setBooked(remote);
+      }
     })();
     return () => {
       cancelled = true;
     };
   }, [uid]);
+
+  // A bid landing on a posted load changes what the row below should say.
+  useRealtimeEvent('transport:bid:created', () => {
+    void openRequests().then(setAwaiting);
+  });
 
   /*
     A status change on the server means this list is stale.
@@ -219,9 +284,70 @@ export default function TripsScreen() {
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={load} tintColor={DS.colors.primary} />
         }
+        ListHeaderComponent={
+          tab === 'active' && (awaiting.length > 0 || booked.length > 0) ? (
+            <View style={styles.awaiting}>
+              {booked.length > 0 ? (
+                <>
+                  <Text style={styles.awaitingTitle}>Booked through FarmBridge</Text>
+                  {booked.map((b) => (
+                    <View key={b.id} style={styles.bookedRow}>
+                      <Ionicons
+                        name="checkmark-circle-outline"
+                        size={18}
+                        color={DS.semantic.success.fg}
+                      />
+                      <View style={styles.flex}>
+                        <Text style={styles.awaitingRoute} numberOfLines={1}>
+                          {b.pickupAddress} → {b.destinationAddress}
+                        </Text>
+                        <Text style={styles.awaitingMeta} numberOfLines={1}>
+                          ${(b.agreedPriceUsdCents / 100).toFixed(2)} ·{' '}
+                          {Math.round(b.distanceMeters / 1000)} km ·{' '}
+                          {b.status.replace(/_/g, ' ').toLowerCase()}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </>
+              ) : null}
+
+              {awaiting.length > 0 ? (
+                <Text style={styles.awaitingTitle}>Waiting for offers</Text>
+              ) : null}
+              {awaiting.map((r) => (
+                <Pressable
+                  key={r.id}
+                  onPress={() =>
+                    router.push(asHref({ pathname: '/(tabs)/transport/bids', params: { id: r.id } }))
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel={`See offers on your load from ${r.pickupAddress} to ${r.destinationAddress}`}
+                  style={({ pressed }) => [styles.awaitingRow, pressed && styles.pressed]}>
+                  <Ionicons name="megaphone-outline" size={18} color={DS.colors.primary} />
+                  <View style={styles.flex}>
+                    <Text style={styles.awaitingRoute} numberOfLines={1}>
+                      {r.pickupAddress} → {r.destinationAddress}
+                    </Text>
+                    <Text style={styles.awaitingMeta} numberOfLines={1}>
+                      {r.goodsDescription} · {Math.round(r.distanceMeters / 1000)} km
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={DS.colors.textSoft} />
+                </Pressable>
+              ))}
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           loading ? (
             <LoadingState title="Loading trips" />
+          ) : tab === 'active' && (awaiting.length > 0 || booked.length > 0) ? (
+            /*
+              The header above is not empty, so "No active trips" would be
+              contradicting what the farmer can see three centimetres higher.
+            */
+            null
           ) : (
             <EmptyState
               icon="bus-outline"
@@ -267,6 +393,51 @@ const styles = StyleSheet.create({
   tabTextSelected: { color: DS.colors.primary },
 
   list: { padding: DS.spacing.md, paddingBottom: DS.spacing.lg },
+
+  flex: { flex: 1 },
+  pressed: { opacity: 0.85 },
+  awaiting: { gap: 6, marginBottom: DS.spacing.md },
+  awaitingTitle: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textMuted,
+    letterSpacing: 0.3,
+  },
+  awaitingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DS.spacing.sm + 2,
+    minHeight: DS.layout.touchTarget,
+    backgroundColor: DS.colors.primaryBg,
+    borderRadius: DS.radius.md,
+    borderWidth: DS.layout.hairline,
+    borderColor: DS.colors.primaryMid,
+    paddingHorizontal: DS.spacing.sm + 4,
+    paddingVertical: DS.spacing.sm,
+  },
+  bookedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DS.spacing.sm + 2,
+    minHeight: DS.layout.touchTarget,
+    backgroundColor: DS.semantic.success.bg,
+    borderRadius: DS.radius.md,
+    borderWidth: DS.layout.hairline,
+    borderColor: DS.semantic.success.border,
+    paddingHorizontal: DS.spacing.sm + 4,
+    paddingVertical: DS.spacing.sm,
+  },
+  awaitingRoute: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  awaitingMeta: {
+    fontSize: 11,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    marginTop: 1,
+  },
   listEmpty: { flexGrow: 1, justifyContent: 'center' },
 
   card: { marginBottom: DS.spacing.sm + 4, gap: DS.spacing.sm },

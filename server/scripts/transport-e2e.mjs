@@ -141,6 +141,50 @@ if (requestId) {
     after.json?.request?.status === 'BIDDING',
     `status ${after.json?.request?.status}`
   );
+
+  // The offers screen asks a farmer to choose between transporters, which is
+  // not a choice if every bid is a UUID.
+  const seen = after.json?.bids?.[0];
+  check(
+    'the customer sees who is bidding',
+    typeof seen?.transporterName === 'string' && seen.transporterName.length > 0,
+    `name ${JSON.stringify(seen?.transporterName)}`
+  );
+
+  /*
+    …and nothing further. Placing a bid identifies you to the customer; it does
+    not hand them your contact details. This asserts on the keys rather than on
+    known values, so a field added to the Prisma select later fails here instead
+    of quietly shipping.
+  */
+  const allowed = new Set([
+    'id',
+    'requestId',
+    'transporterId',
+    'transporterName',
+    'transporterSince',
+    'amountUsdCents',
+    'note',
+    'etaMinutes',
+    'status',
+    'createdAt',
+  ]);
+  const leaked = Object.keys(seen ?? {}).filter((k) => !allowed.has(k));
+  check(
+    'a bid carries no contact details beyond a name',
+    leaked.length === 0,
+    leaked.length ? `leaked ${leaked.join(', ')}` : ''
+  );
+
+  // The bidder sees their own offer — not zero, and not the competition.
+  const own = await call(`/transport/requests/${requestId}`, { token: transporter });
+  check(
+    'a transporter sees their own bid and only their own',
+    Array.isArray(own.json?.bids) &&
+      own.json.bids.length === 1 &&
+      own.json.bids[0].id === bidId,
+    `saw ${own.json?.bids?.length ?? '?'} bids`
+  );
 }
 
 // ── acceptance ─────────────────────────────────────────────────────────────
