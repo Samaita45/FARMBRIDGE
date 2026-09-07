@@ -5,13 +5,18 @@ import { useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Badge, EmptyState, LoadingState, SlideToAct } from '@/components/design-system';
+import { Badge, EmptyState, LoadingState, SlideToAct, Toggle } from '@/components/design-system';
 import { FarmMap, type FarmMapMarker } from '@/components/maps/farm-map';
 import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
 import { useBookingSubscription, useRealtimeEvent, useRealtimeStatus } from '@/hooks/useRealtime';
 import { openExternalNavigation } from '@/lib/external-maps';
 import { IS_API_ENABLED } from '@/services/api/config';
+import {
+  isBackgroundSharing,
+  startBackgroundSharing,
+  stopBackgroundSharing,
+} from '@/services/backgroundLocation';
 import { transportApi, type TransportBookingDto } from '@/services/api/transport.api';
 import type { GeoPoint } from '@/types/geo';
 import type { TransportLifecycleStatus } from '@/types/transport';
@@ -48,12 +53,12 @@ const STALE_AFTER_MS = 90_000;
  * no transporter role, and deciding it on the device would mean shipping both
  * parties' ids to both parties to answer a question the server already knows.
  *
- * WHILE THE SCREEN IS OPEN, AND IT SAYS SO. This does not track a driver in the
- * background. Background location needs a native rebuild, a foreground service
- * on Android and a Play Store declaration, none of which are in place — so
- * rather than a switch that quietly stops working the moment the phone locks,
- * the driver is told plainly that the screen has to stay open. Publishing stops
- * when the app goes to the background and resumes when it returns.
+ * TWO LEVELS OF SHARING, AND THE DRIVER PICKS. With the screen open, positions
+ * go out every fifteen seconds; that needs no special permission and starts by
+ * itself. Sharing with the screen off is a toggle, off by default, and asks for
+ * the "Always" permission at the moment it is turned on rather than at startup
+ * — a dialog that arrives with a reason attached is one people say yes to, and
+ * both stores expect it that way round. Either way it stops at delivery.
  *
  * A POSITION HAS AN AGE. A map pin with no timestamp is the most confident
  * possible way to show something an hour out of date. If nothing has arrived
@@ -114,6 +119,61 @@ export default function TrackScreen() {
   */
   const publishable =
     isDriver && booking?.status !== 'DELIVERED' && booking?.status !== 'CANCELLED';
+
+  /*
+    Sharing with the screen off.
+
+    Off by default and asked for only here, on a trip that is already running:
+    the "Always" location dialog is refused far more often when it arrives
+    without a reason attached, and both stores expect the request to come from
+    the feature that needs it rather than from startup.
+  */
+  const [background, setBackground] = useState(false);
+  const [switching, setSwitching] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void isBackgroundSharing().then((on) => {
+      if (!cancelled) setBackground(on);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const toggleBackground = async (next: boolean) => {
+    if (!id) return;
+    setSwitching(true);
+    try {
+      if (!next) {
+        await stopBackgroundSharing();
+        setBackground(false);
+        return;
+      }
+      const result = await startBackgroundSharing(id);
+      setBackground(result.ok);
+      if (!result.ok) {
+        showToast(
+          result.reason === 'permission'
+            ? 'Allow location "all the time" in Settings to keep sharing with the screen off.'
+            : 'Background sharing could not start on this device.',
+          'error'
+        );
+      }
+    } finally {
+      setSwitching(false);
+    }
+  };
+
+  /*
+    A finished trip must not keep a foreground service alive. The server would
+    refuse the uploads, but Android would go on showing a notification claiming
+    the customer can see this driver — long after the load was delivered.
+  */
+  useEffect(() => {
+    if (publishable) return;
+    void stopBackgroundSharing().then(() => setBackground(false));
+  }, [publishable]);
 
   // The customer's side: positions arrive on the booking's room.
   useRealtimeEvent('transport:driver:location', (payload) => {
@@ -327,9 +387,11 @@ export default function TrackScreen() {
             <Text style={styles.noteText}>
               {publishError
                 ? publishError
-                : publishing
-                  ? 'The farmer can see where you are. Keep this screen open — sharing stops when you leave the app.'
-                  : 'Sharing is paused. Open this screen to let the farmer see where you are.'}
+                : background
+                  ? 'The farmer can see where you are, and will keep seeing it with your screen off.'
+                  : publishing
+                    ? 'The farmer can see where you are while this screen is open.'
+                    : 'Sharing is paused. Open this screen to let the farmer see where you are.'}
             </Text>
           </View>
         ) : (
@@ -353,6 +415,18 @@ export default function TrackScreen() {
           <Text style={styles.offline}>
             Not connected — positions will not arrive until the connection returns.
           </Text>
+        ) : null}
+
+        {isDriver && publishable ? (
+          <Toggle
+            value={background}
+            onValueChange={(next) => void toggleBackground(next)}
+            disabled={switching}
+            label="Keep sharing with my screen off"
+            description="Your position keeps reaching the farmer while you drive. Android shows a notification the whole time it is on, and it stops by itself when you mark the trip delivered."
+            accessibilityLabel="Keep sharing my position when the screen is off"
+            style={styles.bgToggle}
+          />
         ) : null}
 
         {isDriver ? (
@@ -455,6 +529,12 @@ const styles = StyleSheet.create({
     color: DS.colors.textMuted,
   },
   driverActions: { gap: DS.spacing.sm, marginTop: 2 },
+  bgToggle: {
+    backgroundColor: DS.colors.surfaceMuted,
+    borderRadius: DS.radius.md,
+    paddingHorizontal: DS.spacing.sm + 4,
+    paddingVertical: DS.spacing.sm,
+  },
   pressed: { opacity: 0.85 },
   navRow: {
     flexDirection: 'row',

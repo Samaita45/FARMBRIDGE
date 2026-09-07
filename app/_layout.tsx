@@ -1,5 +1,17 @@
 import 'react-native-reanimated';
 import '../global.css';
+/*
+  Imported for its side effect, and it has to be from here.
+
+  The driver-location task registers itself with TaskManager at module scope.
+  When the OS wakes the app in the background to hand over a position, it
+  evaluates the bundle from this root and then looks for a task by name — so if
+  registration only happened when the tracking screen's module loaded, which
+  expo-router does lazily, the task would not exist yet and the update would be
+  dropped. That is the usual reason background location appears to work in
+  testing and never fires in the field.
+*/
+import '@/services/backgroundLocation';
 
 import {
   Fraunces_700Bold,

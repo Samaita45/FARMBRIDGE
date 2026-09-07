@@ -16,7 +16,11 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "FarmBridge uses your location to show local weather and market prices.",
         "NSCameraUsageDescription": "FarmBridge uses the camera to diagnose crop health issues.",
-        "NSPhotoLibraryUsageDescription": "FarmBridge uses your photos for profile and community posts."
+        "NSPhotoLibraryUsageDescription": "FarmBridge uses your photos for profile and community posts.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "FarmBridge shares your position with the customer whose load you are carrying, so they can see the delivery coming. This only happens during a trip you have accepted, and only that one customer sees it.",
+        "UIBackgroundModes": [
+          "location"
+        ]
       }
     },
     "android": {
@@ -32,9 +36,15 @@
         "ACCESS_FINE_LOCATION",
         "CAMERA",
         "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE"
+        "VIBRATE",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
       ],
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -45,7 +55,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "FarmBridge uses your location to name where you are, show local weather, and find transporters near you."
+          "locationWhenInUsePermission": "FarmBridge uses your location to name where you are, show local weather, and find transporters near you.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "isIosBackgroundLocationEnabled": true,
+          "locationAlwaysAndWhenInUsePermission": "FarmBridge shares your position with the customer whose load you are carrying, so they can see the delivery coming. This only happens during a trip you have accepted, and only that one customer sees it."
         }
       ],
       [

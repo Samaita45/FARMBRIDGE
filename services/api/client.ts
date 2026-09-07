@@ -33,11 +33,25 @@ export async function storeTokens(tokens: {
   refreshToken: string;
   expiresIn: number;
 }): Promise<void> {
-  await setSecureJSON<StoredTokens>(TOKENS_KEY, {
-    accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken,
-    expiresAt: Date.now() + tokens.expiresIn * 1000,
-  });
+  await setSecureJSON<StoredTokens>(
+    TOKENS_KEY,
+    {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresAt: Date.now() + tokens.expiresIn * 1000,
+    },
+    /*
+      Readable while the phone is locked, once it has been unlocked since boot.
+
+      A transporter sharing their position on a long haul has the phone in a
+      pocket with the screen off. The background task still has to authenticate
+      that upload, and under the default accessibility the keychain hands back
+      nothing while locked — so the task would run, read no token, post nothing,
+      and the farmer would watch a pin that stopped moving. It would look
+      flawless in any test done with the screen on.
+    */
+    'background'
+  );
 }
 
 export async function clearTokens(): Promise<void> {
