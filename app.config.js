@@ -1,6 +1,12 @@
-const appJson = require('./app.json');
-
 /**
+ * Dynamic config layered over app.json.
+ *
+ * Expo reads app.json, normalises it, and hands the result in as `config` — so
+ * this takes the documented `({ config })` form rather than requiring app.json
+ * itself. It used to do the latter, and `expo-doctor` was right to flag it: two
+ * files claiming to be the source of truth is exactly how a setting gets
+ * changed in one and silently ignored from the other.
+ *
  * Maps SDK keys are build-time only. They are injected into native config and
  * never become EXPO_PUBLIC_* values, so they do not ship in the JS bundle.
  *
@@ -30,40 +36,40 @@ function resolveMapsKey(platform, specific) {
 const androidMapsKey = resolveMapsKey('android', process.env.GOOGLE_MAPS_ANDROID_API_KEY);
 const iosMapsKey = resolveMapsKey('ios', process.env.GOOGLE_MAPS_IOS_API_KEY);
 
-module.exports = {
-  ...appJson,
-  expo: {
-    ...appJson.expo,
-    ios: {
-      ...appJson.expo.ios,
-      config: {
-        ...(appJson.expo.ios.config ?? {}),
-        googleMapsApiKey: iosMapsKey,
-      },
-      infoPlist: {
-        ...(appJson.expo.ios.infoPlist ?? {}),
-        NSLocationWhenInUseUsageDescription:
-          'FarmBridge uses your location to name where you are, show local weather, and find transporters near you.',
-      },
+module.exports = ({ config }) => ({
+  ...config,
+  ios: {
+    ...config.ios,
+    config: {
+      ...(config.ios?.config ?? {}),
+      googleMapsApiKey: iosMapsKey,
     },
-    android: {
-      ...appJson.expo.android,
-      config: {
-        ...(appJson.expo.android.config ?? {}),
-        googleMaps: {
-          apiKey: androidMapsKey,
-        },
-      },
+    infoPlist: {
+      ...(config.ios?.infoPlist ?? {}),
+      // Kept here rather than in app.json because the reason changed when
+      // transport arrived: the same permission now also places a pickup and
+      // finds nearby transporters, and a stale reason is a review question.
+      NSLocationWhenInUseUsageDescription:
+        'FarmBridge uses your location to name where you are, show local weather, and find transporters near you.',
     },
-    plugins: [
-      ...(appJson.expo.plugins ?? []),
-      [
-        'react-native-maps',
-        {
-          androidGoogleMapsApiKey: androidMapsKey,
-          iosGoogleMapsApiKey: iosMapsKey,
-        },
-      ],
-    ],
   },
-};
+  android: {
+    ...config.android,
+    config: {
+      ...(config.android?.config ?? {}),
+      googleMaps: {
+        apiKey: androidMapsKey,
+      },
+    },
+  },
+  plugins: [
+    ...(config.plugins ?? []),
+    [
+      'react-native-maps',
+      {
+        androidGoogleMapsApiKey: androidMapsKey,
+        iosGoogleMapsApiKey: iosMapsKey,
+      },
+    ],
+  ],
+});
