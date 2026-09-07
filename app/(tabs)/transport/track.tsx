@@ -2,16 +2,35 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, StyleSheet, Text, View } from 'react-native';
+import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Badge, EmptyState, LoadingState } from '@/components/design-system';
+import { Badge, EmptyState, LoadingState, SlideToAct } from '@/components/design-system';
 import { FarmMap, type FarmMapMarker } from '@/components/maps/farm-map';
+import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
 import { useBookingSubscription, useRealtimeEvent, useRealtimeStatus } from '@/hooks/useRealtime';
+import { openExternalNavigation } from '@/lib/external-maps';
 import { IS_API_ENABLED } from '@/services/api/config';
 import { transportApi, type TransportBookingDto } from '@/services/api/transport.api';
 import type { GeoPoint } from '@/types/geo';
+import type { TransportLifecycleStatus } from '@/types/transport';
+
+/**
+ * What a driver can do next, and what it is called on the button.
+ *
+ * This mirrors the server's own transition table. It is duplicated rather than
+ * fetched because the server rejects anything it disagrees with — the app is
+ * offering the next step, not deciding it — and a step missing here shows no
+ * button rather than one that fails.
+ */
+const NEXT_STEP: Partial<
+  Record<TransportLifecycleStatus, { to: TransportLifecycleStatus; label: string }>
+> = {
+  DRIVER_ASSIGNED: { to: 'GOODS_COLLECTED', label: 'Slide when the goods are loaded' },
+  GOODS_COLLECTED: { to: 'IN_TRANSIT', label: 'Slide when you set off' },
+  IN_TRANSIT: { to: 'DELIVERED', label: 'Slide when you have delivered' },
+};
 
 /** Above the server's 5s floor by a wide margin, and kind to a phone battery. */
 const PUBLISH_EVERY_MS = 15_000;
@@ -44,6 +63,7 @@ const STALE_AFTER_MS = 90_000;
 export default function TrackScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const realtime = useRealtimeStatus();
+  const { showToast } = useToast();
 
   const [booking, setBooking] = useState<TransportBookingDto | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -84,6 +104,16 @@ export default function TrackScreen() {
 
   const loading = IS_API_ENABLED && !!id && !loaded;
   const isDriver = booking?.viewer === 'transporter';
+  /*
+    A finished trip stops broadcasting.
+
+    The server would refuse the post anyway — location is only accepted on an
+    active booking — but a watcher left running after delivery keeps waking the
+    GPS to be told no, and keeps the screen saying the farmer can see where you
+    are when they no longer can or should.
+  */
+  const publishable =
+    isDriver && booking?.status !== 'DELIVERED' && booking?.status !== 'CANCELLED';
 
   // The customer's side: positions arrive on the booking's room.
   useRealtimeEvent('transport:driver:location', (payload) => {
@@ -99,6 +129,37 @@ export default function TrackScreen() {
   });
 
   /*
+    Advancing the trip.
+
+    This is the last transport endpoint the app never called: a driver carrying
+    a FarmBridge booking had no way to say they had collected the goods, so the
+    farmer watching this trip saw the status it was accepted at until delivery.
+
+    The server is the authority on whether a transition is allowed — it refuses
+    a repeat and it refuses running backwards — so a rejection is reported as
+    the trip having moved on rather than swallowed.
+  */
+  const [advancing, setAdvancing] = useState(false);
+
+  const advance = async (to: TransportLifecycleStatus) => {
+    if (!id) return;
+    setAdvancing(true);
+    try {
+      const updated = await transportApi.updateStatus(id, to);
+      if (!updated) throw new Error('refused');
+      setBooking(updated);
+      showToast(
+        to === 'DELIVERED' ? 'Delivered — thank you' : `Marked ${label(to)}`,
+        'success'
+      );
+    } catch {
+      showToast('That could not be recorded. Check the trip has not already moved on.', 'error');
+    } finally {
+      setAdvancing(false);
+    }
+  };
+
+  /*
     The driver's side.
 
     `watchPositionAsync` is given the distance and time filters rather than
@@ -109,7 +170,7 @@ export default function TrackScreen() {
   const subscription = useRef<Location.LocationSubscription | null>(null);
 
   useEffect(() => {
-    if (!id || !isDriver) return;
+    if (!id || !publishable) return;
     let cancelled = false;
 
     const start = async () => {
@@ -167,7 +228,7 @@ export default function TrackScreen() {
       subscription.current?.remove();
       subscription.current = null;
     };
-  }, [id, isDriver]);
+  }, [id, publishable]);
 
   if (!IS_API_ENABLED) {
     return (
@@ -200,6 +261,8 @@ export default function TrackScreen() {
   }
 
   const stale = driverAt != null && now - driverAt > STALE_AFTER_MS;
+  const step = NEXT_STEP[booking.status];
+  const next = step?.to;
   const markers: FarmMapMarker[] = [
     {
       id: 'pickup',
@@ -246,7 +309,7 @@ export default function TrackScreen() {
           <Text style={styles.route} numberOfLines={1}>
             {booking.pickupAddress} → {booking.destinationAddress}
           </Text>
-          <Badge label={booking.status.replace(/_/g, ' ').toLowerCase()} tone="info" />
+          <Badge label={label(booking.status)} tone="info" />
         </View>
 
         <Text style={styles.meta}>
@@ -291,9 +354,60 @@ export default function TrackScreen() {
             Not connected — positions will not arrive until the connection returns.
           </Text>
         ) : null}
+
+        {isDriver ? (
+          <View style={styles.driverActions}>
+            {/*
+              Navigation goes out to Google Maps or Apple Maps rather than being
+              reinvented in here. Turn-by-turn on a truck is not something to
+              approximate, and the driver already knows how to use theirs.
+            */}
+            <Pressable
+              onPress={() =>
+                void openExternalNavigation(
+                  next === 'GOODS_COLLECTED'
+                    ? { latitude: booking.pickupLat, longitude: booking.pickupLng }
+                    : { latitude: booking.destinationLat, longitude: booking.destinationLng },
+                  next === 'GOODS_COLLECTED' ? booking.pickupAddress : booking.destinationAddress
+                )
+              }
+              accessibilityRole="button"
+              accessibilityLabel={
+                next === 'GOODS_COLLECTED'
+                  ? `Navigate to the pickup at ${booking.pickupAddress}`
+                  : `Navigate to ${booking.destinationAddress}`
+              }
+              style={({ pressed }) => [styles.navRow, pressed && styles.pressed]}>
+              <Ionicons name="navigate-outline" size={16} color={DS.colors.primary} />
+              <Text style={styles.navText} numberOfLines={1}>
+                Directions to{' '}
+                {next === 'GOODS_COLLECTED' ? booking.pickupAddress : booking.destinationAddress}
+              </Text>
+            </Pressable>
+
+            {/*
+              A slide, not a tap. These four words are what the farmer is
+              watching for, and a driver holding a phone in a moving cab should
+              not be able to mark a load delivered with a stray thumb.
+            */}
+            {step && !advancing ? (
+              <SlideToAct
+                label={step.label}
+                icon="arrow-forward"
+                onComplete={() => void advance(step.to)}
+                accessibilityLabel={`Mark this trip ${label(step.to)}`}
+              />
+            ) : null}
+          </View>
+        ) : null}
       </View>
     </SafeAreaView>
   );
+}
+
+/** GOODS_COLLECTED reads as "goods collected" to everyone except a database. */
+function label(status: TransportLifecycleStatus): string {
+  return status.replace(/_/g, ' ').toLowerCase();
 }
 
 /** "just now", "4 min ago" — a pin without an age is a confident lie. */
@@ -339,6 +453,20 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
+  },
+  driverActions: { gap: DS.spacing.sm, marginTop: 2 },
+  pressed: { opacity: 0.85 },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: DS.layout.touchTarget,
+  },
+  navText: {
+    flex: 1,
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.primary,
   },
   offline: {
     fontSize: 11,

@@ -364,7 +364,13 @@ export class TransportService {
     this.realtime.emitToUser(request.customerId, TRANSPORT_EVENTS.BOOKING_ACCEPTED, payload);
     this.realtime.emitToUser(bid.transporterId, TRANSPORT_EVENTS.BOOKING_ACCEPTED, payload);
     this.realtime.emitToBooking(booking.id, TRANSPORT_EVENTS.BOOKING_ACCEPTED, payload);
-    return payload;
+
+    /*
+      The broadcast above goes to both parties, so it carries no `viewer`. The
+      caller is one identified party and gets their own side stamped — without
+      it a driver's trip screen loses its controls the moment they use them.
+    */
+    return { booking: this.publicBooking(booking, user.id) };
   }
 
   async updateStatus(
@@ -428,7 +434,13 @@ export class TransportService {
     this.realtime.emitToBooking(updated.id, TRANSPORT_EVENTS.STATUS_UPDATED, payload);
     this.realtime.emitToUser(updated.customerId, TRANSPORT_EVENTS.STATUS_UPDATED, payload);
     this.realtime.emitToUser(updated.transporterId, TRANSPORT_EVENTS.STATUS_UPDATED, payload);
-    return payload;
+
+    /*
+      The broadcast above goes to both parties, so it carries no `viewer`. The
+      caller is one identified party and gets their own side stamped — without
+      it a driver's trip screen loses its controls the moment they use them.
+    */
+    return { booking: this.publicBooking(updated, user.id) };
   }
 
   async updateLocation(

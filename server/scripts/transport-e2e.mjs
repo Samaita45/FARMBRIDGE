@@ -279,6 +279,16 @@ if (bookingId) {
       body: { status },
     });
     check(`transporter advances to ${status}`, res.status < 300, res.status < 300 ? '' : `${res.status} ${res.text.slice(0, 160)}`);
+    /*
+      The driver's trip screen replaces its booking with this response. If it
+      comes back without `viewer`, the screen decides they are not the driver
+      and every control they just used disappears.
+    */
+    check(
+      `the ${status} response still says who is asking`,
+      res.json?.booking?.viewer === 'transporter',
+      `viewer ${JSON.stringify(res.json?.booking?.viewer)}`
+    );
   }
 
   // Position only means anything while the load is moving.
