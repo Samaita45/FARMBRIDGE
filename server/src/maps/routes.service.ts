@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { GoogleMapsClient } from './google-maps.client';
 import { MapsCache } from './maps.cache';
@@ -29,6 +29,8 @@ const FALLBACK_KMH = 50;
 
 @Injectable()
 export class RoutesService {
+  private readonly logger = new Logger(RoutesService.name);
+
   constructor(
     private readonly client: GoogleMapsClient,
     private readonly cache: MapsCache,
@@ -39,33 +41,57 @@ export class RoutesService {
     const cached = this.cache.get<RouteEstimate>(cacheKey);
     if (cached) return cached;
 
-    if (this.client.configured) {
-      const data = await this.client.postJson<ComputeRoutesResponse>(
-        'https://routes.googleapis.com/directions/v2:computeRoutes',
-        {
-          origin: { location: { latLng: origin } },
-          destination: { location: { latLng: destination } },
-          travelMode: 'DRIVE',
-          routingPreference: 'TRAFFIC_UNAWARE',
-          computeAlternativeRoutes: false,
-          languageCode: 'en',
-          regionCode: 'ZW',
-          units: 'METRIC',
-        },
-        'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline',
-      );
+    /*
+      A ROUTE MUST NEVER BE THE REASON A LOAD CANNOT BE POSTED.
 
-      const route = data.routes?.[0];
-      if (route?.distanceMeters) {
-        const estimate: RouteEstimate = {
-          distanceKm: Math.max(1, Math.round(route.distanceMeters / 1000)),
-          durationSeconds: parseDurationSeconds(route.duration) ??
-            fallbackDuration(route.distanceMeters / 1000),
-          polyline: route.polyline?.encodedPolyline,
-          source: 'routes',
-        };
-        this.cache.set(cacheKey, estimate, ROUTE_TTL_MS);
-        return estimate;
+      This used to call Google inside the `configured` check with nothing around
+      it. `postJson` throws on any non-OK response, so the fallback below was
+      unreachable whenever the API actually failed — it only ran when there was
+      no key at all. The gap that matters: a key set before billing is enabled
+      returns 403, which is a completely ordinary state for a project being set
+      up, and it would have taken down every transport request on the platform
+      rather than costing a slightly less accurate distance.
+
+      A wrong-by-25% distance is a worse estimate. A thrown exception is a
+      farmer who cannot ask for a truck.
+    */
+    if (this.client.configured) {
+      try {
+        const data = await this.client.postJson<ComputeRoutesResponse>(
+          'https://routes.googleapis.com/directions/v2:computeRoutes',
+          {
+            origin: { location: { latLng: origin } },
+            destination: { location: { latLng: destination } },
+            travelMode: 'DRIVE',
+            routingPreference: 'TRAFFIC_UNAWARE',
+            computeAlternativeRoutes: false,
+            languageCode: 'en',
+            regionCode: 'ZW',
+            units: 'METRIC',
+          },
+          'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline',
+        );
+
+        const route = data.routes?.[0];
+        if (route?.distanceMeters) {
+          const estimate: RouteEstimate = {
+            distanceKm: Math.max(1, Math.round(route.distanceMeters / 1000)),
+            durationSeconds: parseDurationSeconds(route.duration) ??
+              fallbackDuration(route.distanceMeters / 1000),
+            polyline: route.polyline?.encodedPolyline,
+            source: 'routes',
+          };
+          this.cache.set(cacheKey, estimate, ROUTE_TTL_MS);
+          return estimate;
+        }
+      } catch (error) {
+        // Logged, not swallowed silently: a permanently failing key should be
+        // visible to whoever runs this, even though the request still succeeds.
+        this.logger.warn(
+          `Routes API unavailable, using the straight-line estimate: ${
+            error instanceof Error ? error.message : 'unknown error'
+          }`,
+        );
       }
     }
 

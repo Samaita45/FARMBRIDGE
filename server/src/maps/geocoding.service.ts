@@ -39,12 +39,32 @@ export class GeocodingService {
     const cached = this.cache.get<GeocodedPlace>(cacheKey);
     if (cached) return cached;
 
-    const key = this.client.requireKey();
-    const url =
-      'https://maps.googleapis.com/maps/api/geocode/json' +
-      `?address=${encodeURIComponent(trimmed)}&region=zw&key=${encodeURIComponent(key)}`;
+    /*
+      "Not found" and "not available" look the same to a caller, and both are
+      answered with null.
 
-    const data = await this.client.getJson<GeocodeResponse>(url);
+      This used to call requireKey(), which throws when no key is set, and left
+      the fetch uncaught — so an unconfigured or unbilled project turned a
+      lookup that has a perfectly good gazetteer fallback into a 503. The app
+      already treats a null as "use the local town list", which is the right
+      behaviour in both cases.
+    */
+    if (!this.client.configured) return null;
+
+    let data: GeocodeResponse;
+    try {
+      const key = this.client.requireKey();
+      const url =
+        'https://maps.googleapis.com/maps/api/geocode/json' +
+        `?address=${encodeURIComponent(trimmed)}&region=zw&key=${encodeURIComponent(key)}`;
+      data = await this.client.getJson<GeocodeResponse>(url);
+    } catch (error) {
+      this.logger.warn(
+        `Geocoding unavailable: ${error instanceof Error ? error.message : 'unknown error'}`,
+      );
+      return null;
+    }
+
     const first = data.results?.[0];
     const lat = first?.geometry?.location?.lat;
     const lng = first?.geometry?.location?.lng;
