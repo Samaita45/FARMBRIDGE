@@ -82,5 +82,3 @@ export const useAuthStore = create<AuthState>((set) => ({
 export const selectUserRole = (state: AuthState): UserRole | null =>
   state.user?.role ?? null;
 
-export const selectIsSubscribed = (state: AuthState): boolean =>
-  state.user?.subscription?.isActive ?? false;

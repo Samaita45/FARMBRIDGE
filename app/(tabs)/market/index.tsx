@@ -12,14 +12,13 @@ import {
   FilterSheet,
   type MarketFilters,
 } from '@/components/market/filter-sheet';
-import { MarketLocked } from '@/components/market/market-locked';
 import { ProductCard } from '@/components/market/product-card';
 import { DS } from '@/constants/design-system';
 import { imageSourceFor } from '@/constants/produce-imagery';
 import { MARKET_CATEGORIES, MARKET_PRODUCTS } from '@/constants/zimbabwe-data';
 import { asHref } from '@/lib/href';
 import { extraTopPad } from '@/lib/platform-ui';
-import { selectIsSubscribed, useAuthStore, type AuthState } from '@/stores/authStore';
+import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useCartStore, type CartState } from '@/stores/cartStore';
 import type { MarketProduct } from '@/types';
 
@@ -37,7 +36,6 @@ import type { MarketProduct } from '@/types';
  */
 export default function MarketplaceScreen() {
   const insets = useSafeAreaInsets();
-  const isSubscribed = useAuthStore(selectIsSubscribed);
   const user = useAuthStore((s: AuthState) => s.user);
   const cartCount = useCartStore((s: CartState) => s.getItemCount());
 
@@ -94,8 +92,6 @@ export default function MarketplaceScreen() {
     ),
     []
   );
-
-  if (!isSubscribed) return <MarketLocked />;
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>

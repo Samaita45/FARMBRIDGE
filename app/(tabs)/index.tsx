@@ -4,7 +4,6 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'r
 
 import { CropTrendCard } from '@/components/cards/crop-trend-card';
 import { FadeInView } from '@/components/design-system/FadeInView';
-import { SubscriptionBanner } from '@/components/cards/subscription-banner';
 import { CropDemandChart } from '@/components/charts/crop-demand-chart';
 import { MarketInsightCard } from '@/components/home/ai-insight-card';
 import { InsightStrip } from '@/components/home/insight-strip';
@@ -31,7 +30,6 @@ import { useProfileAvatar } from '@/hooks/useProfileAvatar';
 import { useWeather } from '@/hooks/useWeather';
 import { upsertCachedCropData, upsertCachedProduct } from '@/services/database';
 import { isOnline } from '@/services/syncService';
-import { useAuthStore, selectIsSubscribed } from '@/stores/authStore';
 
 const MONTH = new Date().getMonth() + 1;
 const MONTH_NAME = new Date().toLocaleDateString('en-ZW', { month: 'long' });
@@ -42,7 +40,6 @@ const GREETING =
 const FEATURED_CROP_IDS = ['tomatoes', 'maize', 'potatoes', 'groundnuts', 'mushrooms'];
 
 export default function HomeScreen() {
-  const isSubscribed = useAuthStore(selectIsSubscribed);
   const { unreadCount, refresh: refreshNotifications } = useNotifications();
   const { avatarUri, initials: avatarInitials, refresh: refreshAvatar } = useProfileAvatar();
   const {
@@ -315,11 +312,6 @@ export default function HomeScreen() {
             <QuickActionsPremium />
           </FadeInView>
 
-          {!isSubscribed ? (
-            <FadeInView delay={7} style={s.block}>
-              <SubscriptionBanner />
-            </FadeInView>
-          ) : null}
         </View>
       </ScrollView>
 

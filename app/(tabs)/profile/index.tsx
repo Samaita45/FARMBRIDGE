@@ -13,7 +13,6 @@ import {
 import { Card, FadeInView, ProfileScreenHeader, ProgressBar, SectionHeader } from '@/components/design-system';
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { ProfileMenuRow } from '@/components/profile/profile-menu-row';
-import { SubscriptionModal } from '@/components/profile/subscription-modal';
 import { useToast } from '@/components/ui/toast-provider';
 import { whatsAppUrl } from '@/constants/support';
 import { DS } from '@/constants/design-system';
@@ -26,10 +25,9 @@ import { getFarmProfile, saveFarmProfile } from '@/services/profileService';
 import { DEFAULT_FARM_PROFILE } from '@/types/profile';
 import { getUserPosts } from '@/services/communityDb';
 import { asHref } from '@/lib/href';
-import { useAuthStore, selectIsSubscribed, type AuthState } from '@/stores/authStore';
+import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useSettingsStore, selectLanguage, type SettingsState } from '@/stores/settingsStore';
 import { useTutorialsStore, type TutorialsState } from '@/stores/tutorialsStore';
-import { SUBSCRIPTION_PLANS } from '@/constants/zimbabwe-data';
 import type { FarmProfile, ProfileStats } from '@/types/profile';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -41,7 +39,6 @@ const ROLE_LABELS: Record<string, string> = {
 export default function ProfileScreen() {
   const user = useAuthStore((s: AuthState) => s.user);
   const logout = useAuthStore((s: AuthState) => s.logout);
-  const isSubscribed = useAuthStore(selectIsSubscribed);
   const lang = useSettingsStore(selectLanguage);
   const hydrateSettings = useSettingsStore((s: SettingsState) => s.hydrate);
   const hydrateTutorials = useTutorialsStore((s: TutorialsState) => s.hydrate);
@@ -50,7 +47,6 @@ export default function ProfileScreen() {
   const { showToast } = useToast();
   const [farm, setFarm] = useState<FarmProfile | null>(null);
   const [stats, setStats] = useState<ProfileStats>({ cropsPlanted: 0, orders: 0, forumPosts: 0 });
-  const [plansOpen, setPlansOpen] = useState(false);
   const [avatarSaving, setAvatarSaving] = useState(false);
 
   // Hoisted so the declared dependency matches the one the compiler infers.
@@ -83,7 +79,6 @@ export default function ProfileScreen() {
     };
   }, [userId, hydrateSettings, hydrateTutorials]);
 
-  const plan = SUBSCRIPTION_PLANS.find((p) => p.id === (user?.subscription?.planId ?? 'basic'));
   const memberSince = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-ZW', { month: 'short', year: 'numeric' })
     : '—';
@@ -167,34 +162,6 @@ export default function ProfileScreen() {
           }
         />
 
-        <FadeInView delay={0}>
-        <Card style={s.card}>
-          <View style={s.subRow}>
-            <View style={s.subLeft}>
-              <View style={[s.subIcon, isSubscribed && { backgroundColor: DS.semantic.success.bg }]}>
-                <Ionicons name="ribbon" size={18} color={isSubscribed ? DS.semantic.success.fg : DS.colors.primary} />
-              </View>
-              <View>
-                <Text style={s.subName}>{plan?.name ?? 'Basic'} Plan</Text>
-                <Text style={s.subHint}>
-                  {isSubscribed ? `Active · expires ${new Date(user!.subscription!.expiresAt!).toLocaleDateString()}` : 'Unlock market & transport'}
-                </Text>
-              </View>
-            </View>
-            {!isSubscribed || user?.subscription?.planId === 'basic' ? (
-              <Pressable onPress={() => setPlansOpen(true)} style={s.upgradeBtn}>
-                <Text style={s.upgradeBtnText}>Upgrade</Text>
-              </Pressable>
-            ) : (
-              <View style={s.activeChip}>
-                <Ionicons name="checkmark-circle" size={14} color={DS.semantic.success.fg} />
-                <Text style={s.activeChipText}>Active</Text>
-              </View>
-            )}
-          </View>
-        </Card>
-        </FadeInView>
-
         {isFarmer && (
           <FadeInView delay={1}>
           <Card style={s.card}>
@@ -270,13 +237,6 @@ export default function ProfileScreen() {
             />
           )}
           <ProfileMenuRow
-            icon="card-outline"
-            label={t('subscription', lang)}
-            subtitle={plan?.name}
-            onPress={() => setPlansOpen(true)}
-            badge={isSubscribed ? undefined : 'Upgrade'}
-          />
-          <ProfileMenuRow
             icon="settings-outline"
             label={t('settings', lang)}
             subtitle="Notifications, language, privacy"
@@ -308,7 +268,6 @@ export default function ProfileScreen() {
 
       </ScrollView>
 
-      <SubscriptionModal visible={plansOpen} onClose={() => setPlansOpen(false)} />
     </View>
   );
 }
@@ -356,15 +315,6 @@ const s = StyleSheet.create({
 
   card: { marginHorizontal: DS.spacing.md, marginTop: DS.spacing.md },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  subRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  subLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  subIcon: { width: 40, height: 40, borderRadius: DS.radius.md, backgroundColor: DS.colors.primaryBg, alignItems: 'center', justifyContent: 'center' },
-  subName: { fontSize: 15, fontWeight: '700', color: DS.colors.text },
-  subHint: { fontSize: 12, color: DS.colors.textMuted, marginTop: 2 },
-  upgradeBtn: { backgroundColor: DS.colors.primary, borderRadius: DS.radius.md, paddingHorizontal: 16, paddingVertical: 8 },
-  upgradeBtnText: { fontSize: 13, fontWeight: '700', color: DS.colors.surface },
-  activeChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: DS.semantic.success.bg, borderRadius: DS.radius.md, paddingHorizontal: 10, paddingVertical: 6 },
-  activeChipText: { fontSize: 12, fontWeight: '700', color: DS.semantic.success.fg },
   farmName: { fontSize: 16, fontWeight: '700', color: DS.colors.text },
   farmMeta: { fontSize: 13, color: DS.colors.textMuted, marginTop: 4 },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, marginTop: 8 },
