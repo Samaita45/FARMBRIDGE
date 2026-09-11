@@ -20,7 +20,8 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "FarmBridge shares your position with the customer whose load you are carrying, so they can see the delivery coming. This only happens during a trip you have accepted, and only that one customer sees it.",
         "UIBackgroundModes": [
           "location"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
