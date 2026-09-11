@@ -12,6 +12,12 @@
         "EXPO_PUBLIC_API_ENABLED": "true"
       }
     },
+    "development-simulator": {
+      "extends": "development",
+      "ios": {
+        "simulator": true
+      }
+    },
     "preview": {
       "distribution": "internal",
       "channel": "preview"
