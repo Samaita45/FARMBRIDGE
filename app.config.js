@@ -42,7 +42,12 @@ module.exports = ({ config }) => ({
     ...config.ios,
     config: {
       ...(config.ios?.config ?? {}),
-      googleMapsApiKey: iosMapsKey,
+      // Omitted entirely when absent rather than set to an empty string. With no
+      // key, react-native-maps leaves useGoogleMaps false and iOS draws with
+      // Apple Maps, which needs no key at all — so an unbilled project still
+      // gets real maps on iPhone. Writing an empty GMSApiKey would only muddy
+      // that with a setting that claims to be configured and is not.
+      ...(iosMapsKey ? { googleMapsApiKey: iosMapsKey } : {}),
     },
     infoPlist: {
       ...(config.ios?.infoPlist ?? {}),
@@ -57,19 +62,29 @@ module.exports = ({ config }) => ({
     ...config.android,
     config: {
       ...(config.android?.config ?? {}),
-      googleMaps: {
-        apiKey: androidMapsKey,
-      },
+      // Android has no Apple Maps to fall back to: without a key the map is a
+      // blank grid. Left absent rather than empty so that failure is a missing
+      // setting someone can find, not a present-but-useless one.
+      ...(androidMapsKey ? { googleMaps: { apiKey: androidMapsKey } } : {}),
     },
   },
   plugins: [
     ...(config.plugins ?? []),
-    [
-      'react-native-maps',
-      {
-        androidGoogleMapsApiKey: androidMapsKey,
-        iosGoogleMapsApiKey: iosMapsKey,
-      },
-    ],
+    /*
+      The plugin decides whether to link the Google Maps SDK from whether these
+      are truthy. Passing it nothing at all when there is no key keeps iOS on
+      MapKit, which is exactly what a project without billing wants.
+    */
+    ...(androidMapsKey || iosMapsKey
+      ? [
+          [
+            'react-native-maps',
+            {
+              ...(androidMapsKey ? { androidGoogleMapsApiKey: androidMapsKey } : {}),
+              ...(iosMapsKey ? { iosGoogleMapsApiKey: iosMapsKey } : {}),
+            },
+          ],
+        ]
+      : []),
   ],
 });
