@@ -5,18 +5,20 @@ import { asHref } from '@/lib/href';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useSettingsStore, type SettingsState } from '@/stores/settingsStore';
 import { useEffect, type ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, Switch, Text, TextInput, View, Alert } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, TextInput, View, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ProvincePicker } from '@/components/forms/province-picker';
-import { Colors } from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { MOCK_POSTS } from '@/constants/community-data';
+import { PRIVACY_URL, SUPPORT_WHATSAPP_URL, TERMS_URL, whatsAppUrl } from '@/constants/support';
 import { CROPS, MARKET_PRODUCTS } from '@/constants/zimbabwe-data';
 import { cachePosts } from '@/services/communityDb';
 import { upsertCachedCropData, upsertCachedProduct } from '@/services/database';
 import { buildSmsReminderBody } from '@/services/smsService';
 import type { AppCurrency, AppLanguage } from '@/types/profile';
 import type { FarmTask } from '@/types/crop-management';
+import { Toggle } from '@/components/design-system';
 
 const LANGUAGES: { id: AppLanguage; label: string }[] = [
   { id: 'en', label: 'English' },
@@ -86,7 +88,7 @@ export default function SettingsScreen() {
             <TextInput
               className="mx-4 mb-2 rounded-xl bg-white px-4 py-3 font-sans"
               placeholder={user?.phone ? `Default: ${user.phone}` : '+263…'}
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={DS.colors.textSoft}
               keyboardType="phone-pad"
               value={settings.smsReminderPhone}
               onChangeText={(t) => void patch(userId, { smsReminderPhone: t })}
@@ -167,27 +169,34 @@ export default function SettingsScreen() {
           <Section title="Support">
             <Pressable
               onPress={() =>
-                Linking.openURL('https://wa.me/263771234567?text=Hi%20ZimFarm%20support')
+                Linking.openURL(SUPPORT_WHATSAPP_URL)
               }
               className="mx-4 mb-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3">
               <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
               <Text className="font-sans text-dark">WhatsApp Support</Text>
             </Pressable>
-            <Pressable className="mx-4 mb-2 rounded-xl bg-white px-4 py-3">
-              <Text className="font-sans text-dark">FAQ & Help Centre</Text>
+            {/*
+              These three had no onPress at all — rows that looked tappable and
+              were not. FAQ now goes to the one support channel that exists;
+              the policies open their published URLs, and say plainly when
+              nothing is published yet rather than absorbing a tap.
+            */}
+            <Pressable
+              onPress={() => Linking.openURL(whatsAppUrl('Hi FarmBridge, I have a question.'))}
+              accessibilityRole="button"
+              accessibilityLabel="Ask a question on WhatsApp"
+              className="mx-4 mb-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3">
+              <Ionicons name="help-circle-outline" size={22} color={DS.colors.primary} />
+              <Text className="font-sans text-dark">FAQ & help</Text>
             </Pressable>
           </Section>
 
           <Section title="About">
             <Text className="px-4 font-sans text-sm text-gray-500">
-              ZimFarm v{Constants.expoConfig?.version ?? '1.0.0'}
+              FarmBridge v{Constants.expoConfig?.version ?? '1.0.0'}
             </Text>
-            <Pressable className="mx-4 mt-2 rounded-xl bg-white px-4 py-3">
-              <Text className="font-sans text-dark">Terms of Service</Text>
-            </Pressable>
-            <Pressable className="mx-4 mt-2 mb-2 rounded-xl bg-white px-4 py-3">
-              <Text className="font-sans text-dark">Privacy Policy</Text>
-            </Pressable>
+            <LegalRow label="Terms of service" url={TERMS_URL} />
+            <LegalRow label="Privacy policy" url={PRIVACY_URL} />
           </Section>
 
           <Pressable
@@ -229,7 +238,37 @@ function SettingSwitch({
         <Text className="font-sans text-dark">{label}</Text>
         {subtitle ? <Text className="font-sans text-xs text-gray-500">{subtitle}</Text> : null}
       </View>
-      <Switch value={value} onValueChange={onChange} trackColor={{ true: Colors.primary }} />
+      <Toggle value={value} onValueChange={onChange} accessibilityLabel={label} />
     </View>
+  );
+}
+
+/**
+ * A policy link that tells the truth about itself. When no URL is configured
+ * the row is plainly unavailable rather than a tappable no-op.
+ */
+function LegalRow({ label, url }: { label: string; url: string }) {
+  if (!url) {
+    return (
+      <View className="mx-4 mt-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3 opacity-60">
+        <Ionicons name="document-text-outline" size={20} color={DS.colors.textSoft} />
+        <View className="flex-1">
+          <Text className="font-sans text-dark">{label}</Text>
+          <Text className="font-sans text-xs text-muted">Not published yet</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      onPress={() => Linking.openURL(url)}
+      accessibilityRole="link"
+      accessibilityLabel={`Open the ${label.toLowerCase()}`}
+      className="mx-4 mt-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3">
+      <Ionicons name="document-text-outline" size={20} color={DS.colors.primary} />
+      <Text className="flex-1 font-sans text-dark">{label}</Text>
+      <Ionicons name="open-outline" size={16} color={DS.colors.textFaint} />
+    </Pressable>
   );
 }

@@ -1,25 +1,31 @@
 {
   "expo": {
-    "name": "ZimFarm",
-    "slug": "zimfarm",
+    "name": "FarmBridge",
+    "slug": "farmbridge",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "zimfarm",
+    "scheme": "farmbridge",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "co.zw.zimfarm",
+      "supportsTablet": false,
+      "bundleIdentifier": "co.zw.farmbridge",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "ZimFarm uses your location to show local weather and market prices.",
-        "NSCameraUsageDescription": "ZimFarm uses the camera to diagnose crop health issues.",
-        "NSPhotoLibraryUsageDescription": "ZimFarm uses your photos for profile and community posts.",
-        "NSUserNotificationsUsageDescription": "ZimFarm sends reminders for your farming tasks."
+        "NSLocationWhenInUseUsageDescription": "FarmBridge uses your location to show local weather and market prices.",
+        "NSCameraUsageDescription": "FarmBridge uses the camera to diagnose crop health issues.",
+        "NSPhotoLibraryUsageDescription": "FarmBridge uses your photos for profile and community posts.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "FarmBridge shares your position with the customer whose load you are carrying, so they can see the delivery coming. This only happens during a trip you have accepted, and only that one customer sees it.",
+        "UIBackgroundModes": [
+          "location"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "co.zw.zimfarm",
+      "package": "co.zw.farmbridge",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -30,15 +36,16 @@
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "SEND_SMS",
-        "READ_SMS"
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
       ],
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -46,6 +53,16 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "FarmBridge uses your location to name where you are, show local weather, and find transporters near you.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "isIosBackgroundLocationEnabled": true,
+          "locationAlwaysAndWhenInUsePermission": "FarmBridge shares your position with the customer whose load you are carrying, so they can see the delivery coming. This only happens during a trip you have accepted, and only that one customer sees it."
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -61,11 +78,23 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-font",
+      "expo-image",
+      "expo-sqlite",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4b45e890-a4fe-4a5c-98c6-a3f89e90cd64"
+      }
     }
   }
 }

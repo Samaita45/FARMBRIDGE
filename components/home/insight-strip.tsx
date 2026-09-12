@@ -1,95 +1,103 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { MotiView } from 'moti';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 
-import { Premium } from '@/constants/premium-home';
+import { DS } from '@/constants/design-system';
+import type { IconName } from '@/types/icons';
 
 export interface InsightItem {
   id: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   label: string;
   value: string;
+  /** Optional qualifier, e.g. the source or freshness of the figure. */
   trend?: string;
-  colors: [string, string];
-  accent: string;
+  tone: keyof typeof DS.semantic;
 }
 
 interface InsightStripProps {
   items: InsightItem[];
 }
 
+/**
+ * A row of at-a-glance figures.
+ *
+ * Each tile was previously a two-stop gradient with a translucent white border
+ * and a staggered Moti entrance. The numbers are the point, so the tiles are
+ * now flat surfaces and the only colour is the semantic tone on the icon.
+ */
 export function InsightStrip({ items }: InsightStripProps) {
   return (
-    <ScrollView
+    <FlatList
       horizontal
+      data={items}
+      keyExtractor={(item) => item.id}
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}>
-      {items.map((item, index) => (
-        <MotiView
-          key={item.id}
-          from={{ opacity: 0, translateX: 16 }}
-          animate={{ opacity: 1, translateX: 0 }}
-          transition={{ type: 'timing', duration: 0.35, delay: index * 0.06 }}>
-          <LinearGradient
-            colors={item.colors}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.card}>
-            <View style={[styles.iconWrap, { borderColor: item.accent + '33' }]}>
-              <Ionicons name={item.icon} size={20} color={item.accent} />
+      contentContainerStyle={styles.row}
+      renderItem={({ item }) => {
+        const tone = DS.semantic[item.tone];
+        return (
+          <View
+            style={styles.card}
+            accessibilityRole="summary"
+            accessibilityLabel={`${item.label}: ${item.value}${item.trend ? `. ${item.trend}` : ''}`}>
+            <View style={[styles.iconWrap, { backgroundColor: tone.bg }]}>
+              <Ionicons name={item.icon} size={18} color={tone.fg} />
             </View>
-            <Text style={styles.label}>{item.label}</Text>
-            <Text style={styles.value}>{item.value}</Text>
+            <Text style={styles.label} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+              {item.label}
+            </Text>
+            <Text
+              style={styles.value}
+              numberOfLines={1}
+              maxFontSizeMultiplier={DS.layout.maxFontScale}>
+              {item.value}
+            </Text>
             {item.trend ? (
-              <View style={styles.trendRow}>
-                <View style={[styles.trendDot, { backgroundColor: item.accent }]} />
-                <Ionicons name="pulse" size={11} color={item.accent} />
-                <Text style={[styles.trend, { color: item.accent }]}>{item.trend}</Text>
-              </View>
+              <Text style={styles.trend} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+                {item.trend}
+              </Text>
             ) : null}
-          </LinearGradient>
-        </MotiView>
-      ))}
-    </ScrollView>
+          </View>
+        );
+      }}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  row: { gap: 14, paddingRight: 8, paddingVertical: 4 },
+  row: { gap: DS.spacing.sm + 2, paddingRight: DS.spacing.sm, paddingVertical: 2 },
   card: {
-    width: 148,
-    borderRadius: Premium.radiusLg,
-    padding: 16,
+    width: 138,
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.65)',
-    ...Premium.shadowSoft,
+    borderColor: DS.colors.border,
+    padding: DS.spacing.sm + 4,
+    gap: 2,
   },
   iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    width: 34,
+    height: 34,
+    borderRadius: DS.radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
-    borderWidth: 1,
+    marginBottom: DS.spacing.sm,
   },
   label: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Premium.textMuted,
-    marginBottom: 4,
+    fontSize: DS.typography.label.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textSoft,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   value: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: Premium.text,
-    letterSpacing: -0.5,
+    fontSize: DS.typography.h2.fontSize,
+    fontFamily: DS.fontFamily.bold,
+    color: DS.colors.text,
   },
-  trendRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 8 },
-  trendDot: { width: 6, height: 6, borderRadius: 3 },
-  trend: { fontSize: 11, fontWeight: '700' },
+  trend: {
+    fontSize: 11,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
 });

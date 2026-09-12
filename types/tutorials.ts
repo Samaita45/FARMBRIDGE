@@ -1,3 +1,5 @@
+import type { IconName } from '@/types/icons';
+
 export type TutorialCategory =
   | 'planting'
   | 'watering'
@@ -21,7 +23,8 @@ export interface Tutorial {
   id: string;
   title: string;
   category: Exclude<TutorialCategory, 'all'>;
-  emoji: string;
+  /** Ionicons name. These were emoji strings until the icon sweep. */
+  icon: IconName;
   durationMin: number;
   difficulty: TutorialDifficulty;
   language: TutorialLanguage;

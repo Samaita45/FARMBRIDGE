@@ -1,9 +1,14 @@
 import { create } from 'zustand';
 
-import { getCurrentUser, logoutUser, updateUser as updateStoredUser } from '@/services/authService';
+import {
+  getCurrentUser,
+  logoutUser,
+  purgeLegacyCredentials,
+  updateUser as updateStoredUser,
+} from '@/services/authService';
 import { upsertUserCache } from '@/services/database';
-import { setJSON } from '@/services/storage';
 import type { User, UserRole } from '@/types';
+import { disconnectRealtime } from '@/services/realtime';
 
 export interface AuthState {
   user: User | null;
@@ -30,12 +35,22 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user, isAuthenticated: true, isLoading: false });
   },
   logout: async () => {
+    /*
+      The socket authenticates once, at the handshake, so it does not notice a
+      logout on its own — it would stay open and authenticated as the previous
+      user until the server dropped it. Closed first, before the tokens it was
+      holding are cleared.
+    */
+    disconnectRealtime();
     await logoutUser();
     set({ user: null, isAuthenticated: false });
   },
   setLoading: (isLoading) => set({ isLoading }),
   hydrate: async () => {
     try {
+      // Clears credential material written by pre-hashing builds. Runs before
+      // the session is read so nothing recoverable outlives the first launch.
+      await purgeLegacyCredentials();
       const user = await getCurrentUser();
       set({ user, isAuthenticated: !!user, isHydrated: true });
       if (user) void upsertUserCache(user);
@@ -50,7 +65,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         ...state.user,
         subscription: { planId, isActive, expiresAt },
       };
-      void setJSON('current_user', user);
+      // Persisted through the user record; there is no separate session copy.
+      void updateStoredUser(user.id, { subscription: user.subscription });
       void upsertUserCache(user);
       return { user };
     }),
@@ -66,5 +82,3 @@ export const useAuthStore = create<AuthState>((set) => ({
 export const selectUserRole = (state: AuthState): UserRole | null =>
   state.user?.role ?? null;
 
-export const selectIsSubscribed = (state: AuthState): boolean =>
-  state.user?.subscription?.isActive ?? false;

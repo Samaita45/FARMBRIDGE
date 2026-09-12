@@ -1,32 +1,47 @@
-import { Platform, type ViewStyle } from 'react-native';
+import { Platform, StatusBar, type ViewStyle } from 'react-native';
 import type { Edge } from 'react-native-safe-area-context';
 
-import { Shadows } from '@/constants/Spacing';
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 
 /** Standard safe-area edges for full screens with custom headers */
 export const SCREEN_EDGES: Edge[] = ['top', 'left', 'right'];
 
+/**
+ * Distance from the top of the window to the first control.
+ *
+ * On Android 15 the app draws under the status bar and `insets.top` is
+ * sometimes 0 on the first frame, which parks the menu on the clock. The
+ * status-bar height is the floor so chrome never sits in the system tray,
+ * the notch, or the camera cutout.
+ */
+export function topChrome(insetsTop: number): number {
+  const statusBar = Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+  return Math.max(insetsTop, statusBar, 12);
+}
+
+/** Extra padding when SafeAreaView already applied `insets.top` but that value was 0. */
+export function extraTopPad(insetsTop: number): number {
+  return Math.max(0, topChrome(insetsTop) - insetsTop);
+}
+
 /** Card shadow that renders on both iOS (shadow*) and Android (elevation) */
 export function cardShadow(elevated = false): ViewStyle {
-  return elevated ? Shadows.elevated : Shadows.card;
+  return elevated ? DS.shadow.elevated : DS.shadow.card;
 }
 
 /** Bottom tab bar — accounts for home indicator / gesture navigation */
 export function tabBarStyle(bottomInset: number): ViewStyle {
   const baseHeight = Platform.OS === 'ios' ? 56 : 58;
   return {
-    backgroundColor: Colors.white,
-    borderTopColor: Colors.gray[200],
+    backgroundColor: DS.colors.surface,
+    borderTopColor: DS.colors.border,
     borderTopWidth: 1,
     height: baseHeight + bottomInset,
     paddingTop: 6,
-    paddingBottom: Math.max(bottomInset, Platform.OS === 'android' ? 10 : 6),
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+    paddingBottom: Math.max(bottomInset, Platform.OS === 'android' ? 12 : 8),
+    // The tab bar sits above content, so its separation comes from the border
+    // above rather than a shadow cast upward.
+    elevation: 0,
   };
 }
 

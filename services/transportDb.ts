@@ -2,6 +2,7 @@ import type { TransportProvider } from '@/types';
 import type { TransportBooking, TransporterProfile, BookingStatus } from '@/types/transport';
 
 import { getDatabase } from './database';
+import { distanceKmBetween, findPlace } from '@/constants/zimbabwe-data/places';
 
 export async function initTransportTables(): Promise<void> {
   const db = await getDatabase();
@@ -41,12 +42,59 @@ export async function initTransportTables(): Promise<void> {
       createdAt TEXT NOT NULL
     );
   `);
+  await addBookingColumn(db, 'pickupLat', 'REAL');
+  await addBookingColumn(db, 'pickupLng', 'REAL');
+  await addBookingColumn(db, 'destinationLat', 'REAL');
+  await addBookingColumn(db, 'destinationLng', 'REAL');
+  await addBookingColumn(db, 'durationSeconds', 'REAL');
+  await addBookingColumn(db, 'routePolyline', 'TEXT');
 }
 
-export function estimateDistanceKm(pickup: string, destination: string): number {
-  const seed = (pickup.length + destination.length) * 3.7;
-  return Math.round(Math.max(8, Math.min(150, seed + 15)));
+async function addBookingColumn(
+  db: Awaited<ReturnType<typeof getDatabase>>,
+  name: string,
+  type: string
+): Promise<void> {
+  try {
+    await db.execAsync(`ALTER TABLE transport_bookings ADD COLUMN ${name} ${type}`);
+  } catch {
+    // Column already exists on later launches.
+  }
 }
+
+/**
+ * Road distance between two places, in kilometres, or null when either end
+ * cannot be resolved to a town.
+ *
+ * WHAT THIS USED TO DO. It multiplied the combined character length of the two
+ * strings by 3.7 and clamped the result. "Harare" to "Bulawayo" — 439 km by
+ * road — came out as 66, and that fabricated number was multiplied by each
+ * transporter's per-kilometre rate to produce the quotes people were choosing
+ * between. It was not an estimate; it was the length of the words.
+ *
+ * It is now a great-circle distance between the two town centres, multiplied
+ * by 1.25 because roads are not straight lines. That is still an estimate and
+ * every screen that shows it says so, but it is an estimate of the distance
+ * rather than of the spelling.
+ */
+export function estimateDistanceKm(pickup: string, destination: string): number | null {
+  const from = findPlace(pickup);
+  const to = findPlace(destination);
+  if (!from || !to) return null;
+  return estimateDistanceKmFromCoords(from, to);
+}
+
+export function estimateDistanceKmFromCoords(
+  from: { latitude: number; longitude: number },
+  to: { latitude: number; longitude: number }
+): number {
+  const straight = distanceKmBetween(from, to);
+  // Same town: still a real trip across it, so never quote zero.
+  return Math.max(5, Math.round(straight * ROAD_FACTOR));
+}
+
+/** Roads wander. Zimbabwe's trunk routes run about a quarter longer than the crow flies. */
+const ROAD_FACTOR = 1.25;
 
 export function estimatePrice(provider: TransportProvider, distanceKm: number): number {
   return Math.round((provider.basePrice + provider.pricePerKm * distanceKm) * 100) / 100;
@@ -59,8 +107,9 @@ export async function insertBooking(booking: TransportBooking): Promise<void> {
     `INSERT INTO transport_bookings (
       id, userId, providerId, providerName, providerPhone, vehicleType,
       pickup, destination, goodsDescription, weightKg, category, preferredDate,
-      distanceKm, agreedPriceUSD, counterPriceUSD, status, paymentMethod, createdAt
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      distanceKm, agreedPriceUSD, counterPriceUSD, status, paymentMethod, createdAt,
+      pickupLat, pickupLng, destinationLat, destinationLng, durationSeconds, routePolyline
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     booking.id,
     booking.userId,
     booking.providerId,
@@ -78,7 +127,13 @@ export async function insertBooking(booking: TransportBooking): Promise<void> {
     booking.counterPriceUSD ?? null,
     booking.status,
     booking.paymentMethod,
-    booking.createdAt
+    booking.createdAt,
+    booking.pickupLat ?? null,
+    booking.pickupLng ?? null,
+    booking.destinationLat ?? null,
+    booking.destinationLng ?? null,
+    booking.durationSeconds ?? null,
+    booking.routePolyline ?? null
   );
 }
 
@@ -140,6 +195,12 @@ function rowToBooking(row: Record<string, unknown>): TransportBooking {
     vehicleType: row.vehicleType as TransportBooking['vehicleType'],
     pickup: String(row.pickup),
     destination: String(row.destination),
+    pickupLat: row.pickupLat != null ? Number(row.pickupLat) : undefined,
+    pickupLng: row.pickupLng != null ? Number(row.pickupLng) : undefined,
+    destinationLat: row.destinationLat != null ? Number(row.destinationLat) : undefined,
+    destinationLng: row.destinationLng != null ? Number(row.destinationLng) : undefined,
+    durationSeconds: row.durationSeconds != null ? Number(row.durationSeconds) : undefined,
+    routePolyline: row.routePolyline != null ? String(row.routePolyline) : undefined,
     goodsDescription: String(row.goodsDescription),
     weightKg: Number(row.weightKg),
     category: row.category as TransportBooking['category'],

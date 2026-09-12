@@ -19,6 +19,11 @@ export interface IncomeEntry {
   buyer: string;
   date: string;
   notes?: string;
+  /**
+   * ZWG per USD at the moment this was recorded. Stored so the row's USD value
+   * never changes when the exchange rate moves.
+   */
+  rateUsed?: number;
   createdAt: string;
 }
 
@@ -30,6 +35,8 @@ export interface ExpenseEntry {
   currency: FinanceCurrency;
   date: string;
   notes?: string;
+  /** ZWG per USD at the moment this was recorded. See IncomeEntry.rateUsed. */
+  rateUsed?: number;
   createdAt: string;
 }
 

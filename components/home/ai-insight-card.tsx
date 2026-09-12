@@ -1,138 +1,95 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Premium } from '@/constants/premium-home';
+import { Button, Card } from '@/components/design-system';
+import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
 
-interface AiInsightCardProps {
+interface MarketInsightCardProps {
   message: string;
   locationLabel?: string;
 }
 
-export function AiInsightCard({ message, locationLabel }: AiInsightCardProps) {
+/**
+ * A single derived market insight.
+ *
+ * Previously branded "AI Farming Assistant · Powered by FarmBridge
+ * Intelligence" and dressed in four gradients plus three decorative shapes.
+ * There is no model behind it: the message is composed from the top-demand crop
+ * and the user's location. It now says what it is. If a real model is added
+ * later, the claim can come back with it.
+ */
+export function MarketInsightCard({ message, locationLabel }: MarketInsightCardProps) {
   return (
-    <LinearGradient
-      colors={['#FFFBEB', '#FEF9C3', '#FDE68A']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.card}>
+    <Card style={styles.card}>
       <View style={styles.header}>
-        <LinearGradient
-          colors={['#FFF', '#FEF3C7']}
-          style={styles.iconBadge}>
-          <Ionicons name="bulb" size={26} color={Premium.orange} />
-        </LinearGradient>
-        <View style={styles.headerText}>
-          <View style={styles.badge}>
-            <Ionicons name="sparkles" size={12} color="#C2410C" />
-            <Text style={styles.badgeText}>AI Farming Assistant</Text>
-          </View>
-          <Text style={styles.powered}>Powered by FarmBridge Intelligence</Text>
+        <View style={styles.iconWrap}>
+          <Ionicons name="trending-up" size={18} color={DS.colors.primary} />
         </View>
+        <Text style={styles.eyebrow} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+          This week’s market signal
+        </Text>
       </View>
 
-      <Text style={styles.body}>{message}</Text>
+      <Text style={styles.body} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+        {message}
+      </Text>
+
       {locationLabel ? (
-        <Text style={styles.meta}>Personalized for {locationLabel}</Text>
+        <Text style={styles.meta} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+          Based on demand data for {locationLabel}
+        </Text>
       ) : null}
 
       <Link href={asHref('/tutorials')} asChild>
-        <Pressable style={({ pressed }) => [styles.cta, pressed && { opacity: 0.92 }]}>
-          <LinearGradient
-            colors={[Premium.primary, Premium.primaryDark]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.ctaGradient}>
-            <Text style={styles.ctaText}>Learn More</Text>
-            <Ionicons name="arrow-forward" size={18} color="#fff" />
-          </LinearGradient>
-        </Pressable>
+        <Button
+          title="Growing guides"
+          variant="outline"
+          size="sm"
+          icon="arrow-forward"
+          iconPosition="right"
+          fullWidth={false}
+          style={styles.cta}
+          accessibilityLabel="Open the growing guides"
+        />
       </Link>
-
-      <View style={styles.deco1} />
-      <View style={styles.deco2} />
-      <View style={styles.decoLeaf}>
-        <Ionicons name="leaf" size={48} color="rgba(22,163,74,0.12)" />
-      </View>
-    </LinearGradient>
+    </Card>
   );
 }
 
+/** @deprecated Use `MarketInsightCard`. */
+export const AiInsightCard = MarketInsightCard;
+
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: Premium.radiusXl,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: Premium.creamBorder,
-    overflow: 'hidden',
-    ...Premium.shadow,
-  },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 14 },
-  iconBadge: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
+  card: { gap: DS.spacing.sm },
+  header: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm },
+  iconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: DS.radius.sm,
+    backgroundColor: DS.colors.primaryBg,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
-    ...Premium.shadowSoft,
   },
-  headerText: { flex: 1 },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(249,115,22,0.12)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 10,
+  eyebrow: {
+    flex: 1,
+    fontSize: DS.typography.label.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textSoft,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
-  badgeText: { fontSize: 11, fontWeight: '800', color: '#C2410C', letterSpacing: 0.3 },
-  powered: { fontSize: 11, color: Premium.textMuted, marginTop: 4 },
   body: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: Premium.text,
-    lineHeight: 26,
-    marginBottom: 8,
-    letterSpacing: -0.2,
+    fontSize: DS.typography.body.fontSize,
+    lineHeight: 24,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
   },
-  meta: { fontSize: 13, color: Premium.textMuted, marginBottom: 18 },
-  cta: { alignSelf: 'flex-start', borderRadius: 16, overflow: 'hidden', ...Premium.shadowSoft },
-  ctaGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 22,
-    paddingVertical: 14,
+  meta: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
   },
-  ctaText: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  deco1: {
-    position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    top: -30,
-    right: -20,
-  },
-  deco2: {
-    position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(37,99,235,0.06)',
-    bottom: 24,
-    right: 40,
-  },
-  decoLeaf: {
-    position: 'absolute',
-    bottom: -8,
-    right: 12,
-    transform: [{ rotate: '-15deg' }],
-  },
+  cta: { alignSelf: 'flex-start', marginTop: DS.spacing.xs },
 });

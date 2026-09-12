@@ -1,174 +1,292 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
-import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import Colors from '@/constants/colors';
+import { Card } from '@/components/design-system';
+import { HeroHeader } from '@/components/ui/hero-header';
+import { DS } from '@/constants/design-system';
 import { ScreenImages } from '@/constants/images';
+import { CROPS, getCropsForMonth, getCurrentSeason } from '@/constants/zimbabwe-data';
 import { useCropPlans } from '@/hooks/useCropPlans';
 import { useFarmTasks } from '@/hooks/useFarmTasks';
+import type { IconName } from '@/types/icons';
 
-const LINKS = [
-  { href: '/crop-management/planner',  label: 'Crop Planner',      desc: 'Calendar, plans & rotation',    icon: 'calendar-outline' as const,    color: Colors.primary },
-  { href: '/crop-management/tasks',    label: 'Tasks & Reminders', desc: 'Notifications & SMS alerts',   icon: 'checkmark-done-outline' as const, color: Colors.accent },
-  { href: '/crop-management/health',   label: 'Crop Health',       desc: 'Diagnose diseases & pests',    icon: 'medkit-outline' as const,       color: '#f59e0b' },
-  { href: '/crop-management/soil',     label: 'Soil & Fertilizer', desc: 'NPK recommendations',          icon: 'water-outline' as const,        color: '#0ea5e9' },
-] as const;
+const MONTH = new Date().getMonth() + 1;
+
+interface ModuleLink {
+  href: '/crop-management/planner' | '/crop-management/tasks' | '/crop-management/health' | '/crop-management/soil';
+  label: string;
+  desc: string;
+  icon: IconName;
+  tone: keyof typeof DS.semantic;
+}
+
+const MODULES: ModuleLink[] = [
+  {
+    href: '/crop-management/planner',
+    label: 'Crop Planner',
+    desc: 'Calendar, plans and rotation',
+    icon: 'calendar-outline',
+    tone: 'info',
+  },
+  {
+    href: '/crop-management/tasks',
+    label: 'Tasks & Reminders',
+    desc: 'Notifications and SMS alerts',
+    icon: 'checkmark-done-outline',
+    tone: 'success',
+  },
+  {
+    href: '/crop-management/health',
+    label: 'Crop Health',
+    desc: 'Diagnose diseases and pests',
+    icon: 'medkit-outline',
+    tone: 'warning',
+  },
+  {
+    href: '/crop-management/soil',
+    label: 'Soil & Fertilizer',
+    desc: 'NPK recommendations',
+    icon: 'flask-outline',
+    tone: 'neutral',
+  },
+];
 
 export default function CropManagementHub() {
   const { plans } = useCropPlans();
   const { allTasks, completionRate } = useFarmTasks();
   const pendingTasks = allTasks.filter((t) => t.status !== 'completed').length;
 
+  const season = getCurrentSeason(MONTH);
+
+  /*
+    The tip was a hardcoded paragraph about fall armyworm, under a heading that
+    said "Seasonal". It gave the same advice in July as in December. It now
+    comes from a crop whose planting window is actually open, using that crop's
+    own `tips` field, and names the crop and the season it belongs to.
+  */
+  const tipCrop =
+    getCropsForMonth(MONTH).find((c) => c.tips) ?? CROPS.find((c) => c.tips) ?? null;
+
   return (
-    <SafeAreaView style={s.root} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={styles.root}>
+      <HeroHeader
+        image={ScreenImages.crop}
+        title="Crop management"
+        subtitle="Plan, track and look after what is in the ground"
+        showBack
+        onBack={() => router.back()}
+        meta={[
+          { icon: 'partly-sunny-outline', label: season.name },
+          { icon: 'leaf-outline', label: `${plans.length} active plan${plans.length === 1 ? '' : 's'}` },
+        ]}
+      />
 
-        {/* ── Hero banner ── */}
-        <ImageBackground source={ScreenImages.crop} style={s.heroBg} resizeMode="cover">
-          <View style={s.heroOverlay}>
-            <Pressable onPress={() => router.back()} style={s.backBtn}>
-              <Ionicons name="arrow-back" size={20} color="#fff" />
-            </Pressable>
-            <View style={s.heroTitleRow}>
-              <Ionicons name="leaf" size={22} color="#fff" />
-              <Text style={s.heroTitle}>Crop Management</Text>
-            </View>
-            <Text style={s.heroSub}>Plan, track, and optimise your crops</Text>
-          </View>
-        </ImageBackground>
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <View style={styles.statsRow}>
+          <Stat icon="leaf-outline" value={String(plans.length)} label="Active plans" />
+          <Stat
+            icon="time-outline"
+            value={String(pendingTasks)}
+            label="Pending tasks"
+            tone={pendingTasks > 0 ? 'warning' : undefined}
+          />
+          <Stat
+            icon="checkmark-circle-outline"
+            value={`${completionRate}%`}
+            label="Done this week"
+            tone="success"
+          />
+        </View>
 
-        <View style={s.body}>
+        {pendingTasks > 0 ? (
+          <Pressable
+            onPress={() => router.push('/crop-management/tasks')}
+            accessibilityRole="button"
+            accessibilityLabel={`You have ${pendingTasks} pending ${pendingTasks === 1 ? 'task' : 'tasks'}. Open the task list.`}
+            style={styles.alert}>
+            <Ionicons name="alert-circle" size={18} color={DS.semantic.warning.fg} />
+            <Text style={styles.alertText} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+              {pendingTasks} pending task{pendingTasks === 1 ? '' : 's'}
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color={DS.semantic.warning.fg} />
+          </Pressable>
+        ) : null}
 
-          {/* ── Stats row ── */}
-          <View style={s.statsRow}>
-            <View style={s.statCard}>
-              <Ionicons name="leaf" size={18} color={Colors.primary} style={s.statIcon} />
-              <Text style={s.statValue}>{plans.length}</Text>
-              <Text style={s.statLabel}>Active plans</Text>
-            </View>
-            <View style={s.statCard}>
-              <Ionicons name="alert-circle-outline" size={18} color="#f59e0b" style={s.statIcon} />
-              <Text style={[s.statValue, pendingTasks > 0 && { color: '#f59e0b' }]}>{pendingTasks}</Text>
-              <Text style={s.statLabel}>Pending tasks</Text>
-            </View>
-            <View style={s.statCard}>
-              <Ionicons name="checkmark-circle-outline" size={18} color={Colors.accent} style={s.statIcon} />
-              <Text style={[s.statValue, { color: Colors.accent }]}>{completionRate}%</Text>
-              <Text style={s.statLabel}>Done this week</Text>
-            </View>
-          </View>
+        <Text style={styles.sectionTitle} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+          Modules
+        </Text>
 
-          {/* ── Quick action tip ── */}
-          {pendingTasks > 0 && (
-            <Pressable
-              onPress={() => router.push('/crop-management/tasks')}
-              style={s.alertBanner}>
-              <Ionicons name="alert-circle" size={18} color="#f59e0b" />
-              <Text style={s.alertText}>
-                You have {pendingTasks} pending task{pendingTasks > 1 ? 's' : ''} — tap to view
-              </Text>
-              <Ionicons name="chevron-forward" size={16} color="#f59e0b" />
-            </Pressable>
-          )}
-
-          {/* ── Module grid ── */}
-          <Text style={s.sectionTitle}>Modules</Text>
-          <View style={s.grid}>
-            {LINKS.map((item) => (
+        <View style={styles.grid}>
+          {MODULES.map((item) => {
+            const tone = DS.semantic[item.tone];
+            return (
               <Link key={item.href} href={item.href} asChild>
-                <Pressable style={({ pressed }) => [s.moduleCard, pressed && { opacity: 0.85 }]}>
-                  <View style={[s.moduleIcon, { backgroundColor: item.color + '18' }]}>
-                    <Ionicons name={item.icon} size={24} color={item.color} />
+                <Pressable
+                  accessibilityRole="link"
+                  accessibilityLabel={`${item.label}. ${item.desc}`}
+                  style={({ pressed }) => [styles.moduleCard, pressed && styles.modulePressed]}>
+                  <View style={[styles.moduleIcon, { backgroundColor: tone.bg }]}>
+                    <Ionicons name={item.icon} size={22} color={tone.fg} />
                   </View>
-                  <Text style={s.moduleLabel}>{item.label}</Text>
-                  <Text style={s.moduleDesc} numberOfLines={2}>{item.desc}</Text>
-                  <View style={[s.moduleArrow, { backgroundColor: item.color + '18' }]}>
-                    <Ionicons name="arrow-forward" size={14} color={item.color} />
-                  </View>
+                  <Text style={styles.moduleLabel} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+                    {item.label}
+                  </Text>
+                  <Text
+                    style={styles.moduleDesc}
+                    numberOfLines={2}
+                    maxFontSizeMultiplier={DS.layout.maxFontScale}>
+                    {item.desc}
+                  </Text>
                 </Pressable>
               </Link>
-            ))}
-          </View>
-
-          {/* ── Season tip ── */}
-          <View style={s.tipCard}>
-            <View style={s.tipHeader}>
-              <Ionicons name="bulb-outline" size={18} color={Colors.warning} />
-              <Text style={s.tipTitle}>Seasonal Tip</Text>
-            </View>
-            <Text style={s.tipBody}>
-              Check maize whorls weekly during rainy season for fall armyworm. Early detection saves your crop.
-            </Text>
-            <Pressable onPress={() => router.push('/tutorials')} style={s.tipBtn}>
-              <Text style={s.tipBtnText}>More tutorials</Text>
-              <Ionicons name="arrow-forward" size={13} color={Colors.primary} />
-            </Pressable>
-          </View>
+            );
+          })}
         </View>
+
+        <Card style={styles.tip}>
+          <View style={styles.tipHeader}>
+            <Ionicons name="bulb-outline" size={18} color={DS.colors.primary} />
+            <Text style={styles.tipTitle} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+              {tipCrop ? `${tipCrop.name} · ${season.name}` : season.name}
+            </Text>
+          </View>
+          <Text style={styles.tipBody} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+            {tipCrop?.tips ?? season.description}
+          </Text>
+          <Pressable
+            onPress={() => router.push('/tutorials')}
+            accessibilityRole="link"
+            accessibilityLabel="Open tutorials"
+            hitSlop={8}
+            style={styles.tipLink}>
+            <Text style={styles.tipLinkText}>More tutorials</Text>
+            <Ionicons name="arrow-forward" size={13} color={DS.colors.primary} />
+          </Pressable>
+        </Card>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.primaryBg },
+function Stat({
+  icon,
+  value,
+  label,
+  tone,
+}: {
+  icon: IconName;
+  value: string;
+  label: string;
+  tone?: keyof typeof DS.semantic;
+}) {
+  const color = tone ? DS.semantic[tone].solid : DS.colors.primary;
+  return (
+    <Card style={styles.statCard} accessibilityRole="summary" accessibilityLabel={`${value} ${label}`}>
+      <Ionicons name={icon} size={18} color={color} />
+      <Text style={[styles.statValue, { color }]} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+        {value}
+      </Text>
+      <Text style={styles.statLabel} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+        {label}
+      </Text>
+    </Card>
+  );
+}
 
-  heroBg: { width: '100%', height: 160 },
-  heroOverlay: {
-    flex: 1, backgroundColor: 'rgba(15,80,30,0.68)',
-    paddingHorizontal: 16, paddingBottom: 16, paddingTop: 12, justifyContent: 'flex-end',
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: DS.colors.background },
+
+
+  body: { padding: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.md },
+
+  statsRow: { flexDirection: 'row', gap: DS.spacing.sm },
+  statCard: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 12, paddingHorizontal: 8 },
+  statValue: {
+    fontSize: DS.typography.h2.fontSize,
+    fontFamily: DS.fontFamily.bold,
   },
-  backBtn: {
-    position: 'absolute', top: 12, left: 16,
-    width: 36, height: 36, borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center', justifyContent: 'center',
+  statLabel: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    textAlign: 'center',
   },
-  heroTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  heroTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  heroSub: { fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 3 },
 
-  body: { padding: 16, paddingBottom: 40 },
-
-  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  statCard: {
-    flex: 1, backgroundColor: '#fff', borderRadius: 14, padding: 12, alignItems: 'center',
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
-    borderWidth: 1, borderColor: Colors.gray[100],
+  alert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: DS.spacing.sm,
+    minHeight: DS.layout.touchTarget,
+    backgroundColor: DS.semantic.warning.bg,
+    borderRadius: DS.radius.md,
+    borderWidth: 1,
+    borderColor: DS.semantic.warning.border,
+    paddingHorizontal: 12,
   },
-  statIcon: { marginBottom: 6 },
-  statValue: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
-  statLabel: { fontSize: 10, color: Colors.textSecondary, marginTop: 3, textAlign: 'center' },
-
-  alertBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#fffbeb', borderRadius: 12, padding: 12,
-    borderWidth: 1, borderColor: '#fef3c7', marginBottom: 16,
+  alertText: {
+    flex: 1,
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.semantic.warning.fg,
   },
-  alertText: { flex: 1, fontSize: 13, fontWeight: '600', color: '#92400e' },
 
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary, marginBottom: 12 },
+  sectionTitle: {
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+    marginBottom: -DS.spacing.sm,
+  },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: DS.spacing.sm + 4 },
   moduleCard: {
-    width: '47%',
-    backgroundColor: '#fff', borderRadius: 18, padding: 16,
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
-    borderWidth: 1, borderColor: Colors.gray[100],
+    width: '47.5%',
+    flexGrow: 1,
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.lg,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
+    padding: DS.spacing.md,
+    gap: 4,
   },
-  moduleIcon: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  moduleLabel: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 3 },
-  moduleDesc: { fontSize: 11, color: Colors.textSecondary, lineHeight: 15, marginBottom: 10 },
-  moduleArrow: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start' },
+  modulePressed: { backgroundColor: DS.colors.surfaceMuted },
+  moduleIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: DS.radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  moduleLabel: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  moduleDesc: {
+    fontSize: DS.typography.caption.fontSize,
+    lineHeight: 16,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
 
-  tipCard: {
-    backgroundColor: Colors.primaryBg, borderRadius: 16, padding: 16,
-    borderWidth: 1.5, borderColor: Colors.primaryMid,
+  tip: { gap: DS.spacing.sm },
+  tipHeader: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm },
+  tipTitle: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
   },
-  tipHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  tipTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  tipBody: { fontSize: 13, color: Colors.textSecondary, lineHeight: 19, marginBottom: 12 },
-  tipBtn: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  tipBtnText: { fontSize: 13, fontWeight: '600', color: Colors.primary },
+  tipBody: {
+    fontSize: DS.typography.bodySm.fontSize,
+    lineHeight: 20,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+  tipLink: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 4 },
+  tipLinkText: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.primary,
+  },
 });

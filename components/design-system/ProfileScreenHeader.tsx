@@ -1,9 +1,12 @@
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DS } from '@/constants/design-system';
+import { ScreenImages } from '@/constants/images';
+import { topChrome } from '@/lib/platform-ui';
 
 interface ProfileScreenHeaderProps {
   label?: string;
@@ -12,8 +15,27 @@ interface ProfileScreenHeaderProps {
   roleLabel: string;
   avatar: ReactNode;
   stats: ReactNode;
+  /** Sits at the top-right — settings, or anything screen-specific. */
+  action?: ReactNode;
 }
 
+/**
+ * The profile header.
+ *
+ * It has been a gradient, then a plain white band. The gradient put the name,
+ * the role and three statistics on a shifting colour, so every one of them was
+ * set in translucent white and none held a fixed contrast ratio. The white band
+ * fixed that and read as a form.
+ *
+ * This keeps the fix and gets the warmth back a different way: a photograph
+ * behind a fixed scrim carries the top, and the statistics sit on their own
+ * solid card lifted over the seam. The numbers are the thing people come here
+ * to check, so they get a surface with predictable contrast rather than being
+ * laid over a picture.
+ *
+ * The avatar carries a ring so a dark profile photograph never blends into the
+ * scrim behind it.
+ */
 export function ProfileScreenHeader({
   label = 'Profile',
   name,
@@ -21,76 +43,126 @@ export function ProfileScreenHeader({
   roleLabel,
   avatar,
   stats,
+  action,
 }: ProfileScreenHeaderProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <LinearGradient
-      colors={[DS.colors.primaryLight, DS.colors.primary, DS.colors.primaryDark]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={[styles.gradient, { paddingTop: insets.top + 12 }]}>
-      <Text style={styles.label}>{label}</Text>
-      {avatar}
-      <Text style={styles.name}>{name}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
-      <View style={styles.rolePill}>
-        <Text style={styles.roleText}>{roleLabel}</Text>
+    <View style={styles.wrap}>
+      <View style={styles.photo}>
+        <Image
+          source={ScreenImages.community}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={280}
+          cachePolicy="memory-disk"
+        />
+        {/* 0.68: white clears 6.19:1 against the brightest frame. */}
+        <View style={styles.scrim} />
+
+        <View style={[styles.photoBody, { paddingTop: topChrome(insets.top) + DS.spacing.sm }]}>
+          <View style={styles.topRow}>
+            <Text style={styles.label}>{label.toUpperCase()}</Text>
+            {action}
+          </View>
+
+          <View style={styles.identity}>
+            <View style={styles.avatarRing}>{avatar}</View>
+
+            <Text style={styles.name} numberOfLines={1} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+              {name}
+            </Text>
+            <Text style={styles.subtitle} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+              {subtitle}
+            </Text>
+
+            <View style={styles.rolePill}>
+              <Ionicons name="person-circle-outline" size={12} color={DS.colors.primaryDark} />
+              <Text style={styles.roleText}>{roleLabel}</Text>
+            </View>
+          </View>
+        </View>
       </View>
-      <View style={styles.statsWrap}>{stats}</View>
-    </LinearGradient>
+
+      {/* Lifted over the seam, so the numbers sit on a known surface. */}
+      <View style={styles.statsCard}>{stats}</View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
+  wrap: { backgroundColor: DS.colors.background },
+
+  photo: {
+    backgroundColor: DS.colors.primaryDark,
+    borderBottomLeftRadius: DS.radius.xxl,
+    borderBottomRightRadius: DS.radius.xxl,
+    overflow: 'hidden',
+    paddingBottom: DS.spacing.xl + DS.spacing.md,
+  },
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.68)' },
+  photoBody: { paddingHorizontal: DS.spacing.lg },
+
+  topRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: DS.spacing.lg,
-    paddingBottom: DS.spacing.xl,
+    justifyContent: 'space-between',
+    minHeight: 32,
   },
   label: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.65)',
-    textTransform: 'uppercase',
+    fontSize: DS.typography.label.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textInverse,
     letterSpacing: 1,
-    alignSelf: 'flex-start',
-    marginBottom: DS.spacing.md,
-    fontFamily: 'PlusJakartaSans_600SemiBold',
+  },
+
+  identity: { alignItems: 'center', marginTop: DS.spacing.sm },
+  // Keeps a dark profile photograph from merging with the scrim behind it.
+  avatarRing: {
+    padding: 3,
+    borderRadius: DS.radius.full,
+    backgroundColor: 'rgba(255,255,255,0.28)',
   },
   name: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: DS.typography.h1.fontSize,
+    lineHeight: DS.typography.h1.lineHeight,
+    fontFamily: DS.fontFamily.display,
     color: DS.colors.textInverse,
     marginTop: DS.spacing.sm,
-    fontFamily: 'Fraunces_700Bold',
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 4,
-    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textInverse,
+    marginTop: 2,
+    textAlign: 'center',
   },
   rolePill: {
-    marginTop: 10,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: DS.spacing.sm,
+    backgroundColor: DS.colors.surface,
     borderRadius: DS.radius.full,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 5,
   },
   roleText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: DS.colors.textInverse,
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.primaryDark,
   },
-  statsWrap: {
-    width: '100%',
-    marginTop: DS.spacing.lg,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    borderRadius: DS.radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
+
+  statsCard: {
+    marginTop: -DS.spacing.xl,
+    marginHorizontal: DS.spacing.md,
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.xl,
+    borderWidth: DS.layout.hairline,
+    borderColor: DS.colors.border,
     paddingVertical: DS.spacing.md,
     paddingHorizontal: DS.spacing.sm,
+    ...DS.shadow.card,
   },
 });

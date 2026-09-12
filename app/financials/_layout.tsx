@@ -1,14 +1,11 @@
 import { Stack } from 'expo-router';
 
+import { stackScreenOptions } from '@/lib/navigation';
+
 export default function FinancialsLayout() {
   return (
     <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: '#f0fdf4' },
-        headerTintColor: '#14532d',
-        headerTitleStyle: { fontWeight: '700' },
-        headerBackTitle: 'Back',
-      }}>
+      screenOptions={stackScreenOptions}>
       <Stack.Screen name="index" options={{ title: 'Financials', headerShown: false }} />
       <Stack.Screen name="income" options={{ title: 'Income' }} />
       <Stack.Screen name="expense" options={{ title: 'Expenses' }} />

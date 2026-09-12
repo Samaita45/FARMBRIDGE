@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 
 interface ProfileMenuRowProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -18,7 +18,7 @@ export function ProfileMenuRow({ icon, label, subtitle, onPress, danger, badge }
       onPress={onPress}
       style={({ pressed }) => [s.row, pressed && s.rowPressed]}>
       <View style={[s.iconBox, danger && s.iconBoxDanger]}>
-        <Ionicons name={icon} size={20} color={danger ? Colors.error : Colors.primary} />
+        <Ionicons name={icon} size={20} color={danger ? DS.semantic.danger.solid : DS.colors.primary} />
       </View>
       <View style={s.textBlock}>
         <Text style={[s.label, danger && s.labelDanger]}>{label}</Text>
@@ -27,7 +27,7 @@ export function ProfileMenuRow({ icon, label, subtitle, onPress, danger, badge }
       {badge ? (
         <View style={s.badge}><Text style={s.badgeText}>{badge}</Text></View>
       ) : null}
-      {!danger && <Ionicons name="chevron-forward" size={16} color={Colors.gray[400]} />}
+      {!danger && <Ionicons name="chevron-forward" size={16} color={DS.colors.textFaint} />}
     </Pressable>
   );
 }
@@ -37,24 +37,24 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#fff',
+    backgroundColor: DS.colors.surface,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.gray[100],
+    borderBottomColor: DS.colors.borderLight,
   },
-  rowPressed: { backgroundColor: Colors.gray[100] },
+  rowPressed: { backgroundColor: DS.colors.borderLight },
   iconBox: {
     width: 40, height: 40,
     borderRadius: 12,
-    backgroundColor: Colors.primaryBg,
+    backgroundColor: DS.colors.primaryBg,
     alignItems: 'center', justifyContent: 'center',
   },
-  iconBoxDanger: { backgroundColor: '#fee2e2' },
+  iconBoxDanger: { backgroundColor: DS.semantic.danger.bg },
   textBlock: { flex: 1 },
-  label: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
-  labelDanger: { color: Colors.error },
-  subtitle: { fontSize: 12, color: Colors.textSecondary, marginTop: 1 },
-  badge: { backgroundColor: Colors.primary, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
-  badgeText: { fontSize: 11, fontWeight: '700', color: '#fff' },
+  label: { fontSize: 14, fontWeight: '600', color: DS.colors.text },
+  labelDanger: { color: DS.semantic.danger.solid },
+  subtitle: { fontSize: 12, color: DS.colors.textMuted, marginTop: 1 },
+  badge: { backgroundColor: DS.colors.primary, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+  badgeText: { fontSize: 11, fontWeight: '700', color: DS.colors.surface },
 });

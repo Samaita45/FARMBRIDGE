@@ -1,9 +1,8 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
-import { Premium } from '@/constants/premium-home';
+import { DS } from '@/constants/design-system';
 import { getCropImage, getDemandBadge } from '@/utils/crop-emoji';
 import { asHref } from '@/lib/href';
 import type { Crop } from '@/types';
@@ -23,10 +22,6 @@ export function CropTrendCard({ crop }: CropTrendCardProps) {
       accessibilityLabel={`${crop.name}, $${crop.currentPriceUSD} per kg`}>
       <View style={s.imageHero}>
         <Image source={getCropImage(crop.id, crop.category)} style={s.cropImage} resizeMode="cover" />
-        <LinearGradient
-          colors={['transparent', 'rgba(15,23,42,0.35)']}
-          style={s.imageShade}
-        />
         <View style={[s.ribbon, { backgroundColor: badge.bg }]}>
           <Text style={[s.ribbonText, { color: badge.color }]}>{badge.label}</Text>
         </View>
@@ -41,13 +36,13 @@ export function CropTrendCard({ crop }: CropTrendCardProps) {
           <Text style={s.perkg}>/kg</Text>
         </Text>
         <Text style={s.priceZWG}>ZWG {crop.currentPriceZWG.toLocaleString()}</Text>
-        <View style={[s.changePill, { backgroundColor: up ? '#DCFCE7' : '#FEE2E2' }]}>
+        <View style={[s.changePill, { backgroundColor: up ? DS.semantic.success.bg : DS.semantic.danger.bg }]}>
           <Ionicons
             name={up ? 'arrow-up' : 'arrow-down'}
             size={12}
-            color={up ? Premium.green : Premium.red}
+            color={up ? DS.semantic.success.fg : DS.semantic.danger.solid}
           />
-          <Text style={[s.changeText, { color: up ? Premium.green : Premium.red }]}>
+          <Text style={[s.changeText, { color: up ? DS.semantic.success.fg : DS.semantic.danger.solid }]}>
             {Math.abs(crop.priceChangePercent)}%
           </Text>
         </View>
@@ -60,23 +55,16 @@ const s = StyleSheet.create({
   card: {
     width: 172,
     marginRight: 16,
-    backgroundColor: Premium.surface,
-    borderRadius: Premium.radiusLg,
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.xl,
     overflow: 'hidden',
-    ...Premium.shadow,
+    ...DS.shadow.card,
     borderWidth: 1,
-    borderColor: 'rgba(226,232,240,0.9)',
+    borderColor: DS.colors.border,
   },
   cardPressed: { transform: [{ scale: 0.98 }], opacity: 0.95 },
   imageHero: { height: 112, position: 'relative' },
   cropImage: { width: '100%', height: '100%' },
-  imageShade: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 48,
-  },
   ribbon: {
     position: 'absolute',
     top: 12,
@@ -84,26 +72,24 @@ const s = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.35)',
   },
   ribbonText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.6 },
   body: { padding: 16 },
   name: {
     fontSize: 16,
     fontWeight: '800',
-    color: Premium.text,
+    color: DS.colors.text,
     marginBottom: 8,
     letterSpacing: -0.2,
   },
   priceUSD: {
     fontSize: 22,
     fontWeight: '800',
-    color: Premium.primary,
+    color: DS.colors.primary,
     letterSpacing: -0.5,
   },
-  perkg: { fontSize: 13, fontWeight: '500', color: Premium.textMuted },
-  priceZWG: { fontSize: 12, color: Premium.textMuted, marginTop: 2, marginBottom: 12 },
+  perkg: { fontSize: 13, fontWeight: '500', color: DS.colors.textMuted },
+  priceZWG: { fontSize: 12, color: DS.colors.textMuted, marginTop: 2, marginBottom: 12 },
   changePill: {
     flexDirection: 'row',
     alignItems: 'center',

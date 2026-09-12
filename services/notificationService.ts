@@ -89,7 +89,7 @@ export async function scheduleTaskNotification(task: FarmTask): Promise<string |
   const triggers: { date: Date; title: string }[] = [];
 
   if (dayBefore.getTime() > now) {
-    triggers.push({ date: dayBefore, title: `Tomorrow: ${task.title} 💧` });
+    triggers.push({ date: dayBefore, title: `Tomorrow: ${task.title}` });
   }
   if (due.getTime() > now) {
     triggers.push({ date: due, title: `Today's Task: ${task.title}` });
@@ -174,7 +174,7 @@ export async function rescheduleDailyDigestNotification(taskCountToday: number):
       : "Open FarmBridge for today's tasks and market tips.";
 
   const id = await Notifications.scheduleNotificationAsync({
-    content: { title: `🌱 ${APP_NAME}`, body, data: { href: '/(tabs)' } },
+    content: { title: APP_NAME, body, data: { href: '/(tabs)' } },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: when,

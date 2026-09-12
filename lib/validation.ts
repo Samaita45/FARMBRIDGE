@@ -9,7 +9,9 @@ export const registerSchema = z
       .string()
       .min(9, 'Enter a valid Zimbabwe phone number')
       .regex(/^(\+?263|0)?[7][1-9][0-9]{7}$/, 'Enter a valid Zimbabwe mobile number'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    // Matches the server's minimum. A shorter rule here would let someone fill
+    // the form, submit, and only then be told the password is too short.
+    password: z.string().min(12, 'Use at least 12 characters'),
     confirmPassword: z.string(),
     role: z.enum(['farmer', 'buyer', 'both'], { required_error: 'Select your role' }),
     province: z.string().min(1, 'Select your province'),

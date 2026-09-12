@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useToast } from '@/components/ui/toast-provider';
+import { DS } from '@/constants/design-system';
 import { MARKET_PRODUCTS } from '@/constants/zimbabwe-data';
 import { getOrders } from '@/services/orderService';
 import { useAuthStore } from '@/stores/authStore';
@@ -22,14 +24,22 @@ export default function OrdersScreen() {
   const { showToast } = useToast();
   const [orders, setOrders] = useState<MarketOrder[]>([]);
 
-  const load = useCallback(async () => {
-    if (!user?.id) return;
-    setOrders(await getOrders(user.id));
-  }, [user?.id]);
+  // Hoisted so the declared and inferred dependencies are the same value: with
+  // `user?.id` in the array the compiler infers the whole `user` object.
+  const userId = user?.id;
 
+  // Fetched in the effect with a cancellation guard, so a slow read cannot
+  // write state after the screen has gone.
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!userId) return;
+    let cancelled = false;
+    void getOrders(userId).then((rows) => {
+      if (!cancelled) setOrders(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const reorder = (order: MarketOrder) => {
     let added = 0;
@@ -46,7 +56,7 @@ export default function OrdersScreen() {
   if (orders.length === 0) {
     return (
       <View className="flex-1 items-center justify-center bg-surface p-8">
-        <Text className="text-4xl">📦</Text>
+        <Ionicons name="cube-outline" size={40} color={DS.colors.textFaint} />
         <Text className="mt-2 font-sans text-gray-500">No orders yet</Text>
         <Text className="mt-1 text-center font-sans text-sm text-gray-400">
           Browse the marketplace to place your first order

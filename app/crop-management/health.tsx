@@ -1,26 +1,33 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { Image } from 'expo-image';
+import { useCallback, useMemo, useState } from 'react';
 import {
-  Image,
+  FlatList,
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DiagnosisResultCard } from '@/components/crop-health/diagnosis-result-card';
 import { ScanOverlay } from '@/components/crop-health/scan-overlay';
-import { ModuleHeader } from '@/components/design-system';
-import Colors from '@/constants/colors';
+import { Button, ButtonRow, Card, EmptyState, IconButton, Input } from '@/components/design-system';
+import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
 import { CROP_DISEASES, type CropDisease } from '@/constants/zimbabwe-data';
 import { useCropPlans } from '@/hooks/useCropPlans';
-import { getCropIcon } from '@/utils/crop-emoji';
 
+/**
+ * Symptom-based diagnosis against the offline disease library.
+ *
+ * This is deliberately not described as AI: it matches the symptoms the farmer
+ * selects against a curated table. The photo is captured and kept for the
+ * farmer's own record and for the image model that will be wired in behind a
+ * DiagnosisService later.
+ */
 function healthPercent(disease: CropDisease, matchedSymptoms: boolean): number {
   const base = disease.severity === 'high' ? 34 : disease.severity === 'medium' ? 52 : 71;
   return Math.min(95, matchedSymptoms ? base + 14 : base);
@@ -28,6 +35,7 @@ function healthPercent(disease: CropDisease, matchedSymptoms: boolean): number {
 
 export default function CropHealthScreen() {
   const { plans } = useCropPlans();
+  const { showToast } = useToast();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -39,26 +47,48 @@ export default function CropHealthScreen() {
   const selectedPlan = plans.find((p) => p.id === selectedPlanId) ?? plans[0];
   const cropId = selectedPlan?.cropId;
 
-  const relevantDiseases = useMemo(() => {
-    if (!cropId) return CROP_DISEASES;
-    return CROP_DISEASES.filter((d) => d.affectedCrops.includes(cropId));
-  }, [cropId]);
+  const relevantDiseases = useMemo(
+    () => (cropId ? CROP_DISEASES.filter((d) => d.affectedCrops.includes(cropId)) : CROP_DISEASES),
+    [cropId]
+  );
 
   const libraryFiltered = useMemo(() => {
-    const q = search.toLowerCase();
+    const q = search.trim().toLowerCase();
+    if (!q) return CROP_DISEASES;
     return CROP_DISEASES.filter(
       (d) => d.name.toLowerCase().includes(q) || d.affectedCrops.some((c) => c.includes(q))
     );
   }, [search]);
 
+  const allSymptoms = useMemo(
+    () => [...new Set(relevantDiseases.flatMap((d) => d.symptoms))],
+    [relevantDiseases]
+  );
+
   const pickPhoto = async (source: 'camera' | 'library') => {
     const ImagePicker = await import('expo-image-picker').catch(() => null);
-    if (!ImagePicker) return;
+    if (!ImagePicker) {
+      showToast('Photo capture is unavailable on this device', 'error');
+      return;
+    }
+
     const perm =
       source === 'camera'
         ? await ImagePicker.requestCameraPermissionsAsync()
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (perm.status !== 'granted') return;
+
+    // Previously this returned silently, so a denied permission looked like a
+    // broken button.
+    if (perm.status !== 'granted') {
+      showToast(
+        source === 'camera'
+          ? 'Allow camera access in Settings to scan a crop'
+          : 'Allow photo access in Settings to choose an image',
+        'warning'
+      );
+      return;
+    }
+
     const result =
       source === 'camera'
         ? await ImagePicker.launchCameraAsync({ quality: 0.85, allowsEditing: true, aspect: [4, 3] })
@@ -68,6 +98,7 @@ export default function CropHealthScreen() {
             allowsEditing: true,
             aspect: [4, 3],
           });
+
     if (!result.canceled && result.assets?.[0]) {
       setPhotoUri(result.assets[0].uri);
       setDiagnosis(null);
@@ -76,282 +107,398 @@ export default function CropHealthScreen() {
   };
 
   const toggleSymptom = (symptom: string) =>
-    setSelectedSymptoms((prev) => prev.includes(symptom) ? prev.filter((s) => s !== symptom) : [...prev, symptom]);
+    setSelectedSymptoms((prev) =>
+      prev.includes(symptom) ? prev.filter((s) => s !== symptom) : [...prev, symptom]
+    );
 
   const runDiagnosis = () => {
     setScanning(true);
     setDiagnosis(null);
     setTimeout(() => {
       const match = relevantDiseases.find((d) =>
-        d.symptoms.some((sym) => selectedSymptoms.includes(sym)),
+        d.symptoms.some((sym) => selectedSymptoms.includes(sym))
       );
       setDiagnosis(match ?? relevantDiseases[0] ?? null);
       setScanning(false);
-    }, 2200);
+    }, 1600);
   };
 
-  const allSymptoms = [...new Set(relevantDiseases.flatMap((d) => d.symptoms))];
+  const renderDisease = useCallback(
+    ({ item }: { item: CropDisease }) => (
+      <Pressable
+        onPress={() => {
+          setDiagnosis(item);
+          setLibraryOpen(false);
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.name}. Affects ${item.affectedCrops.join(', ')}.`}
+        style={({ pressed }) => [styles.diseaseCard, pressed && styles.diseaseCardPressed]}>
+        <Text style={styles.diseaseName}>{item.name}</Text>
+        <Text style={styles.diseaseAffects}>Affects {item.affectedCrops.join(', ')}</Text>
+        <Text style={styles.diseaseSymptom} numberOfLines={2}>
+          {item.symptoms[0]}
+        </Text>
+      </Pressable>
+    ),
+    []
+  );
 
   return (
-    <SafeAreaView style={s.root} edges={['top']}>
+    <SafeAreaView style={styles.root} edges={['bottom']}>
+      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        {plans.length > 0 ? (
+          <View>
+            <Text style={styles.sectionTitle}>My crops</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipsRow}>
+              {plans.map((plan) => {
+                const active = selectedPlan?.id === plan.id;
+                return (
+                  <Pressable
+                    key={plan.id}
+                    onPress={() => setSelectedPlanId(plan.id)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={`Diagnose ${plan.cropName}`}
+                    style={[styles.cropChip, active && styles.cropChipActive]}>
+                    <Ionicons
+                      name="leaf-outline"
+                      size={13}
+                      color={active ? DS.colors.textInverse : DS.colors.primary}
+                    />
+                    <Text style={[styles.cropChipText, active && styles.cropChipTextActive]}>
+                      {plan.cropName}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        ) : null}
 
-      <ModuleHeader
-        title="Crop Health"
-        subtitle="AI-assisted disease scan & treatment"
-        icon="medkit"
-      />
-
-      <ScrollView contentContainerStyle={s.body} showsVerticalScrollIndicator={false}>
-
-        {/* My crops chips */}
-        <Text style={s.sectionTitle}>My Crops</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipsRow}>
-          {plans.length === 0 ? (
-            <View style={s.emptyChip}>
-              <Text style={s.emptyChipText}>Add a crop plan first</Text>
-            </View>
-          ) : plans.map((plan) => {
-            const active = selectedPlan?.id === plan.id;
-            return (
-              <Pressable
-                key={plan.id}
-                onPress={() => setSelectedPlanId(plan.id)}
-                style={[s.cropChip, active && s.cropChipActive]}>
-                <Ionicons name={getCropIcon() as keyof typeof Ionicons.glyphMap} size={13} color={active ? '#fff' : Colors.primary} />
-                <Text style={[s.cropChipText, active && s.cropChipTextActive]}>
-                  {plan.cropName}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        {/* Weather alert */}
-        <View style={s.alertCard}>
-          <Ionicons name="partly-sunny" size={18} color="#f59e0b" />
-          <View style={s.alertBody}>
-            <Text style={s.alertTitle}>Weather alert</Text>
-            <Text style={s.alertSub}>
-              High humidity today — watch for fungal diseases in your {selectedPlan?.cropName ?? 'crops'}.
+        <View style={styles.alert} accessibilityRole="alert">
+          <Ionicons name="partly-sunny-outline" size={18} color={DS.semantic.warning.fg} />
+          <View style={styles.alertBody}>
+            <Text style={styles.alertTitle}>Weather alert</Text>
+            <Text style={styles.alertText}>
+              High humidity today — watch for fungal disease in your{' '}
+              {selectedPlan?.cropName ?? 'crops'}.
             </Text>
           </View>
         </View>
 
-        {/* Photo diagnosis */}
-        <Text style={s.sectionTitle}>Diagnose Problem</Text>
-        <View style={s.photoPressable}>
-          <Pressable onPress={() => pickPhoto('camera')} style={s.photoTap}>
+        <Text style={styles.sectionTitle}>Diagnose a problem</Text>
+
+        <View style={styles.photoBlock}>
+          <Pressable
+            onPress={() => void pickPhoto('camera')}
+            accessibilityRole="imagebutton"
+            accessibilityLabel={photoUri ? 'Replace the crop photo' : 'Take a photo of the crop'}
+            style={styles.photoTap}>
             {photoUri ? (
-              <Image source={{ uri: photoUri }} style={s.photoImage} resizeMode="cover" />
+              <Image
+                source={{ uri: photoUri }}
+                style={styles.photoImage}
+                contentFit="cover"
+                transition={180}
+              />
             ) : (
-              <View style={s.photoPlaceholder}>
-                <View style={s.cameraIconWrap}>
-                  <Ionicons name="scan" size={32} color={DS.colors.primary} />
+              <View style={styles.photoPlaceholder}>
+                <View style={styles.photoIcon}>
+                  <Ionicons name="scan-outline" size={26} color={DS.colors.primary} />
                 </View>
-                <Text style={s.photoTitle}>Scan crop</Text>
-                <Text style={s.photoHint}>Camera or gallery — point at affected leaves</Text>
+                <Text style={styles.photoTitle}>Photograph the affected area</Text>
+                <Text style={styles.photoHint}>
+                  Get close to the leaves showing symptoms, in good light
+                </Text>
               </View>
             )}
             <ScanOverlay active={scanning} />
           </Pressable>
-          <View style={s.photoActions}>
-            <Pressable onPress={() => pickPhoto('camera')} style={s.photoActionBtn}>
-              <Ionicons name="camera" size={16} color={DS.colors.primary} />
-              <Text style={s.photoActionText}>Camera</Text>
-            </Pressable>
-            <Pressable onPress={() => pickPhoto('library')} style={s.photoActionBtn}>
-              <Ionicons name="images" size={16} color={DS.colors.primary} />
-              <Text style={s.photoActionText}>Gallery</Text>
-            </Pressable>
-          </View>
+
+          <ButtonRow>
+            <Button
+              title="Camera"
+              variant="outline"
+              size="sm"
+              icon="camera-outline"
+              onPress={() => void pickPhoto('camera')}
+              style={styles.flex}
+            />
+            <Button
+              title="Gallery"
+              variant="outline"
+              size="sm"
+              icon="images-outline"
+              onPress={() => void pickPhoto('library')}
+              style={styles.flex}
+            />
+          </ButtonRow>
         </View>
 
-        {photoUri && (
-          <View style={s.symptomsCard}>
-            <Text style={s.symptomsTitle}>Select matching symptoms</Text>
-            <View style={s.symptomsList}>
+        {photoUri ? (
+          <Card style={styles.symptomsCard}>
+            <Text style={styles.symptomsTitle}>Which symptoms do you see?</Text>
+            <View style={styles.symptomsList}>
               {allSymptoms.map((symptom) => {
                 const active = selectedSymptoms.includes(symptom);
                 return (
                   <Pressable
                     key={symptom}
                     onPress={() => toggleSymptom(symptom)}
-                    style={[s.symptomChip, active && s.symptomChipActive]}>
-                    {active && <Ionicons name="checkmark" size={12} color="#fff" />}
-                    <Text style={[s.symptomText, active && s.symptomTextActive]}>{symptom}</Text>
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: active }}
+                    accessibilityLabel={symptom}
+                    style={[styles.symptomChip, active && styles.symptomChipActive]}>
+                    {active ? (
+                      <Ionicons name="checkmark" size={12} color={DS.colors.textInverse} />
+                    ) : null}
+                    <Text style={[styles.symptomText, active && styles.symptomTextActive]}>
+                      {symptom}
+                    </Text>
                   </Pressable>
                 );
               })}
             </View>
-            <Pressable onPress={runDiagnosis} style={s.diagBtn}>
-              <Ionicons name="flask" size={16} color="#fff" />
-              <Text style={s.diagBtnText}>Get Diagnosis</Text>
-            </Pressable>
-          </View>
-        )}
+            <Button
+              title={scanning ? 'Checking symptoms' : 'Get diagnosis'}
+              icon="flask-outline"
+              loading={scanning}
+              disabled={selectedSymptoms.length === 0}
+              onPress={runDiagnosis}
+              accessibilityHint={
+                selectedSymptoms.length === 0 ? 'Select at least one symptom first' : undefined
+              }
+            />
+          </Card>
+        ) : null}
 
-        {/* Diagnosis result */}
         {diagnosis && !scanning ? (
           <DiagnosisResultCard
             disease={diagnosis}
             healthPercent={healthPercent(
               diagnosis,
-              diagnosis.symptoms.some((sym) => selectedSymptoms.includes(sym)),
+              diagnosis.symptoms.some((sym) => selectedSymptoms.includes(sym))
             )}
             cropName={selectedPlan?.cropName}
           />
         ) : null}
 
-        {/* Disease library button */}
-        <Pressable onPress={() => setLibraryOpen(true)} style={s.libraryBtn}>
-          <Ionicons name="library-outline" size={18} color={Colors.primary} />
-          <Text style={s.libraryBtnText}>Disease Library ({CROP_DISEASES.length} diseases)</Text>
-          <Ionicons name="chevron-forward" size={16} color={Colors.primary} />
-        </Pressable>
+        <Button
+          title={`Disease library · ${CROP_DISEASES.length} entries`}
+          variant="outline"
+          icon="library-outline"
+          onPress={() => setLibraryOpen(true)}
+        />
       </ScrollView>
 
-      {/* Disease library modal */}
-      <Modal visible={libraryOpen} animationType="slide">
-        <SafeAreaView style={s.modal}>
-          <View style={s.modalHeader}>
-            <Text style={s.modalTitle}>Disease Library</Text>
-            <Pressable onPress={() => setLibraryOpen(false)} style={s.modalCloseBtn}>
-              <Ionicons name="close" size={20} color={Colors.textPrimary} />
-            </Pressable>
-          </View>
-          <View style={s.modalSearch}>
-            <Ionicons name="search" size={16} color={Colors.gray[400]} />
-            <TextInput
-              style={s.modalSearchInput}
-              placeholder="Search diseases or crops..."
-              value={search}
-              onChangeText={setSearch}
-              placeholderTextColor={Colors.gray[400]}
+      <Modal
+        visible={libraryOpen}
+        animationType="slide"
+        onRequestClose={() => setLibraryOpen(false)}>
+        <SafeAreaView style={styles.modal}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Disease library</Text>
+            <IconButton
+              icon="close"
+              accessibilityLabel="Close the disease library"
+              variant="outline"
+              size="sm"
+              onPress={() => setLibraryOpen(false)}
             />
           </View>
-          <ScrollView contentContainerStyle={s.modalBody}>
-            {libraryFiltered.map((d) => (
-              <Pressable
-                key={d.id}
-                onPress={() => { setDiagnosis(d); setLibraryOpen(false); }}
-                style={s.diseaseCard}>
-                <Text style={s.diseaseName}>{d.name}</Text>
-                <Text style={s.diseaseAffects}>Affects: {d.affectedCrops.join(', ')}</Text>
-                <Text style={s.diseaseSymptom} numberOfLines={2}>{d.symptoms[0]}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+
+          <View style={styles.modalSearch}>
+            <Input
+              icon="search-outline"
+              placeholder="Search diseases or crops"
+              value={search}
+              onChangeText={setSearch}
+              autoCorrect={false}
+              returnKeyType="search"
+            />
+          </View>
+
+          <FlatList
+            data={libraryFiltered}
+            keyExtractor={(item) => item.id}
+            renderItem={renderDisease}
+            contentContainerStyle={[
+              styles.modalList,
+              libraryFiltered.length === 0 && styles.modalListEmpty,
+            ]}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              <EmptyState
+                icon="search-outline"
+                title="No matches"
+                description={`Nothing in the library matches “${search.trim()}”.`}
+              />
+            }
+          />
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
+const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: DS.colors.background },
+  body: { padding: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.md },
+  flex: { flex: 1 },
 
-  body: { padding: 16, paddingBottom: 40, gap: 14 },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-
-  chipsRow: { gap: 8, paddingRight: 4 },
-  emptyChip: { backgroundColor: Colors.gray[100], borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
-  emptyChipText: { fontSize: 12, color: Colors.textSecondary },
-  cropChip: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9, borderWidth: 1, borderColor: Colors.gray[200] },
-  cropChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  cropChipText: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
-  cropChipTextActive: { color: '#fff' },
-
-  alertCard: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 12,
-    backgroundColor: '#fffbeb', borderRadius: 14, padding: 14,
-    borderWidth: 1, borderColor: '#fef3c7',
+  sectionTitle: {
+    fontSize: DS.typography.h3.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+    marginBottom: DS.spacing.sm,
   },
-  alertBody: { flex: 1 },
-  alertTitle: { fontSize: 13, fontWeight: '700', color: '#92400e' },
-  alertSub: { fontSize: 12, color: '#a16207', marginTop: 2, lineHeight: 17 },
 
-  photoPressable: { gap: 10 },
-  photoTap: {
-    backgroundColor: '#fff',
-    borderRadius: DS.radius.lg,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: DS.colors.primaryMid,
-    borderStyle: 'dashed',
-    minHeight: 160,
-  },
-  photoActions: { flexDirection: 'row', gap: 10 },
-  photoActionBtn: {
-    flex: 1,
+  chipsRow: { gap: DS.spacing.sm, paddingRight: DS.spacing.xs },
+  cropChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#fff',
-    borderRadius: DS.radius.md,
-    paddingVertical: 10,
+    gap: 5,
+    minHeight: 38,
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.sm,
+    paddingHorizontal: 14,
     borderWidth: 1,
     borderColor: DS.colors.border,
   },
-  photoActionText: { fontSize: 13, fontWeight: '700', color: DS.colors.primary },
+  cropChipActive: { backgroundColor: DS.colors.primary, borderColor: DS.colors.primary },
+  cropChipText: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  cropChipTextActive: { color: DS.colors.textInverse },
+
+  alert: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: DS.spacing.sm + 4,
+    backgroundColor: DS.semantic.warning.bg,
+    borderRadius: DS.radius.md,
+    borderWidth: 1,
+    borderColor: DS.semantic.warning.border,
+    padding: DS.spacing.sm + 4,
+  },
+  alertBody: { flex: 1, gap: 2 },
+  alertTitle: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.semantic.warning.fg,
+  },
+  alertText: {
+    fontSize: DS.typography.caption.fontSize,
+    lineHeight: 17,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.semantic.warning.fg,
+  },
+
+  photoBlock: { gap: DS.spacing.sm + 2 },
+  photoTap: {
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: DS.colors.border,
+    borderStyle: 'dashed',
+    minHeight: 168,
+    justifyContent: 'center',
+  },
   photoImage: { width: '100%', height: 200 },
-  photoPlaceholder: { alignItems: 'center', justifyContent: 'center', paddingVertical: 32, gap: 8 },
-  cameraIconWrap: { width: 64, height: 64, borderRadius: 20, backgroundColor: Colors.primaryBg, alignItems: 'center', justifyContent: 'center' },
-  photoTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  photoHint: { fontSize: 12, color: Colors.textSecondary, textAlign: 'center', paddingHorizontal: 20 },
+  photoPlaceholder: { alignItems: 'center', paddingVertical: 32, gap: 8 },
+  photoIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: DS.radius.lg,
+    backgroundColor: DS.colors.primaryBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoTitle: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  photoHint: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    textAlign: 'center',
+    paddingHorizontal: DS.spacing.lg,
+  },
 
-  symptomsCard: { backgroundColor: '#fff', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: Colors.gray[100] },
-  symptomsTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 10 },
-  symptomsList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
+  symptomsCard: { gap: DS.spacing.sm + 4 },
+  symptomsTitle: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  symptomsList: { flexDirection: 'row', flexWrap: 'wrap', gap: DS.spacing.sm },
   symptomChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: Colors.gray[100], borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: Colors.gray[200],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    minHeight: 36,
+    paddingHorizontal: 12,
+    backgroundColor: DS.colors.surfaceMuted,
+    borderRadius: DS.radius.sm,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
   },
-  symptomChipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  symptomText: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
-  symptomTextActive: { color: '#fff' },
-  diagBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 12 },
-  diagBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  symptomChipActive: { backgroundColor: DS.colors.primary, borderColor: DS.colors.primary },
+  symptomText: {
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
+  symptomTextActive: { color: DS.colors.textInverse },
 
-  resultCard: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#fca5a5',
-    borderLeftWidth: 4, borderLeftColor: Colors.error,
+  modal: { flex: 1, backgroundColor: DS.colors.background },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: DS.spacing.md,
+    paddingVertical: DS.spacing.sm + 4,
   },
-  resultHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  resultIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#fee2e2', alignItems: 'center', justifyContent: 'center' },
-  resultHeaderText: { flex: 1 },
-  resultTitle: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
-  resultSeverity: { fontSize: 12, color: Colors.error, fontWeight: '600', marginTop: 2 },
-  resultSection: { marginTop: 10 },
-  resultSectionTitle: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
-  resultSectionBody: { fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
+  modalTitle: {
+    fontSize: DS.typography.h2.fontSize,
+    fontFamily: DS.fontFamily.bold,
+    color: DS.colors.text,
+  },
+  modalSearch: { paddingHorizontal: DS.spacing.md, paddingBottom: DS.spacing.sm + 4 },
+  modalList: { paddingHorizontal: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.sm + 2 },
+  modalListEmpty: { flexGrow: 1, justifyContent: 'center' },
 
-  libraryBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#fff', borderRadius: 14, padding: 14,
-    borderWidth: 1, borderColor: Colors.primaryMid,
-  },
-  libraryBtnText: { flex: 1, fontSize: 13, fontWeight: '700', color: Colors.primary },
-
-  modal: { flex: 1, backgroundColor: Colors.primaryBg },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
-  modalCloseBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: Colors.gray[100], alignItems: 'center', justifyContent: 'center' },
-  modalSearch: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    marginHorizontal: 16, marginBottom: 12,
-    backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
-    borderWidth: 1, borderColor: Colors.gray[200],
-  },
-  modalSearchInput: { flex: 1, fontSize: 14, color: Colors.textPrimary },
-  modalBody: { paddingHorizontal: 16, paddingBottom: 40, gap: 10 },
   diseaseCard: {
-    backgroundColor: '#fff', borderRadius: 14, padding: 14,
-    borderWidth: 1, borderColor: Colors.gray[100],
-    shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1,
+    backgroundColor: DS.colors.surface,
+    borderRadius: DS.radius.lg,
+    borderWidth: 1,
+    borderColor: DS.colors.border,
+    padding: DS.spacing.sm + 4,
+    gap: 3,
   },
-  diseaseName: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  diseaseAffects: { fontSize: 11, color: Colors.textSecondary, marginTop: 3 },
-  diseaseSymptom: { fontSize: 12, color: Colors.textSecondary, marginTop: 4, lineHeight: 16 },
+  diseaseCardPressed: { backgroundColor: DS.colors.surfaceMuted },
+  diseaseName: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.text,
+  },
+  diseaseAffects: {
+    fontSize: 11,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textSoft,
+  },
+  diseaseSymptom: {
+    fontSize: DS.typography.caption.fontSize,
+    lineHeight: 16,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+  },
 });

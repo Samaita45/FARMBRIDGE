@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { useToast } from '@/components/ui/toast-provider';
@@ -9,6 +9,7 @@ import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useCommunityStore, type CommunityState } from '@/stores/communityStore';
 import type { PostCategory, UserRoleBadge } from '@/types/community';
 import { POST_CATEGORY_LABELS } from '@/types/community';
+import { Toggle } from '@/components/design-system';
 
 const CATEGORIES: PostCategory[] = ['question', 'tip', 'success', 'market', 'weather', 'general'];
 
@@ -100,7 +101,11 @@ export default function CreatePostScreen() {
 
       <View className="mt-4 flex-row items-center justify-between rounded-xl bg-white px-4 py-3">
         <Text className="font-sans text-dark">Post anonymously</Text>
-        <Switch value={anonymous} onValueChange={setAnonymous} trackColor={{ true: '#22c55e' }} />
+        <Toggle
+          value={anonymous}
+          onValueChange={setAnonymous}
+          accessibilityLabel="Post anonymously"
+        />
       </View>
 
       <View className="mt-6">

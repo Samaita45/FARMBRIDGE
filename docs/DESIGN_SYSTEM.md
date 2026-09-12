@@ -1,47 +1,106 @@
 # FarmBridge Design System
 
-## Tokens (`constants/design-system.ts`)
+## Where the values live
 
-| Token | Value |
-|-------|--------|
-| Primary | `#2563EB` |
-| Accent | `#16A34A` |
-| Background | `#F8FAFC` |
-| Radius (cards) | `22–28px` |
+`constants/design-tokens.js` is the single source of truth. It is plain
+CommonJS because two consumers read it:
 
-Import: `import { DS } from '@/constants/design-system'`
+- `constants/design-system.ts` — the typed `DS` object every screen should use
+- `tailwind.config.js` — so NativeWind classes resolve to the same palette
 
-Legacy alias: `Premium` (re-exported from same file)
+There is no second palette. Do not add one.
 
-## Components (`components/design-system/`)
+```ts
+import { DS } from '@/constants/design-system';
+```
 
-- **AppText** — typography variants
-- **GlassCard** — elevated surfaces, optional iOS blur
-- **AnimatedPressable** — Moti scale + haptics
-- **FadeInView** — staggered entrance
-- **EmptyState** — consistent empty UX
-- **SectionHeader** — module section titles
-- **ModuleHeader** — gradient screen headers
+## Token groups
 
-## Screen shell
+| Group | Contents |
+|-------|----------|
+| `DS.colors` | Brand (blue), accent (green), neutrals (slate), text roles, borders, surfaces |
+| `DS.semantic` | `success` · `warning` · `danger` · `info` · `neutral`, each with `fg` / `bg` / `border` / `solid` |
+| `DS.spacing` | `xs 4` · `sm 8` · `md 16` · `lg 24` · `xl 32` · `xxl 48` |
+| `DS.radius` | `xs 4` · `sm 6` · `md 8` · `lg 12` · `xl 16` · `xxl 20` · `full` |
+| `DS.shadow` | `soft` · `card` · `elevated` — all neutral |
+| `DS.typography` | `display` · `h1` · `h2` · `h3` · `body` · `bodySm` · `caption` · `label` · `button` |
+| `DS.fontFamily` | `display` · `regular` · `semibold` · `bold` |
+| `DS.motion` | `fast 150` · `normal 240` · `slow 380` · `spring` |
+| `DS.layout` | `touchTarget 48` · `maxFontScale 1.4` · `screenPadding 16` · `hairline` |
 
-Use `Screen` from `@/components/ui/screen` with `DS.colors.background`.
+## Design direction
 
-## Animations
+Blue and white carry the brand; agricultural green is an accent, never a
+background wash. Gradients, blur and glass are not default treatments — a
+surface is `DS.colors.surface` with a `DS.colors.border` hairline unless there
+is a specific reason otherwise.
 
-- **Moti** — micro-interactions (`AnimatedPressable`, `FadeInView`)
-- **Reanimated** — skeletons, toasts, charts
+Three rules that came out of the audit:
 
-## Data layer (current)
+1. **Weight comes from the font family, not `fontWeight`.** Setting both makes
+   Android synthesise a second bold over an already-bold face.
+2. **Shadows are neutral.** A coloured shadow is a glow, not an elevation cue.
+3. **`textFaint` is not for text.** It fails contrast on white. Use it for
+   dividers, disabled affordances, and icons that repeat an adjacent label.
 
-The app is **local-first** (SQLite + AsyncStorage + Zustand). Firebase/Firestore is not wired yet.
+## Semantic colour
 
-Planned adapter: `services/data/` when backend is added.
+Alert and status surfaces come from `DS.semantic`, not ad-hoc hex:
 
-## Migration checklist
+```ts
+const s = StyleSheet.create({
+  alert: {
+    backgroundColor: DS.semantic.warning.bg,
+    borderColor: DS.semantic.warning.border,
+    borderWidth: 1,
+  },
+  alertText: { color: DS.semantic.warning.fg },
+});
+```
 
-- [x] Phase 2: Market, Community, Profile tabs → `TabScreenHeader`, `GlassCard`, `ChipTabs`
-- [ ] Replace remaining hardcoded colors in transport / financials / crop-management
-- [ ] Migrate NativeWind screens to `Screen` + `GlassCard`
-- [ ] Consolidate `primary-button` → `Button`
-- [ ] Add Firebase auth/sync behind `services/data/`
+Each role's `fg` passes 4.5:1 on its own `bg`.
+
+## Components
+
+| Component | Notes |
+|-----------|-------|
+| `Button` | `primary` · `secondary` · `outline` · `ghost` · `danger` · `success`; sizes `sm` 40 / `md` 48 / `lg` 54; loading, disabled, icon, press animation that respects reduced motion |
+| `IconButton` | Icon-only. Requires `accessibilityLabel` — an icon alone announces nothing. `hitSlop` keeps the target at 48. |
+| `Input` | Label, error, hint, leading/trailing icons, focus and error styling, wired to assistive tech |
+| `Card` | `outlined` (default) · `flat` · `raised`. A hairline border reads as structure; a shadow on every card reads as noise. |
+| `LoadingState` `ErrorState` `OfflineState` `EmptyState` | The four states every feature owes the user |
+
+Text inside these caps at `DS.layout.maxFontScale`, so fixed-height rows
+survive the largest OS font setting.
+
+## Deprecated aliases
+
+These still resolve, but every value now comes from `DS`. They are deleted once
+the screen sweep removes the last import:
+
+| File | Replacement |
+|------|-------------|
+| `constants/colors.ts` (`Colors`) | `DS.colors` |
+| `constants/Typography.ts` | `DS.typography` |
+| `constants/Spacing.ts` | `DS.spacing` / `DS.radius` / `DS.shadow` |
+| `constants/theme.ts` (`Spacing`, `BorderRadius`, `Shadows`, `Typography`) | `DS.*` |
+| `constants/premium-home.ts` (`Premium`) | `DS` |
+
+`constants/theme.ts` still owns the light/dark map for `useThemeColor`. The dark
+palette is a placeholder — FarmBridge ships light-only, and a real dark theme
+needs its own contrast pass rather than an inversion.
+
+## Status
+
+- [x] One token source, read by both TypeScript and Tailwind
+- [x] Radii reduced from 12–30 to 4–20
+- [x] Neutral shadows; blue glow removed
+- [x] Muted text raised to pass 4.5:1
+- [x] Semantic colour roles defined
+- [x] Shared component layer: `Button`, `IconButton`, `Input`, `Card`,
+      `LoadingState`, `ErrorState`, `OfflineState`, `EmptyState`
+- [x] 19 superseded and template-residue components deleted
+- [ ] `ScreenHeader` — consolidates `ModuleHeader` / `TabScreenHeader` /
+      `ProfileScreenHeader`; deferred to the sweep, where the call sites move
+- [ ] Screen sweep: replace 99 inline button styles and ~300 hex literals
+- [ ] Delete the deprecated aliases

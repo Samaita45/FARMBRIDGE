@@ -1,275 +1,288 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 import { Link, router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Button, ButtonRow } from '@/components/design-system';
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
-import { Premium } from '@/constants/premium-home';
+import { DS } from '@/constants/design-system';
+import { ScreenImages } from '@/constants/images';
+import { asHref } from '@/lib/href';
+import { topChrome } from '@/lib/platform-ui';
 import { useAuthStore } from '@/stores/authStore';
 
-interface PremiumHeroHeaderProps {
+interface HomeHeaderProps {
   locationLabel: string;
   greeting: string;
   notificationCount?: number;
   avatarUri?: string | null;
   avatarInitials?: string;
+  /** How the location was determined, so the header can say rather than imply. */
+  locationSource?: 'gps' | 'profile' | 'default';
+  onRefreshLocation?: () => void;
 }
 
-/** Capitalize greeting for premium display e.g. "Good Morning" */
-function displayGreeting(greeting: string): string {
-  return greeting
-    .split(' ')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
+const DATE_FORMAT: Intl.DateTimeFormatOptions = {
+  weekday: 'long',
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+};
 
-export function PremiumHeroHeader({
+/**
+ * The home header, rebuilt to the Farm UI reference: a photograph carrying the
+ * greeting, the date, the promise, and the one control people reach for.
+ *
+ * It has been a gradient with decorative orbs, then a flat brand band. The band
+ * was honest but told you nothing — this puts the same information on a
+ * photograph of the subject, which is what the reference does and what makes
+ * the screen read as a farming product rather than a form.
+ *
+ * Everything on it still does something. The search pill opens marketplace
+ * search; the location chip re-runs the fix and says where the current answer
+ * came from, because a saved profile province presented as a live one is the
+ * bug this app has already shipped once.
+ */
+export function HomeHeader({
   locationLabel,
   greeting,
   notificationCount = 0,
   avatarUri = null,
   avatarInitials = 'F',
-}: PremiumHeroHeaderProps) {
-  const badge = notificationCount > 99 ? '99+' : String(notificationCount);
+  locationSource = 'default',
+  onRefreshLocation,
+}: HomeHeaderProps) {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const firstName = user?.name?.split(' ')[0] ?? 'Farmer';
   const locationShort = locationLabel.split('·')[0]?.trim() ?? locationLabel;
+  const badge = notificationCount > 99 ? '99+' : String(notificationCount);
+  const today = new Date().toLocaleDateString('en-ZW', DATE_FORMAT);
 
   return (
     <View style={styles.wrap}>
-      <LinearGradient
-        colors={['#60A5FA', Premium.primary, '#1E3A8A']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.gradient, { paddingTop: insets.top + 10 }]}>
-        {/* Abstract farm / fintech pattern */}
-        <View style={styles.patternRow} pointerEvents="none">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <View key={i} style={[styles.patternDot, { opacity: 0.15 + i * 0.04 }]} />
-          ))}
-        </View>
-        <View style={styles.orb1} />
-        <View style={styles.orb2} />
-        <View style={styles.orb3} />
-        <View style={styles.orb4} />
+      <Image
+        source={ScreenImages.crop}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        transition={300}
+        cachePolicy="memory-disk"
+      />
+      {/* Uniform, not bottom-weighted: text runs the full height of this header. */}
+      <View style={styles.scrim} />
 
-        <View style={styles.floatCard}>
-          <View style={styles.glassPanel}>
-            <View style={styles.topRow}>
-              <View style={styles.userRow}>
-                <View style={styles.avatarRing}>
-                  <ProfileAvatar
-                    uri={avatarUri}
-                    initials={avatarInitials}
-                    size={56}
-                    embedded
-                    showCameraBadge={false}
-                    onPress={user ? () => router.push('/(tabs)/profile') : undefined}
-                  />
-                </View>
-                <View>
-                  <Text style={styles.greeting}>{displayGreeting(greeting)}</Text>
-                  <Text style={styles.name}>{firstName}</Text>
-                </View>
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Notifications"
-                onPress={() => router.push('/notifications')}
-                style={({ pressed }) => [styles.bellBtn, pressed && { opacity: 0.88 }]}>
-                <Ionicons name="notifications" size={22} color="#fff" />
-                {notificationCount > 0 ? (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{badge}</Text>
-                  </View>
-                ) : null}
-              </Pressable>
-            </View>
-
-            <View style={styles.locationPill}>
-              <Ionicons name="location" size={15} color="#4ADE80" />
-              <Text style={styles.locationText}>{locationShort}</Text>
-              <View style={styles.dot} />
-              <Text style={styles.online}>Online</Text>
-            </View>
+      <View style={[styles.content, { paddingTop: topChrome(insets.top) + DS.spacing.sm }]}>
+        <View style={styles.topRow}>
+          <View style={styles.identity}>
+            <Text style={styles.greeting} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+              {greeting}, {firstName}
+            </Text>
+            <Text style={styles.date} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+              {today}
+            </Text>
           </View>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              notificationCount > 0 ? `Notifications, ${notificationCount} unread` : 'Notifications'
+            }
+            onPress={() => router.push(asHref('/notifications'))}
+            style={({ pressed }) => [styles.bell, pressed && styles.pressed]}>
+            <Ionicons name="notifications-outline" size={21} color={DS.colors.textInverse} />
+            {notificationCount > 0 ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{badge}</Text>
+              </View>
+            ) : null}
+          </Pressable>
+
+          <ProfileAvatar
+            uri={avatarUri}
+            initials={avatarInitials}
+            size={44}
+            embedded
+            showCameraBadge={false}
+            onPress={user ? () => router.push(asHref('/(tabs)/profile')) : undefined}
+          />
+        </View>
+
+        <Text style={styles.headline} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+          Everything your farm needs, in one place
+        </Text>
+
+        <View style={styles.actionRow}>
+          <Pressable
+            onPress={() => router.push(asHref('/(tabs)/market/search'))}
+            accessibilityRole="search"
+            accessibilityLabel="Search the marketplace"
+            style={({ pressed }) => [styles.searchPill, pressed && styles.pressed]}>
+            <Ionicons name="search" size={18} color={DS.colors.textSoft} />
+            <Text style={styles.searchText} numberOfLines={1}>
+              Search seeds, produce, equipment
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={onRefreshLocation}
+            disabled={!onRefreshLocation}
+            accessibilityRole="button"
+            accessibilityLabel={`${LOCATION_CAPTION[locationSource]}: ${locationShort}. Tap to locate again.`}
+            style={({ pressed }) => [styles.locationBtn, pressed && styles.pressed]}>
+            <Ionicons
+              name={locationSource === 'gps' ? 'locate' : 'locate-outline'}
+              size={20}
+              color={DS.colors.primary}
+            />
+          </Pressable>
+        </View>
+
+        <View style={styles.locationRow}>
+          <Ionicons name="location" size={13} color={DS.colors.textInverse} />
+          <Text
+            style={styles.locationText}
+            numberOfLines={1}
+            maxFontSizeMultiplier={DS.layout.maxFontScale}>
+            {locationShort}
+          </Text>
+          <Text style={styles.locationSource}>{LOCATION_CAPTION[locationSource]}</Text>
         </View>
 
         {!user ? (
-          <View style={styles.authRow}>
+          <ButtonRow style={styles.authRow}>
             <Link href="/(auth)/login" asChild>
-              <Pressable style={styles.authOutline}>
-                <Text style={styles.authOutlineText}>Login</Text>
-              </Pressable>
+              <Button title="Log in" variant="onImage" size="sm" style={styles.authBtn} />
             </Link>
             <Link href="/(auth)/register" asChild>
-              <Pressable style={styles.authSolid}>
-                <Text style={styles.authSolidText}>Register</Text>
-              </Pressable>
+              <Button title="Register" size="sm" style={styles.authBtn} />
             </Link>
-          </View>
+          </ButtonRow>
         ) : null}
-      </LinearGradient>
+      </View>
     </View>
   );
 }
 
+const LOCATION_CAPTION: Record<'gps' | 'profile' | 'default', string> = {
+  gps: 'your location',
+  profile: 'from your profile',
+  default: 'default',
+};
+
+/** @deprecated Use `HomeHeader`. */
+export const PremiumHeroHeader = HomeHeader;
+
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: -24,
-    zIndex: 2,
-    borderBottomLeftRadius: Premium.radiusXl,
-    borderBottomRightRadius: Premium.radiusXl,
+    backgroundColor: DS.colors.primaryDark,
+    borderBottomLeftRadius: DS.radius.xxl,
+    borderBottomRightRadius: DS.radius.xxl,
     overflow: 'hidden',
-    ...Premium.shadowSoft,
   },
-  gradient: { paddingHorizontal: 20, paddingBottom: 36 },
-  patternRow: {
-    position: 'absolute',
-    top: 40,
-    right: 24,
-    flexDirection: 'row',
-    gap: 12,
+  // 0.68 over the photograph. Against the brightest frame the image can present
+  // that is 6.19:1 for full white and 4.65:1 for the dimmed captions below —
+  // 0.62 left those two at 4.15 and 3.89.
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.68)' },
+  pressed: { opacity: 0.85 },
+
+  content: {
+    paddingHorizontal: DS.spacing.md,
+    paddingBottom: DS.spacing.md,
+    gap: DS.spacing.sm + 2,
   },
-  patternDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#fff',
-  },
-  orb1: {
-    position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    top: -50,
-    right: -40,
-  },
-  orb2: {
-    position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(22,163,74,0.2)',
-    top: 50,
-    left: -30,
-  },
-  orb3: {
-    position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    bottom: 80,
-    right: 50,
-  },
-  orb4: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(139,92,246,0.12)',
-    bottom: -20,
-    left: 40,
-  },
-  floatCard: {
-    ...Premium.shadow,
-  },
-  glassPanel: {
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderRadius: Premium.radiusLg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.28)',
-    padding: 18,
-  },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  userRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  avatarRing: {
-    padding: 3,
-    borderRadius: 34,
-    borderWidth: 2.5,
-    borderColor: 'rgba(255,255,255,0.5)',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
+
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm },
+  identity: { flex: 1 },
   greeting: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.88)',
-    fontWeight: '500',
-    letterSpacing: 0.2,
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textInverse,
   },
-  name: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: -0.5,
-    marginTop: 2,
+  date: {
+    fontSize: 11,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textInverse,
+    opacity: 0.85,
+    marginTop: 1,
   },
-  bellBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+
+  bell: {
+    width: 44,
+    height: 44,
+    borderRadius: DS.radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(255,255,255,0.16)',
   },
   badge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Premium.red,
+    top: 3,
+    right: 1,
+    minWidth: 18,
+    height: 18,
+    borderRadius: DS.radius.full,
+    backgroundColor: DS.semantic.danger.solid,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 5,
-    borderWidth: 2,
-    borderColor: '#fff',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: DS.colors.primaryDark,
   },
-  badgeText: { fontSize: 10, fontWeight: '800', color: '#fff' },
-  locationPill: {
+  badgeText: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.semantic.danger.onSolid,
+  },
+
+  headline: {
+    fontSize: DS.typography.display.fontSize,
+    lineHeight: DS.typography.display.lineHeight,
+    fontFamily: DS.fontFamily.display,
+    color: DS.colors.textInverse,
+    marginTop: DS.spacing.xs,
+  },
+
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm },
+  searchPill: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 16,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(15,23,42,0.2)',
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    gap: DS.spacing.sm,
+    minHeight: DS.layout.touchTarget,
+    paddingHorizontal: 16,
+    borderRadius: DS.radius.full,
+    backgroundColor: DS.colors.surface,
   },
-  locationText: { fontSize: 14, fontWeight: '600', color: '#fff' },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: '#4ADE80',
-    marginLeft: 4,
-  },
-  online: { fontSize: 13, fontWeight: '700', color: '#BBF7D0' },
-  authRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  authOutline: {
+  searchText: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.5)',
-    alignItems: 'center',
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
   },
-  authOutlineText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  authSolid: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 14,
-    backgroundColor: '#fff',
+  locationBtn: {
+    width: DS.layout.touchTarget,
+    height: DS.layout.touchTarget,
+    borderRadius: DS.radius.full,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: DS.colors.surface,
   },
-  authSolidText: { color: Premium.primary, fontWeight: '700', fontSize: 14 },
+
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  locationText: {
+    flexShrink: 1,
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textInverse,
+  },
+  locationSource: {
+    fontSize: 10,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textInverse,
+    opacity: 0.8,
+  },
+
+  authRow: { marginTop: DS.spacing.xs },
+  authBtn: { flex: 1 },
 });

@@ -2,19 +2,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import Colors from '@/constants/colors';
+import { Button, IconButton } from '@/components/design-system';
+import { DS } from '@/constants/design-system';
 import type { CropPlan, FarmTask } from '@/types/crop-management';
+import type { IconName } from '@/types/icons';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type EventType = 'plant' | 'water' | 'fertilize' | 'harvest' | 'treat' | 'mixed';
 
-const EVENT_CONFIG: Record<EventType, { color: string; bg: string; icon: keyof typeof Ionicons.glyphMap; label: string }> = {
-  plant:     { color: '#388E3C', bg: '#E8F5E9', icon: 'leaf-outline', label: 'Planting' },
-  water:     { color: '#1976D2', bg: '#E3F2FD', icon: 'water-outline', label: 'Watering' },
-  fertilize: { color: '#F57C00', bg: '#FFF3E0', icon: 'flask-outline', label: 'Fertilize' },
-  harvest:   { color: '#C62828', bg: '#FFEBEE', icon: 'basket-outline', label: 'Harvest' },
-  treat:     { color: '#6A1B9A', bg: '#F3E5F5', icon: 'medkit-outline', label: 'Treatment' },
-  mixed:     { color: '#37474F', bg: '#ECEFF1', icon: 'calendar-outline', label: 'Multiple' },
+/**
+ * Event colours come from DS.semantic, not a private Material palette. `color`
+ * is the readable foreground and `bg` its matching tinted surface, so a dot and
+ * its chip always pass contrast together.
+ */
+const EVENT_CONFIG: Record<EventType, { color: string; bg: string; icon: IconName; label: string }> = {
+  plant:     { color: DS.semantic.success.fg, bg: DS.semantic.success.bg, icon: 'leaf-outline',     label: 'Planting' },
+  water:     { color: DS.semantic.info.fg,    bg: DS.semantic.info.bg,    icon: 'water-outline',    label: 'Watering' },
+  fertilize: { color: DS.semantic.warning.fg, bg: DS.semantic.warning.bg, icon: 'flask-outline',    label: 'Fertilize' },
+  harvest:   { color: DS.semantic.danger.fg,  bg: DS.semantic.danger.bg,  icon: 'basket-outline',   label: 'Harvest' },
+  treat:     { color: DS.colors.purple,       bg: DS.colors.surfaceMuted, icon: 'medkit-outline',   label: 'Treatment' },
+  mixed:     { color: DS.semantic.neutral.fg, bg: DS.semantic.neutral.bg, icon: 'calendar-outline', label: 'Multiple' },
 };
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -100,22 +107,34 @@ export function MonthCalendar({ plans, tasks, onDayPress, onAddTask }: MonthCale
     <View style={s.root}>
       {/* ── Month navigation header ── */}
       <View style={s.header}>
-        <Pressable onPress={prevMonth} style={s.navBtn}>
-          <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
-        </Pressable>
-        <Pressable onPress={goToday} style={s.monthWrap}>
+        <IconButton
+          icon="chevron-back"
+          accessibilityLabel="Previous month"
+          variant="outline"
+          size="sm"
+          onPress={prevMonth}
+        />
+        <Pressable
+          onPress={goToday}
+          accessibilityRole="button"
+          accessibilityLabel={`${MONTHS[month]} ${year}. Jump to today.`}
+          style={s.monthWrap}>
           <Text style={s.monthText}>{MONTHS[month]}</Text>
           <Text style={s.yearText}>{year}</Text>
         </Pressable>
-        <Pressable onPress={nextMonth} style={s.navBtn}>
-          <Ionicons name="chevron-forward" size={20} color={Colors.textPrimary} />
-        </Pressable>
+        <IconButton
+          icon="chevron-forward"
+          accessibilityLabel="Next month"
+          variant="outline"
+          size="sm"
+          onPress={nextMonth}
+        />
       </View>
 
       {/* ── Weekday headers ── */}
       <View style={s.weekRow}>
         {WEEKDAYS.map((d) => (
-          <Text key={d} style={[s.weekDay, d === 'Sun' && { color: Colors.error }]}>{d}</Text>
+          <Text key={d} style={[s.weekDay, d === 'Sun' && s.sundayText]}>{d}</Text>
         ))}
       </View>
 
@@ -135,6 +154,13 @@ export function MonthCalendar({ plans, tasks, onDayPress, onAddTask }: MonthCale
             <Pressable
               key={dateStr}
               onPress={() => handleDayPress(dateStr)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: selected_ }}
+              accessibilityLabel={
+                `${day} ${MONTHS[month]}` +
+                (today_ ? ', today' : '') +
+                (cfg ? `, ${cfg.label.toLowerCase()} scheduled` : '')
+              }
               style={({ pressed }) => [s.cell, pressed && { opacity: 0.75 }]}>
               <View style={[
                 s.dayCircle,
@@ -179,19 +205,33 @@ export function MonthCalendar({ plans, tasks, onDayPress, onAddTask }: MonthCale
           <View style={s.agendaDateBadge}>
             <Text style={s.agendaDateText}>{selectedDate}</Text>
           </View>
-          <Pressable
-            onPress={() => setAddModalOpen(true)}
-            style={({ pressed }) => [s.addBtn, pressed && { opacity: 0.8 }]}>
-            <Ionicons name="add" size={16} color="#fff" />
-            <Text style={s.addBtnText}>Add Task</Text>
-          </Pressable>
+          {/*
+            Only offered when a handler exists. Previously this button rendered
+            unconditionally while the modal behind it was gated on `onAddTask`,
+            so on the planner screen -- which passes no handler -- tapping it
+            did nothing at all.
+          */}
+          {onAddTask ? (
+            <Button
+              title="Add task"
+              size="sm"
+              icon="add"
+              fullWidth={false}
+              onPress={() => setAddModalOpen(true)}
+              accessibilityLabel={`Add a task on ${selectedDate}`}
+            />
+          ) : null}
         </View>
 
         {dayPlans.length === 0 && dayTasks.length === 0 ? (
           <View style={s.emptyDay}>
-            <Ionicons name="calendar-outline" size={28} color={Colors.gray[300]} />
+            <Ionicons name="calendar-outline" size={28} color={DS.colors.textFaint} />
             <Text style={s.emptyDayText}>No tasks scheduled</Text>
-            <Text style={s.emptyDayHint}>Tap "Add Task" to schedule an activity</Text>
+            <Text style={s.emptyDayHint}>
+              {onAddTask
+                ? 'Tap “Add task” to schedule an activity'
+                : 'Tasks appear here when you add a crop plan'}
+            </Text>
           </View>
         ) : (
           <View style={s.taskList}>
@@ -246,7 +286,7 @@ function AgendaItem({ type, title, subtitle, done }: {
       </View>
       {done && (
         <View style={ai.doneBadge}>
-          <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+          <Ionicons name="checkmark-circle" size={16} color={DS.semantic.success.solid} />
         </View>
       )}
     </View>
@@ -256,17 +296,17 @@ function AgendaItem({ type, title, subtitle, done }: {
 const ai = StyleSheet.create({
   item: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#fff', borderRadius: 12, marginBottom: 8,
+    backgroundColor: DS.colors.surface, borderRadius: 12, marginBottom: 8,
     padding: 10, overflow: 'hidden',
-    borderWidth: 1, borderColor: Colors.gray[200],
+    borderWidth: 1, borderColor: DS.colors.border,
   },
   itemDone: { opacity: 0.65 },
   stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3 },
   iconWrap: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   text: { flex: 1 },
-  title: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary },
+  title: { fontSize: 13, fontWeight: '700', color: DS.colors.text },
   titleDone: { textDecorationLine: 'line-through' },
-  sub: { fontSize: 11, color: Colors.textSecondary, marginTop: 2 },
+  sub: { fontSize: 11, color: DS.colors.textMuted, marginTop: 2 },
   doneBadge: { padding: 2 },
 });
 
@@ -316,8 +356,8 @@ function AddTaskModal({ visible, date, onClose, onSave }: {
                   key={type}
                   onPress={() => setTaskType(type)}
                   style={[m.typeChip, active && { backgroundColor: cfg.color, borderColor: cfg.color }]}>
-                  <Ionicons name={cfg.icon} size={13} color={active ? '#fff' : cfg.color} />
-                  <Text style={[m.typeChipText, active && { color: '#fff' }]}>{label}</Text>
+                  <Ionicons name={cfg.icon} size={13} color={active ? DS.colors.textInverse : cfg.color} />
+                  <Text style={[m.typeChipText, active && { color: DS.colors.textInverse }]}>{label}</Text>
                 </Pressable>
               );
             })}
@@ -331,7 +371,7 @@ function AddTaskModal({ visible, date, onClose, onSave }: {
               placeholder="e.g. Water tomatoes in field A"
               value={title}
               onChangeText={setTitle}
-              placeholderTextColor={Colors.placeholder}
+              placeholderTextColor={DS.colors.textSoft}
             />
           </View>
 
@@ -344,7 +384,7 @@ function AddTaskModal({ visible, date, onClose, onSave }: {
               value={notes}
               onChangeText={setNotes}
               multiline
-              placeholderTextColor={Colors.placeholder}
+              placeholderTextColor={DS.colors.textSoft}
             />
           </View>
 
@@ -356,7 +396,7 @@ function AddTaskModal({ visible, date, onClose, onSave }: {
             <Pressable
               onPress={save}
               style={({ pressed }) => [m.saveBtn, !title.trim() && m.saveBtnDisabled, pressed && { opacity: 0.85 }]}>
-              <Ionicons name="checkmark" size={16} color="#fff" />
+              <Ionicons name="checkmark" size={16} color={DS.colors.textInverse} />
               <Text style={m.saveText}>Save Task</Text>
             </Pressable>
           </View>
@@ -368,23 +408,23 @@ function AddTaskModal({ visible, date, onClose, onSave }: {
 
 // ── Stylesheet ─────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root: { backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: Colors.primaryMid },
+  root: { backgroundColor: DS.colors.surface, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: DS.colors.border },
 
   // Header
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 12, paddingVertical: 12,
-    backgroundColor: Colors.primaryBg,
-    borderBottomWidth: 1, borderBottomColor: Colors.primaryMid,
+    backgroundColor: DS.colors.surfaceMuted,
+    borderBottomWidth: 1, borderBottomColor: DS.colors.border,
   },
-  navBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.primaryMid },
+  navBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: DS.colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: DS.colors.border },
   monthWrap: { alignItems: 'center' },
-  monthText: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
-  yearText: { fontSize: 11, color: Colors.textSecondary, marginTop: 1 },
+  monthText: { fontSize: 16, fontWeight: '800', color: DS.colors.text },
+  yearText: { fontSize: 11, color: DS.colors.textMuted, marginTop: 1 },
 
   // Weekdays
-  weekRow: { flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 8, backgroundColor: Colors.primaryBg },
-  weekDay: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '700', color: Colors.textSecondary },
+  weekRow: { flexDirection: 'row', paddingHorizontal: 8, paddingVertical: 8, backgroundColor: DS.colors.surfaceMuted },
+  weekDay: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '700', color: DS.colors.textMuted },
 
   // Grid
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 4, paddingBottom: 8 },
@@ -394,71 +434,65 @@ const s = StyleSheet.create({
     width: 34, height: 34, borderRadius: 17,
     alignItems: 'center', justifyContent: 'center',
   },
-  todayCircle: { backgroundColor: Colors.primary },
-  selectedCircle: { backgroundColor: Colors.primaryMid, borderWidth: 1.5, borderColor: Colors.primary },
-  dayText: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
-  sundayText: { color: Colors.error },
-  todayText: { color: '#fff', fontWeight: '800' },
-  selectedText: { color: Colors.primary, fontWeight: '800' },
+  todayCircle: { backgroundColor: DS.colors.primary },
+  selectedCircle: { backgroundColor: DS.colors.border, borderWidth: 1.5, borderColor: DS.colors.primary },
+  dayText: { fontSize: 13, fontWeight: '600', color: DS.colors.text },
+  sundayText: { color: DS.semantic.danger.solid },
+  todayText: { color: DS.colors.textInverse, fontWeight: '800' },
+  selectedText: { color: DS.colors.primary, fontWeight: '800' },
   dot: { width: 5, height: 5, borderRadius: 3, marginTop: 1 },
 
   // Legend
   legend: {
     flexDirection: 'row', flexWrap: 'wrap', gap: 10,
     paddingHorizontal: 12, paddingBottom: 12, paddingTop: 4,
-    borderTopWidth: 1, borderTopColor: Colors.gray[100],
+    borderTopWidth: 1, borderTopColor: DS.colors.borderLight,
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: 11, color: Colors.textSecondary, fontWeight: '600' },
+  legendText: { fontSize: 11, color: DS.colors.textMuted, fontWeight: '600' },
 
   // Agenda
-  agenda: { borderTopWidth: 1, borderTopColor: Colors.gray[100], padding: 14 },
+  agenda: { borderTopWidth: 1, borderTopColor: DS.colors.borderLight, padding: 14 },
   agendaHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  agendaDateBadge: { backgroundColor: Colors.primaryBg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: Colors.primaryMid },
-  agendaDateText: { fontSize: 12, fontWeight: '700', color: Colors.primary },
-  addBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: Colors.primary, borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 7,
-  },
-  addBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
+  agendaDateBadge: { backgroundColor: DS.colors.surfaceMuted, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: DS.colors.border },
+  agendaDateText: { fontSize: 12, fontWeight: '700', color: DS.colors.primary },
   emptyDay: { alignItems: 'center', paddingVertical: 20, gap: 6 },
-  emptyDayText: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  emptyDayHint: { fontSize: 12, color: Colors.textSecondary },
+  emptyDayText: { fontSize: 14, fontWeight: '700', color: DS.colors.text },
+  emptyDayHint: { fontSize: 12, color: DS.colors.textMuted },
   taskList: {},
 });
 
 const m = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: DS.colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     padding: 20, paddingBottom: 36,
   },
-  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.gray[300], alignSelf: 'center', marginBottom: 16 },
-  sheetTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 2 },
-  sheetDate: { fontSize: 12, color: Colors.textSecondary, marginBottom: 16 },
-  label: { fontSize: 12, fontWeight: '700', color: Colors.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: DS.colors.textFaint, alignSelf: 'center', marginBottom: 16 },
+  sheetTitle: { fontSize: 18, fontWeight: '800', color: DS.colors.text, marginBottom: 2 },
+  sheetDate: { fontSize: 12, color: DS.colors.textMuted, marginBottom: 16 },
+  label: { fontSize: 12, fontWeight: '700', color: DS.colors.textMuted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   typeRow: { gap: 8, paddingBottom: 4, marginBottom: 16 },
   typeChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7,
-    backgroundColor: Colors.gray[100], borderWidth: 1, borderColor: Colors.gray[200],
+    backgroundColor: DS.colors.borderLight, borderWidth: 1, borderColor: DS.colors.border,
   },
-  typeChipText: { fontSize: 12, fontWeight: '600', color: Colors.textPrimary },
+  typeChipText: { fontSize: 12, fontWeight: '600', color: DS.colors.text },
   inputWrap: {
-    backgroundColor: Colors.inputBg, borderRadius: 12, borderWidth: 1, borderColor: Colors.inputBorder,
+    backgroundColor: DS.colors.surface, borderRadius: 12, borderWidth: 1, borderColor: DS.colors.border,
     paddingHorizontal: 14, paddingVertical: 2, marginBottom: 14,
   },
-  input: { fontSize: 14, color: Colors.textPrimary, paddingVertical: 10 },
+  input: { fontSize: 14, color: DS.colors.text, paddingVertical: 10 },
   actions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  cancelBtn: { flex: 1, paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: Colors.gray[200], alignItems: 'center' },
-  cancelText: { fontSize: 14, fontWeight: '700', color: Colors.textSecondary },
+  cancelBtn: { flex: 1, paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: DS.colors.border, alignItems: 'center' },
+  cancelText: { fontSize: 14, fontWeight: '700', color: DS.colors.textMuted },
   saveBtn: {
     flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 13,
+    backgroundColor: DS.colors.primary, borderRadius: 12, paddingVertical: 13,
   },
-  saveBtnDisabled: { backgroundColor: Colors.gray[300] },
-  saveText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  saveBtnDisabled: { backgroundColor: DS.colors.textFaint },
+  saveText: { fontSize: 14, fontWeight: '700', color: DS.colors.textInverse },
 });
 

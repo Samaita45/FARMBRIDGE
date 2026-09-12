@@ -1,3 +1,5 @@
+import type { IconName } from '@/types/icons';
+
 import { CACHE_TTL, getCached, getStaleCached, setCached } from './cacheService';
 
 const BASE_URL = 'https://api.open-meteo.com/v1/forecast';
@@ -8,8 +10,10 @@ export interface CurrentWeather {
   humidity: number;
   windSpeed: number;
   condition: string;
-  icon: string;
+  icon: IconName;
   precipitation: number;
+  /** Reported by the service for the user's own coordinates, not guessed from the clock. */
+  isDay: boolean;
 }
 
 export interface DailyForecast {
@@ -19,7 +23,10 @@ export interface DailyForecast {
   rainProbability: number;
   rainAmount: number;
   condition: string;
-  icon: string;
+  icon: IconName;
+  /** ISO local time. Zimbabwe's sunrise moves by about an hour across the year. */
+  sunrise: string;
+  sunset: string;
 }
 
 export interface RainForecast {
@@ -41,17 +48,24 @@ export interface WeatherBundle {
   agricultural: AgriculturalWeather;
 }
 
-function mapWeatherCode(code: number): { condition: string; icon: string } {
-  if (code === 0) return { condition: 'Clear sky', icon: '☀️' };
-  if (code <= 3) return { condition: 'Partly cloudy', icon: '⛅' };
-  if (code <= 48) return { condition: 'Foggy', icon: '🌫️' };
-  if (code <= 57) return { condition: 'Drizzle', icon: '🌦️' };
-  if (code <= 67) return { condition: 'Rain', icon: '🌧️' };
-  if (code <= 77) return { condition: 'Snow', icon: '❄️' };
-  if (code <= 82) return { condition: 'Showers', icon: '🌧️' };
-  if (code <= 86) return { condition: 'Snow showers', icon: '🌨️' };
-  if (code >= 95) return { condition: 'Thunderstorm', icon: '⛈️' };
-  return { condition: 'Cloudy', icon: '☁️' };
+/**
+ * WMO weather code to a condition label and an Ionicons name.
+ *
+ * These were emoji until the icon sweep. Emoji rendered as text cannot be
+ * recoloured, size inconsistently against surrounding type, and vary by Android
+ * OEM font, so the same forecast looked different on different phones.
+ */
+function mapWeatherCode(code: number): { condition: string; icon: IconName } {
+  if (code === 0) return { condition: 'Clear sky', icon: 'sunny-outline' };
+  if (code <= 3) return { condition: 'Partly cloudy', icon: 'partly-sunny-outline' };
+  if (code <= 48) return { condition: 'Foggy', icon: 'cloudy-outline' };
+  if (code <= 57) return { condition: 'Drizzle', icon: 'rainy-outline' };
+  if (code <= 67) return { condition: 'Rain', icon: 'rainy-outline' };
+  if (code <= 77) return { condition: 'Snow', icon: 'snow-outline' };
+  if (code <= 82) return { condition: 'Showers', icon: 'rainy-outline' };
+  if (code <= 86) return { condition: 'Snow showers', icon: 'snow-outline' };
+  if (code >= 95) return { condition: 'Thunderstorm', icon: 'thunderstorm-outline' };
+  return { condition: 'Cloudy', icon: 'cloudy-outline' };
 }
 
 function getFarmingInsight(
@@ -79,6 +93,7 @@ async function fetchForecast(lat: number, lon: number): Promise<WeatherBundle> {
       'wind_speed_10m',
       'precipitation',
       'weather_code',
+      'is_day',
     ].join(','),
     daily: [
       'temperature_2m_max',
@@ -86,6 +101,8 @@ async function fetchForecast(lat: number, lon: number): Promise<WeatherBundle> {
       'precipitation_sum',
       'precipitation_probability_max',
       'weather_code',
+      'sunrise',
+      'sunset',
     ].join(','),
     hourly: 'soil_temperature_0cm,soil_moisture_0_to_1cm',
   });
@@ -105,6 +122,7 @@ async function fetchForecast(lat: number, lon: number): Promise<WeatherBundle> {
     precipitation: current.precipitation ?? 0,
     condition: mapped.condition,
     icon: mapped.icon,
+    isDay: current.is_day === 1 || current.is_day === true,
   };
 
   const dailyForecast: DailyForecast[] = daily.time.map((date: string, i: number) => {
@@ -117,6 +135,8 @@ async function fetchForecast(lat: number, lon: number): Promise<WeatherBundle> {
       rainAmount: daily.precipitation_sum[i] ?? 0,
       condition: w.condition,
       icon: w.icon,
+      sunrise: daily.sunrise?.[i] ?? `${date}T06:00`,
+      sunset: daily.sunset?.[i] ?? `${date}T18:00`,
     };
   });
 
@@ -180,6 +200,10 @@ function getOfflineFallback(): WeatherBundle {
       precipitation: 0,
       condition: mapped.condition,
       icon: mapped.icon,
+      // No network to ask, so fall back to the local hour. Zimbabwe sits at
+      // 17 degrees south, where sunrise and sunset stay within about half an
+      // hour of six o'clock all year.
+      isDay: new Date().getHours() >= 6 && new Date().getHours() < 18,
     },
     daily: Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
@@ -191,7 +215,9 @@ function getOfflineFallback(): WeatherBundle {
         rainProbability: i === 2 ? 65 : 20,
         rainAmount: i === 2 ? 8 : 0,
         condition: 'Partly cloudy',
-        icon: '⛅',
+        icon: 'partly-sunny-outline',
+        sunrise: `${d.toISOString().slice(0, 10)}T06:00`,
+        sunset: `${d.toISOString().slice(0, 10)}T18:00`,
       };
     }),
     rain: { nextRainDate: null, daysUntil: 2, amount: 8 },

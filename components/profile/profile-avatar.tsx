@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { resolveAvatarUri } from '@/lib/profile-photo';
 
 interface ProfileAvatarProps {
@@ -77,7 +77,7 @@ export function ProfileAvatar({
               borderRadius: badgeSize / 2,
             },
           ]}>
-          <Ionicons name="camera" size={Math.round(badgeSize * 0.54)} color={Colors.primary} />
+          <Ionicons name="camera" size={Math.round(badgeSize * 0.54)} color={DS.colors.primary} />
         </View>
       ) : null}
     </Pressable>
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   fallback: {
     backgroundColor: 'rgba(255,255,255,0.25)',
     borderWidth: 3,
-    borderColor: '#fff',
+    borderColor: DS.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -97,15 +97,15 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     backgroundColor: 'rgba(255,255,255,0.25)',
   },
-  initials: { fontWeight: '800', color: '#fff' },
+  initials: { fontWeight: '800', color: DS.colors.surface },
   cameraBtn: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#fff',
+    backgroundColor: DS.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.primaryBg,
+    borderColor: DS.colors.primaryBg,
   },
 });

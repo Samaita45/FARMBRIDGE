@@ -30,3 +30,23 @@ export const ScreenImages = {
   /** Colourful vegetables on table — Community & Dashboard */
   community: require("../assets/backgrounds/bg-community.png") as number,
 } as const;
+
+/**
+ * Photographs fetched from Unsplash.
+ *
+ * EVERY ONE WAS DOWNLOADED AND LOOKED AT before being listed, the same rule the
+ * produce table follows — search descriptions have been wrong in both
+ * directions before, once returning a poisonous toadstool for "mushrooms".
+ *
+ * Each entry pairs with a bundled `placeholder` from ScreenImages. The onboarding
+ * screen in particular is opened before the app has ever had a network, and a
+ * remote-only hero is a grey rectangle exactly then.
+ */
+const UNSPLASH = '?auto=format&fit=crop&w=1000&q=75';
+
+export const RemoteImages = {
+  /** Red tractor with an implement working a green hillside — onboarding hero. */
+  onboardingTractor: {
+    uri: `https://images.unsplash.com/photo-1712421811762-544942426e84${UNSPLASH}`,
+  },
+} as const;

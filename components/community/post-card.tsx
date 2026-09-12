@@ -10,7 +10,17 @@ import type { CommunityPost } from '@/types/community';
 const ROLE_LABELS: Record<string, string> = {
   farmer: 'Farmer', buyer: 'Buyer', expert: 'Expert', both: 'Farmer & Buyer',
 };
-const AVATAR_COLORS = [DS.colors.primary, DS.colors.purple, DS.colors.orange, '#3b82f6', '#ec4899'];
+/**
+ * Avatar tints. Decorative identity only -- the person's name is always shown
+ * beside it, so nothing depends on telling two of these apart.
+ */
+const AVATAR_COLORS = [
+  DS.colors.primary,
+  DS.colors.purple,
+  DS.colors.accentText,
+  DS.colors.teal,
+  DS.semantic.info.solid,
+];
 
 function avatarColor(name: string): string {
   let h = 0; for (let i = 0; i < name.length; i++) h += name.charCodeAt(i);
@@ -77,8 +87,8 @@ export function PostCard({ post }: { post: CommunityPost }) {
         ))}
         {post.isSolved && (
           <View style={[s.tag, s.tagSolved]}>
-            <Ionicons name="checkmark-circle" size={10} color={DS.colors.accent} />
-            <Text style={[s.tagText, { color: DS.colors.accent }]}>Solved</Text>
+            <Ionicons name="checkmark-circle" size={10} color={DS.semantic.success.fg} />
+            <Text style={[s.tagText, { color: DS.semantic.success.fg }]}>Solved</Text>
           </View>
         )}
       </View>
@@ -117,7 +127,7 @@ const s = StyleSheet.create({
   pinnedText: { fontSize: 11, fontWeight: '600', color: DS.colors.primary },
   authorRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  avatarText: { fontSize: 16, fontWeight: '800', color: DS.colors.surface },
   authorInfo: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   authorName: { fontSize: 14, fontWeight: '700', color: DS.colors.text },
@@ -131,7 +141,7 @@ const s = StyleSheet.create({
   body: { fontSize: 14, color: DS.colors.textMuted, lineHeight: 20 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
   tag: { backgroundColor: DS.colors.primaryBg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, flexDirection: 'row', alignItems: 'center', gap: 3 },
-  tagSolved: { backgroundColor: DS.colors.accentLight },
+  tagSolved: { backgroundColor: DS.semantic.success.bg },
   tagText: { fontSize: 11, fontWeight: '600', color: DS.colors.primary },
   actions: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: DS.colors.borderLight, paddingTop: 10 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5 },

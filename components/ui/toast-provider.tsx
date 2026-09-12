@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useState, createContext, type ReactNode, useContext } from 'react';
 import {
   Animated,
   Pressable,
@@ -8,7 +9,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors } from '@/constants/colors';
+import { DS } from '@/constants/design-system';
+import { topChrome } from '@/lib/platform-ui';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -24,18 +26,22 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const BG: Record<ToastType, string> = {
-  success: Colors.accent,        // green
-  error:   Colors.error,         // red
-  warning: Colors.warning,       // amber
-  info:    Colors.primary,       // blue
+/**
+ * Background and foreground travel together. White on the amber measures
+ * 3.19:1 — a warning nobody can read — so the amber toast takes dark text.
+ */
+const TONE: Record<ToastType, { bg: string; fg: string }> = {
+  success: { bg: DS.semantic.success.solid, fg: DS.semantic.success.onSolid },
+  error: { bg: DS.semantic.danger.solid, fg: DS.semantic.danger.onSolid },
+  warning: { bg: DS.semantic.warning.solid, fg: DS.semantic.warning.onSolid },
+  info: { bg: DS.colors.primary, fg: DS.colors.textInverse },
 };
 
-const ICON: Record<ToastType, string> = {
-  success: '✓  ',
-  error:   '✕  ',
-  warning: '⚠  ',
-  info:    'ℹ  ',
+const ICON: Record<ToastType, keyof typeof Ionicons.glyphMap> = {
+  success: 'checkmark-circle',
+  error: 'close-circle',
+  warning: 'warning',
+  info: 'information-circle',
 };
 
 function ToastItem({
@@ -45,8 +51,8 @@ function ToastItem({
   toast: ToastMessage;
   onDismiss: () => void;
 }) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(-20)).current;
+  const [opacity] = useState(() => new Animated.Value(0));
+  const [translateY] = useState(() => new Animated.Value(-20));
 
   // Slide in
   Animated.parallel([
@@ -58,9 +64,11 @@ function ToastItem({
     <Animated.View style={[t.item, { opacity, transform: [{ translateY }] }]}>
       <Pressable
         onPress={onDismiss}
-        style={[t.pill, { backgroundColor: BG[toast.type] }]}>
-        <Text style={t.icon}>{ICON[toast.type]}</Text>
-        <Text style={t.msg} numberOfLines={3}>{toast.message}</Text>
+        style={[t.pill, { backgroundColor: TONE[toast.type].bg }]}>
+        <Ionicons name={ICON[toast.type]} size={18} color={TONE[toast.type].fg} />
+        <Text style={[t.msg, { color: TONE[toast.type].fg }]} numberOfLines={3}>
+          {toast.message}
+        </Text>
       </Pressable>
     </Animated.View>
   );
@@ -87,7 +95,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {/* ── Toast container — absolute, always on top ── */}
       <View
         pointerEvents="box-none"
-        style={[t.container, { top: insets.top + 12 }]}>
+        style={[t.container, { top: topChrome(insets.top) + 12 }]}>
         {toasts.map((toast) => (
           <ToastItem key={toast.id} toast={toast} onDismiss={() => dismiss(toast.id)} />
         ))}
@@ -121,7 +129,7 @@ const t = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 18,
     paddingVertical: 13,
-    shadowColor: '#000',
+    shadowColor: DS.colors.text,
     shadowOpacity: 0.22,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -129,14 +137,14 @@ const t = StyleSheet.create({
   },
   icon: {
     fontSize: 16,
-    color: '#fff',
+    color: DS.colors.surface,
     fontWeight: '700',
   },
   msg: {
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: DS.colors.surface,
     lineHeight: 20,
   },
 });

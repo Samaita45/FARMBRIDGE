@@ -2,14 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
 import type { Tutorial } from '@/types/tutorials';
 
 const DIFF_COLORS: Record<string, { bg: string; text: string }> = {
-  beginner:     { bg: Colors.accentLight, text: Colors.accent },
-  intermediate: { bg: '#fef3c7',          text: '#d97706' },
-  advanced:     { bg: '#fee2e2',          text: Colors.error },
+  beginner:     { bg: DS.semantic.success.bg, text: DS.semantic.success.fg },
+  intermediate: { bg: DS.semantic.warning.bg, text: DS.semantic.warning.fg },
+  advanced:     { bg: DS.semantic.danger.bg,  text: DS.semantic.danger.fg },
 };
 const LANG_LABELS: Record<string, string> = { en: 'EN', sn: 'SN', nd: 'ND' };
 
@@ -24,12 +24,11 @@ export function TutorialCard({ tutorial, completed, bookmarked, onBookmark }: Tu
   const diff = DIFF_COLORS[tutorial.difficulty] ?? DIFF_COLORS.beginner;
   return (
     <View style={[s.card, completed && s.cardDone]}>
-      {/* Emoji column */}
-      <View style={s.emojiCol}>
-        <Text style={s.emoji}>{tutorial.emoji}</Text>
+      <View style={s.iconCol}>
+        <Ionicons name={tutorial.icon} size={26} color={DS.colors.primary} />
         {completed && (
           <View style={s.doneStamp}>
-            <Ionicons name="checkmark-circle" size={16} color={Colors.accent} />
+            <Ionicons name="checkmark-circle" size={16} color={DS.semantic.success.fg} />
           </View>
         )}
       </View>
@@ -47,7 +46,7 @@ export function TutorialCard({ tutorial, completed, bookmarked, onBookmark }: Tu
               <Ionicons
                 name={bookmarked ? 'bookmark' : 'bookmark-outline'}
                 size={18}
-                color={bookmarked ? Colors.primary : Colors.gray[400]}
+                color={bookmarked ? DS.colors.primary : DS.colors.textFaint}
               />
             </Pressable>
           )}
@@ -57,14 +56,14 @@ export function TutorialCard({ tutorial, completed, bookmarked, onBookmark }: Tu
 
         <View style={s.meta}>
           <View style={s.metaChip}>
-            <Ionicons name="time-outline" size={10} color={Colors.textSecondary} />
+            <Ionicons name="time-outline" size={10} color={DS.colors.textMuted} />
             <Text style={s.metaChipText}>{tutorial.durationMin} min</Text>
           </View>
           <View style={[s.metaChip, { backgroundColor: diff.bg }]}>
             <Text style={[s.metaChipText, { color: diff.text }]}>{tutorial.difficulty.charAt(0).toUpperCase() + tutorial.difficulty.slice(1)}</Text>
           </View>
-          <View style={[s.metaChip, { backgroundColor: Colors.primaryBg }]}>
-            <Text style={[s.metaChipText, { color: Colors.primary }]}>{LANG_LABELS[tutorial.language] ?? 'EN'}</Text>
+          <View style={[s.metaChip, { backgroundColor: DS.colors.primaryBg }]}>
+            <Text style={[s.metaChipText, { color: DS.colors.primary }]}>{LANG_LABELS[tutorial.language] ?? 'EN'}</Text>
           </View>
         </View>
       </View>
@@ -75,28 +74,27 @@ export function TutorialCard({ tutorial, completed, bookmarked, onBookmark }: Tu
 const s = StyleSheet.create({
   card: {
     flexDirection: 'row', marginBottom: 10,
-    backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden',
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
-    borderWidth: 1, borderColor: Colors.gray[100],
+    backgroundColor: DS.colors.surface, borderRadius: 16, overflow: 'hidden',
+    shadowColor: DS.colors.text, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+    borderWidth: 1, borderColor: DS.colors.borderLight,
   },
-  cardDone: { borderColor: Colors.accentLight },
-  emojiCol: {
-    width: 70, backgroundColor: Colors.primaryBg,
+  cardDone: { borderColor: DS.semantic.success.border },
+  iconCol: {
+    width: 70, backgroundColor: DS.colors.primaryBg,
     alignItems: 'center', justifyContent: 'center', gap: 4,
   },
-  emoji: { fontSize: 28 },
   doneStamp: {},
   content: { flex: 1, padding: 12 },
   titleRow: { flexDirection: 'row', gap: 6, alignItems: 'flex-start' },
   titlePressable: { flex: 1 },
-  title: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, lineHeight: 18 },
+  title: { fontSize: 13, fontWeight: '700', color: DS.colors.text, lineHeight: 18 },
   bookmarkBtn: { padding: 2 },
-  summary: { fontSize: 11, color: Colors.textSecondary, marginTop: 4, lineHeight: 15 },
+  summary: { fontSize: 11, color: DS.colors.textMuted, marginTop: 4, lineHeight: 15 },
   meta: { flexDirection: 'row', gap: 6, marginTop: 8, flexWrap: 'wrap' },
   metaChip: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: Colors.gray[100], borderRadius: 6,
+    backgroundColor: DS.colors.borderLight, borderRadius: 6,
     paddingHorizontal: 7, paddingVertical: 3,
   },
-  metaChipText: { fontSize: 10, fontWeight: '600', color: Colors.textSecondary },
+  metaChipText: { fontSize: 10, fontWeight: '600', color: DS.colors.textMuted },
 });

@@ -1,8 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DS } from '@/constants/design-system';
 
@@ -14,9 +12,20 @@ interface TabScreenHeaderProps {
   onSearchChange?: (text: string) => void;
   searchPlaceholder?: string;
   rightAction?: ReactNode;
-  searchTint?: 'light' | 'dark';
 }
 
+/**
+ * The header at the top of a tab.
+ *
+ * It used to be a three-stop gradient with white text. That put every screen's
+ * most important words on a background whose contrast changed across its own
+ * width, and it made the search field — the one control up here — compete with
+ * the colour behind it. A plain surface with a hairline rule underneath gives
+ * the title and the field a fixed, predictable ground, and lets the content
+ * below carry the colour instead.
+ *
+ * The screen's own SafeAreaView handles the top inset, so this does not add one.
+ */
 export function TabScreenHeader({
   title,
   subtitle,
@@ -25,122 +34,110 @@ export function TabScreenHeader({
   onSearchChange,
   searchPlaceholder = 'Search…',
   rightAction,
-  searchTint = 'dark',
 }: TabScreenHeaderProps) {
-  const insets = useSafeAreaInsets();
   const showSearch = onSearchChange !== undefined;
 
   return (
-    <LinearGradient
-      colors={[DS.colors.primaryLight, DS.colors.primary, DS.colors.primaryDark]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={[styles.gradient, { paddingTop: insets.top + 8 }]}>
+    <View style={styles.header}>
       <View style={styles.topRow}>
-        <View style={styles.titleBlock}>
-          <View style={styles.titleRow}>
-            <View style={styles.iconCircle}>
-              <Ionicons name={icon} size={20} color={DS.colors.textInverse} />
-            </View>
-            <Text style={styles.title}>{title}</Text>
-          </View>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+        <View style={styles.iconTile}>
+          <Ionicons name={icon} size={20} color={DS.colors.primary} />
         </View>
+
+        <View style={styles.titleBlock}>
+          <Text
+            style={styles.title}
+            numberOfLines={1}
+            maxFontSizeMultiplier={DS.layout.maxFontScale}>
+            {title}
+          </Text>
+          <Text
+            style={styles.subtitle}
+            numberOfLines={1}
+            maxFontSizeMultiplier={DS.layout.maxFontScale}>
+            {subtitle}
+          </Text>
+        </View>
+
         {rightAction}
       </View>
 
       {showSearch ? (
-        <View
-          style={[
-            styles.searchBar,
-            searchTint === 'light' && styles.searchBarLight,
-          ]}>
-          <Ionicons
-            name="search"
-            size={18}
-            color={searchTint === 'light' ? 'rgba(255,255,255,0.75)' : DS.colors.textSoft}
-          />
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={18} color={DS.colors.textSoft} />
           <TextInput
-            style={[
-              styles.searchInput,
-              searchTint === 'light' && styles.searchInputLight,
-            ]}
+            style={styles.searchInput}
             placeholder={searchPlaceholder}
-            placeholderTextColor={
-              searchTint === 'light' ? 'rgba(255,255,255,0.55)' : DS.colors.textSoft
-            }
+            placeholderTextColor={DS.colors.textMuted}
             value={searchValue}
             onChangeText={onSearchChange}
+            returnKeyType="search"
+            accessibilityLabel={searchPlaceholder}
+            maxFontSizeMultiplier={DS.layout.maxFontScale}
           />
           {searchValue && searchValue.length > 0 ? (
-            <Pressable onPress={() => onSearchChange('')} hitSlop={8}>
-              <Ionicons
-                name="close-circle"
-                size={18}
-                color={searchTint === 'light' ? 'rgba(255,255,255,0.75)' : DS.colors.textSoft}
-              />
+            <Pressable
+              onPress={() => onSearchChange('')}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search">
+              <Ionicons name="close-circle" size={18} color={DS.colors.textSoft} />
             </Pressable>
           ) : null}
         </View>
       ) : null}
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
+  header: {
+    backgroundColor: DS.colors.surface,
+    borderBottomWidth: DS.layout.hairline,
+    borderBottomColor: DS.colors.border,
     paddingHorizontal: DS.spacing.md,
+    paddingTop: DS.spacing.sm,
     paddingBottom: DS.spacing.md,
+    gap: DS.spacing.sm + 4,
   },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: DS.spacing.sm,
-  },
-  titleBlock: { flex: 1, marginRight: DS.spacing.sm },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  iconCircle: {
-    width: 40,
-    height: 40,
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm + 4 },
+  iconTile: {
+    width: 42,
+    height: 42,
     borderRadius: DS.radius.md,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: DS.colors.primaryBg,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  titleBlock: { flex: 1 },
   title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: DS.colors.textInverse,
-    fontFamily: 'Fraunces_700Bold',
+    fontSize: DS.typography.h1.fontSize,
+    lineHeight: DS.typography.h1.lineHeight,
+    fontFamily: DS.fontFamily.display,
+    color: DS.colors.text,
   },
   subtitle: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 6,
-    marginLeft: 50,
-    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize: DS.typography.caption.fontSize,
+    fontFamily: DS.fontFamily.regular,
+    color: DS.colors.textMuted,
+    marginTop: 2,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: DS.colors.surface,
+    backgroundColor: DS.colors.surfaceMuted,
     borderRadius: DS.radius.md,
+    borderWidth: DS.layout.hairline,
+    borderColor: DS.colors.borderControl,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    ...DS.shadow.soft,
-  },
-  searchBarLight: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
+    minHeight: DS.layout.touchTarget,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    paddingVertical: 0,
+    fontSize: DS.typography.body.fontSize,
     color: DS.colors.text,
-    fontFamily: 'PlusJakartaSans_400Regular',
+    fontFamily: DS.fontFamily.regular,
   },
-  searchInputLight: { color: DS.colors.textInverse },
 });

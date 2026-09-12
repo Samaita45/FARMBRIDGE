@@ -1,14 +1,13 @@
 import { Stack } from 'expo-router';
 
+import { stackScreenOptions } from '@/lib/navigation';
+
 export default function CropManagementLayout() {
   return (
     <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: '#f0fdf4' },
-        headerTintColor: '#14532d',
-        headerTitleStyle: { fontWeight: '700' },
-      }}>
-      <Stack.Screen name="index" options={{ title: 'Crop Management' }} />
+      screenOptions={stackScreenOptions}>
+      {/* The hub renders its own header so it can carry the stat row. */}
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="planner" options={{ title: 'Crop Planner' }} />
       <Stack.Screen name="tasks" options={{ title: 'Tasks' }} />
       <Stack.Screen name="health" options={{ title: 'Crop Health' }} />

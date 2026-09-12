@@ -4,7 +4,8 @@ import NetInfo from '@react-native-community/netinfo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useToast } from '@/components/ui/toast-provider';
-import Colors from '@/constants/colors';
+import { DS } from '@/constants/design-system';
+import { topChrome } from '@/lib/platform-ui';
 import { flushSyncQueue } from '@/services/syncService';
 
 export function OfflineBanner() {
@@ -50,22 +51,28 @@ export function OfflineBanner() {
 
   if (flashOnline) {
     return (
-      <View style={[s.banner, s.online, { paddingTop: insets.top }]}>
-        <Text style={s.text}>Connected</Text>
+      <View style={[s.banner, s.online, { paddingTop: topChrome(insets.top) }]}>
+        <Text style={[s.text, s.textOnline]}>Connected</Text>
       </View>
     );
   }
   if (!offline) return null;
   return (
-    <View style={[s.banner, s.offline, { paddingTop: insets.top }]}>
-      <Text style={s.text}>{"You're offline — showing cached data"}</Text>
+    <View style={[s.banner, s.offline, { paddingTop: topChrome(insets.top) }]}>
+      <Text style={[s.text, s.textOffline]}>
+        {"You're offline — showing cached data"}
+      </Text>
     </View>
   );
 }
 
 const s = StyleSheet.create({
   banner: { zIndex: 50, paddingHorizontal: 16, paddingBottom: 8 },
-  online: { backgroundColor: Colors.primary },
-  offline: { backgroundColor: Colors.warning },
-  text: { textAlign: 'center', fontSize: 13, fontWeight: '700', color: Colors.white },
+  online: { backgroundColor: DS.colors.primary },
+  offline: { backgroundColor: DS.semantic.warning.solid },
+  text: { textAlign: 'center', fontSize: 13, fontFamily: DS.fontFamily.semibold },
+  // The amber cannot carry white text at 4.5:1, so the offline state takes
+  // dark type. A banner about connectivity that cannot be read is pointless.
+  textOffline: { color: DS.semantic.warning.onSolid },
+  textOnline: { color: DS.colors.textInverse },
 });

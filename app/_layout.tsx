@@ -1,3 +1,18 @@
+import 'react-native-reanimated';
+import '../global.css';
+/*
+  Imported for its side effect, and it has to be from here.
+
+  The driver-location task registers itself with TaskManager at module scope.
+  When the OS wakes the app in the background to hand over a position, it
+  evaluates the bundle from this root and then looks for a task by name — so if
+  registration only happened when the tracking screen's module loaded, which
+  expo-router does lazily, the task would not exist yet and the update would be
+  dropped. That is the usual reason background location appears to work in
+  testing and never fires in the field.
+*/
+import '@/services/backgroundLocation';
+
 import {
   Fraunces_700Bold,
 } from '@expo-google-fonts/fraunces';
@@ -6,18 +21,15 @@ import {
   PlusJakartaSans_600SemiBold,
   PlusJakartaSans_700Bold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import 'react-native-reanimated';
-import '../global.css';
 
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { OfflineBanner } from '@/components/ui/offline-banner';
-import { Colors } from '@/constants/colors';
 import { DS } from '@/constants/design-system';
 import { useDailyDigestScheduler } from '@/hooks/useDailyDigestScheduler';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -25,40 +37,58 @@ import {
   registerNotificationListeners,
   requestNotificationPermissions,
 } from '@/services/notificationService';
+import { setSessionExpiredHandler } from '@/services/api/client';
+import { hydrateFastStorage } from '@/services/fastStorage';
+import { migrateNamespace } from '@/services/migrations/rename-namespace';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 SplashScreen.preventAutoHideAsync();
 
-const ZimFarmLightTheme = {
+/**
+ * React Navigation's own theme, derived from DS so the chrome it draws (screen
+ * backgrounds during transitions, default header tints) matches the app rather
+ * than sitting a shade off it.
+ */
+const NavigationLightTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: Colors.primary,
+    primary: DS.colors.primary,
     background: DS.colors.background,
-    card: Colors.white,
-    text: Colors.gray[900],
-    border: Colors.gray[200],
+    card: DS.colors.surface,
+    text: DS.colors.text,
+    border: DS.colors.border,
   },
 };
 
-const ZimFarmDarkTheme = {
+// Placeholder until a real dark theme gets its own contrast pass; the app
+// ships light-only today.
+const NavigationDarkTheme = {
   ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: Colors.primary,
-  },
+  colors: { ...DarkTheme.colors, primary: DS.colors.primaryLight },
 };
 
 function AppBootstrap() {
   useDailyDigestScheduler();
   const userId = useAuthStore((s: AuthState) => s.user?.id);
   const addNotification = useNotificationStore((s) => s.add);
+  const logout = useAuthStore((s: AuthState) => s.logout);
 
   useEffect(() => {
     void requestNotificationPermissions();
   }, []);
+
+  // When a refresh token is rejected the API layer clears it and calls this, so
+  // the app returns to a signed-out state instead of sitting on a dead session
+  // and failing every request.
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      void logout();
+    });
+    return () => setSessionExpiredHandler(null);
+  }, [logout]);
 
   useEffect(() => {
     if (!userId) return;
@@ -86,7 +116,17 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    void hydrate();
+    // The namespace migration must finish before anything reads storage,
+    // otherwise hydrate() looks under the new prefix while the data is still
+    // filed under the old one and the app appears empty.
+    void (async () => {
+      // Order matters. The synchronous store's mirror has to be filled before
+      // the migration reads its completion flag, and both must finish before
+      // hydrate() looks for the session.
+      await hydrateFastStorage();
+      await migrateNamespace();
+      await hydrate();
+    })();
   }, [hydrate]);
 
   useEffect(() => {
@@ -104,7 +144,7 @@ export default function RootLayout() {
       <ToastProvider>
         <AppBootstrap />
         <OfflineBanner />
-        <ThemeProvider value={colorScheme === 'dark' ? ZimFarmDarkTheme : ZimFarmLightTheme}>
+        <ThemeProvider value={colorScheme === 'dark' ? NavigationDarkTheme : NavigationLightTheme}>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" />
               <Stack.Screen name="(auth)" />
@@ -117,11 +157,9 @@ export default function RootLayout() {
                 name="notifications"
                 options={{ headerShown: true, title: 'Notifications' }}
               />
-              <Stack.Screen
-                name="modal"
-                options={{ presentation: 'modal', headerShown: true, title: 'Modal' }}
-              />
             </Stack>
+            {/* `translucent` went in SDK 57 — under edge-to-edge, which this
+                app enables, the bar is translucent already. */}
             <StatusBar style="dark" />
         </ThemeProvider>
       </ToastProvider>

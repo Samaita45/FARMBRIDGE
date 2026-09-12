@@ -1,8 +1,8 @@
 import { ScrollView, StyleSheet, View, type ScrollViewProps, type ViewStyle } from 'react-native';
-import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 
 import { DS } from '@/constants/design-system';
-import { SCREEN_EDGES } from '@/lib/platform-ui';
+import { extraTopPad, SCREEN_EDGES } from '@/lib/platform-ui';
 
 interface ScreenProps {
   children: React.ReactNode;
@@ -24,9 +24,13 @@ export function Screen({
   contentContainerStyle,
   scrollProps,
 }: ScreenProps) {
+  const insets = useSafeAreaInsets();
+  const topGap = edges.includes('top') ? extraTopPad(insets.top) : 0;
+
   if (scroll) {
     return (
       <SafeAreaView style={[s.root, style]} edges={edges}>
+        {topGap > 0 ? <View style={{ height: topGap }} /> : null}
         <ScrollView
           contentContainerStyle={[s.scrollContent, contentContainerStyle]}
           showsVerticalScrollIndicator={false}
@@ -40,6 +44,7 @@ export function Screen({
 
   return (
     <SafeAreaView style={[s.root, style]} edges={edges}>
+      {topGap > 0 ? <View style={{ height: topGap }} /> : null}
       <View style={[s.inner, contentContainerStyle]}>{children}</View>
     </SafeAreaView>
   );

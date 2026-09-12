@@ -1,21 +1,23 @@
 import { Stack } from 'expo-router';
 
+import { stackScreenOptions } from '@/lib/navigation';
+
 export default function TransportLayout() {
   return (
     <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: '#f0fdf4' },
-        headerTintColor: '#14532d',
-        headerTitleStyle: { fontWeight: '700' },
-        headerBackTitle: 'Back',
-      }}>
-      <Stack.Screen name="index" options={{ title: 'Farm Transport', headerShown: false }} />
-      <Stack.Screen name="request" options={{ title: 'Request Transport' }} />
-      <Stack.Screen name="providers" options={{ title: 'Available Drivers' }} />
-      <Stack.Screen name="negotiate" options={{ title: 'Negotiate Price' }} />
-      <Stack.Screen name="confirm" options={{ title: 'Booking Confirmed' }} />
-      <Stack.Screen name="register" options={{ title: 'Offer Transport' }} />
-      <Stack.Screen name="trips" options={{ title: 'My Trips' }} />
+      screenOptions={stackScreenOptions}>
+      <Stack.Screen name="index" options={{ title: 'Transport', headerShown: false }} />
+      <Stack.Screen name="request" options={{ title: 'Request transport' }} />
+      <Stack.Screen name="providers" options={{ title: 'Choose a transporter' }} />
+      <Stack.Screen name="quote" options={{ title: 'Transporter details' }} />
+      <Stack.Screen name="jobs" options={{ title: 'Loads near you' }} />
+      <Stack.Screen name="job" options={{ title: 'Load details' }} />
+      <Stack.Screen name="bids" options={{ title: 'Offers on your load' }} />
+      <Stack.Screen name="track" options={{ title: 'Track this trip' }} />
+      <Stack.Screen name="negotiate" options={{ title: 'Negotiate price' }} />
+      <Stack.Screen name="confirm" options={{ title: 'Booking confirmed' }} />
+      <Stack.Screen name="register" options={{ title: 'Offer transport' }} />
+      <Stack.Screen name="trips" options={{ title: 'My trips' }} />
     </Stack>
   );
 }
