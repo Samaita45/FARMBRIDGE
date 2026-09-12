@@ -46,3 +46,18 @@ app-example
 
 # Design reference photos — large HEIC source files, not app assets
 public/
+
+# iOS signing material. credentials.json carries the p12 password in plain text,
+# and the .key below is the private half of the distribution certificate — the
+# thing an attacker would need to sign software as you.
+credentials.json
+credentials/
+*.csr
+*.cer
+
+# Google / Firebase service-account keys. These are private keys with project
+# admin rights, not config — they must never sit in a repo.
+*-adminsdk-*.json
+service-account*.json
+google-services.json
+GoogleService-Info.plist
