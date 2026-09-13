@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -120,6 +120,7 @@ export function Button({
   const isDisabled = Boolean(disabled) || loading;
   const stretches = fullWidth ?? size !== 'sm';
 
+  const [pressed, setPressed] = useState(false);
   const reducedMotion = useReducedMotion();
   const scale = useSharedValue(1);
 
@@ -144,15 +145,39 @@ export function Button({
         accessibilityHint={accessibilityHint}
         accessibilityState={{ disabled: isDisabled, busy: loading }}
         disabled={isDisabled}
-        onPressIn={() => press(0.97)}
-        onPressOut={() => press(1)}
+        onPressIn={() => {
+          setPressed(true);
+          press(0.97);
+        }}
+        onPressOut={() => {
+          setPressed(false);
+          press(1);
+        }}
         onPress={(event) => {
           if (shouldHaptic && Platform.OS !== 'web') {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
           onPress?.(event);
         }}
-        style={({ pressed }) => [
+        /*
+          A PLAIN ARRAY, NOT `({ pressed }) => [...]`.
+
+          Pressable's function style is the documented way to tint a press, and
+          it is also the single most fragile prop in this component: anything
+          that wraps Pressable has to know to call it. This file already carries
+          the scar — Animated.createAnimatedComponent(Pressable) silently
+          discarded it, and every Button in the app rendered with no height, no
+          padding and no background. Pressable is now wrapped a second time, by
+          NativeWind's jsx runtime, which swaps it for `CssInterop.Pressable`
+          for every element in the app.
+
+          When that form is dropped the button does not degrade, it disappears:
+          the background, the size and the border all live inside the function.
+          The press tint is the only thing worth that risk, and it is not worth
+          it. Tracking `pressed` in state costs one re-render per touch and
+          makes the array plain, which is the form every wrapper handles.
+        */
+        style={[
           styles.base,
           {
             height: dims.height,
@@ -217,6 +242,7 @@ export function IconButton({
 }: IconButtonProps) {
   const tokens = VARIANTS[variant];
   const dims = SIZES[size];
+  const [pressed, setPressed] = useState(false);
 
   return (
     <Pressable
@@ -226,7 +252,12 @@ export function IconButton({
       disabled={disabled}
       // Keeps the tappable area at the minimum even when the glyph is smaller.
       hitSlop={Math.max(0, (DS.layout.touchTarget - dims.height) / 2)}
-      style={({ pressed }) => [
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      // A plain array for the same reason as Button above: this is the back
+      // arrow on the auth screens, and it sits on a photograph. If the style is
+      // dropped there is no scrim disc behind the glyph and no way back.
+      style={[
         styles.base,
         {
           width: dims.height,
@@ -235,7 +266,7 @@ export function IconButton({
           backgroundColor: pressed && !disabled ? tokens.pressedBackground : tokens.background,
           borderColor: tokens.border,
         },
-        (variant === 'outline' || variant === 'onImage') && styles.outlineBorder,
+        tokens.stroked && styles.outlineBorder,
         variant === 'onImage' && styles.round,
         disabled && styles.disabled,
         style,
