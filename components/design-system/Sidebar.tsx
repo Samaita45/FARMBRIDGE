@@ -208,17 +208,33 @@ export function Sidebar({
                   item.active && styles.itemActive,
                   pressed && styles.pressedRow,
                 ]}>
-                <Ionicons
-                  name={item.icon}
-                  size={22}
-                  color={
-                    item.destructive
-                      ? DS.semantic.danger.fg
-                      : item.active
-                        ? DS.colors.primaryDark
-                        : DS.colors.textMuted
-                  }
-                />
+                {/*
+                  A FIXED-WIDTH SLOT, NOT A BARE GLYPH.
+
+                  Ionicons renders as text, and its glyphs are not the same
+                  width — a navigate arrow is narrow, a settings cog is wide.
+                  Placed directly in the row, each icon took whatever width its
+                  glyph happened to need and every label started at a different
+                  x, so "Request a truck" and "Transporters" sat a few pixels
+                  apart down a list that should read as one column.
+
+                  The slot fixes the width and centres the glyph inside it, so
+                  the icons line up with each other and the labels line up with
+                  each other.
+                */}
+                <View style={styles.itemIcon}>
+                  <Ionicons
+                    name={item.icon}
+                    size={22}
+                    color={
+                      item.destructive
+                        ? DS.semantic.danger.fg
+                        : item.active
+                          ? DS.colors.primaryDark
+                          : DS.colors.textMuted
+                    }
+                  />
+                </View>
                 <Text
                   style={[
                     styles.itemLabel,
@@ -308,6 +324,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: DS.spacing.md,
   },
   itemActive: { backgroundColor: DS.colors.primaryBg },
+  // 24 is the widest Ionicons glyph at size 22, so nothing is ever clipped and
+  // every label starts at the same place.
+  itemIcon: { width: 24, alignItems: 'center', justifyContent: 'center' },
   itemLabel: {
     flex: 1,
     fontSize: DS.typography.h3.fontSize,
