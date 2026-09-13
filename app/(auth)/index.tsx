@@ -1,120 +1,47 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
 import {
-  Dimensions,
   Pressable,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   View,
-  type LayoutChangeEvent,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, SlideToAct } from '@/components/design-system';
+import { SlideToAct } from '@/components/design-system';
 import { AppLogo } from '@/components/ui/app-logo';
 import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
 import { AuthImages, RemoteImages } from '@/constants/images';
 import { imageSourceFor } from '@/constants/produce-imagery';
-import type { IconName } from '@/types/icons';
-
-const INITIAL = Dimensions.get('window');
-
-interface PageSize {
-  width: number;
-  height: number;
-}
-
-const FEATURES: { icon: IconName; label: string }[] = [
-  { icon: 'leaf-outline', label: 'Crops' },
-  { icon: 'storefront-outline', label: 'Market' },
-  { icon: 'bus-outline', label: 'Transport' },
-  { icon: 'wallet-outline', label: 'Money' },
-];
 
 /**
- * Onboarding, in two pages you swipe between.
+ * Onboarding. One screen.
  *
- * Page one: brand + slide to continue.
- * Page two: create an account or sign in — both as full-width buttons.
+ * IT USED TO BE TWO, AND THE SECOND ONE EARNED ITS REMOVAL. Sliding to get
+ * started scrolled a pager to a card offering "Create an account" and "Sign
+ * in" — a second decision to reach the decision, with a swipe in between that
+ * fought the slide control badly enough to need the pager locked while the
+ * thumb was down. Getting started now goes where getting started goes: the
+ * register form.
+ *
+ * SIGNING IN IS STILL HERE. It was on the deleted card, and dropping it would
+ * have stranded every returning user behind a form for an account they already
+ * have. It sits under the slide, worded as what it is.
+ *
+ * THE HERO IS REMOTE WITH A BUNDLED FALLBACK. The Unsplash photograph is the
+ * one the reference uses — a tractor working a green field — but this is the
+ * screen someone opens before the app has ever had a network, on a new phone
+ * or a new SIM. `placeholder` holds the bundled photo underneath, so the screen
+ * is never empty and is at its best when there is signal.
  */
 export default function OnboardingScreen() {
-  const scrollRef = useRef<ScrollView>(null);
-  const [page, setPage] = useState(0);
-  const [size, setSize] = useState({ width: INITIAL.width, height: INITIAL.height });
-  const [pagerLocked, setPagerLocked] = useState(false);
-
-  const onLayout = (e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    if (width !== size.width || height !== size.height) setSize({ width, height });
-  };
-
-  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const next = Math.round(e.nativeEvent.contentOffset.x / size.width);
-    if (next !== page) setPage(next);
-  };
-
-  const goToChoice = () => scrollRef.current?.scrollTo({ x: size.width, animated: true });
-
   return (
-    <View style={styles.root} onLayout={onLayout}>
-      <StatusBar barStyle={page === 0 ? 'dark-content' : 'light-content'} />
+    <View style={styles.root}>
+      {/* The top half is a white sheet, so the clock has to be dark. */}
+      <StatusBar barStyle="dark-content" />
 
-      <ScrollView
-        ref={scrollRef}
-        horizontal
-        pagingEnabled
-        scrollEnabled={!pagerLocked}
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={onScroll}
-        scrollEventThrottle={16}
-        // Keep the pager from fighting the slide control on Android.
-        nestedScrollEnabled={false}
-        style={styles.pager}>
-        <Intro
-          size={size}
-          onStart={goToChoice}
-          onSlidingChange={setPagerLocked}
-          onSignIn={() => router.push(asHref('/(auth)/login'))}
-        />
-        <Choice size={size} />
-      </ScrollView>
-
-      <View style={[styles.dots, page === 0 && styles.dotsOnLight]} pointerEvents="none">
-        {[0, 1].map((i) => (
-          <View
-            key={i}
-            style={[
-              styles.dot,
-              page === 0 && styles.dotOnLight,
-              page === i && (page === 0 ? styles.dotActiveOnLight : styles.dotActive),
-            ]}
-          />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function Intro({
-  size,
-  onStart,
-  onSlidingChange,
-  onSignIn,
-}: {
-  size: PageSize;
-  onStart: () => void;
-  onSlidingChange: (sliding: boolean) => void;
-  onSignIn: () => void;
-}) {
-  return (
-    <View style={[styles.page, size]}>
       <SafeAreaView edges={['top']} style={styles.introTopSafe}>
         <View style={styles.introTop}>
           <AppLogo size={40} />
@@ -124,6 +51,7 @@ function Intro({
           </Text>
 
           <View style={styles.headlineRow}>
+            {/* Decorative: the words either side carry the meaning. */}
             <Image
               source={imageSourceFor('tomato vegetables')}
               style={styles.headlineChip}
@@ -159,12 +87,11 @@ function Intro({
         <SafeAreaView edges={['bottom']} style={styles.heroSafe}>
           <SlideToAct
             label="Slide to get started"
-            accessibilityLabel="Get started"
-            onComplete={onStart}
-            onSlidingChange={onSlidingChange}
+            accessibilityLabel="Get started and create an account"
+            onComplete={() => router.push(asHref('/(auth)/register'))}
           />
           <Pressable
-            onPress={onSignIn}
+            onPress={() => router.push(asHref('/(auth)/login'))}
             accessibilityRole="button"
             accessibilityLabel="Sign in to an existing account"
             hitSlop={10}
@@ -177,96 +104,9 @@ function Intro({
   );
 }
 
-function Choice({ size }: { size: PageSize }) {
-  return (
-    <View style={[styles.page, styles.choicePage, size]}>
-      <Image
-        source={AuthImages.onboardingFarm}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        transition={250}
-      />
-      <View style={styles.choiceScrim} />
-
-      <SafeAreaView style={styles.choiceSafe}>
-        <View style={styles.choiceBrand}>
-          <AppLogo size={44} />
-          <View style={styles.flex}>
-            <Text style={styles.choiceBrandName}>FarmBridge</Text>
-            <Text style={styles.choiceBrandSub}>Zimbabwe’s farming platform</Text>
-          </View>
-        </View>
-
-        <View style={styles.panel}>
-          <Text style={styles.panelTitle} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-            Grow, sell and move your harvest
-          </Text>
-          <Text style={styles.panelBody} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-            Everything in one place, and it works offline when the signal does not.
-          </Text>
-
-          <View style={styles.features}>
-            {FEATURES.map((feature) => (
-              <View key={feature.label} style={styles.feature}>
-                <Ionicons name={feature.icon} size={14} color={DS.colors.primary} />
-                <Text style={styles.featureLabel} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-                  {feature.label}
-                </Text>
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.actions}>
-            <Button
-              title="Create an account"
-              variant="success"
-              size="lg"
-              icon="arrow-forward"
-              iconPosition="right"
-              onPress={() => router.push(asHref('/(auth)/register'))}
-              accessibilityLabel="Create a new FarmBridge account"
-            />
-            <Button
-              title="Sign in"
-              variant="success"
-              size="lg"
-              icon="log-in-outline"
-              onPress={() => router.push(asHref('/(auth)/login'))}
-              accessibilityLabel="Sign in to an existing account"
-            />
-          </View>
-        </View>
-      </SafeAreaView>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: DS.colors.surface },
-  pager: { flex: 1 },
-  page: {},
-  flex: { flex: 1 },
   pressed: { opacity: 0.75 },
-
-  dots: {
-    position: 'absolute',
-    bottom: 10,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  dotsOnLight: { bottom: 14 },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.45)',
-  },
-  dotOnLight: { backgroundColor: 'rgba(15, 23, 42, 0.2)' },
-  dotActive: { width: 18, backgroundColor: DS.colors.textInverse },
-  dotActiveOnLight: { width: 18, backgroundColor: DS.colors.primary },
 
   introTopSafe: { backgroundColor: DS.colors.surface },
   introTop: {
@@ -325,65 +165,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.textInverse,
   },
-
-  choicePage: { backgroundColor: DS.colors.text },
-  choiceScrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.55)' },
-  choiceSafe: { flex: 1, justifyContent: 'space-between', padding: DS.spacing.md },
-
-  choiceBrand: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: DS.spacing.sm + 4,
-    marginTop: DS.spacing.sm,
-  },
-  choiceBrandName: {
-    fontSize: DS.typography.h1.fontSize,
-    fontFamily: DS.fontFamily.display,
-    color: DS.colors.textInverse,
-  },
-  choiceBrandSub: {
-    fontSize: DS.typography.caption.fontSize,
-    fontFamily: DS.fontFamily.regular,
-    color: DS.colors.textInverse,
-    marginTop: 1,
-  },
-
-  panel: {
-    backgroundColor: DS.colors.surface,
-    borderRadius: DS.radius.xxl,
-    padding: DS.spacing.lg,
-    gap: DS.spacing.sm + 4,
-    marginBottom: DS.spacing.lg,
-    ...DS.shadow.elevated,
-  },
-  panelTitle: {
-    fontSize: DS.typography.display.fontSize,
-    lineHeight: DS.typography.display.lineHeight,
-    fontFamily: DS.fontFamily.display,
-    color: DS.colors.text,
-  },
-  panelBody: {
-    fontSize: DS.typography.bodySm.fontSize,
-    lineHeight: 21,
-    fontFamily: DS.fontFamily.regular,
-    color: DS.colors.textMuted,
-  },
-
-  features: { flexDirection: 'row', flexWrap: 'wrap', gap: DS.spacing.sm },
-  feature: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: DS.colors.primaryBg,
-    borderRadius: DS.radius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  featureLabel: {
-    fontSize: 12,
-    fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.primaryDark,
-  },
-
-  actions: { gap: DS.spacing.sm, marginTop: DS.spacing.sm },
 });
