@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ForgotPasswordModal } from '@/components/auth/forgot-password-modal';
 import { Button, IconButton, Input } from '@/components/design-system';
 import { useToast } from '@/components/ui/toast-provider';
+import { BUILD_MARKER } from '@/constants/build-marker';
 import { DS } from '@/constants/design-system';
 import { AuthImages } from '@/constants/images';
 import { asHref } from '@/lib/href';
@@ -273,7 +274,7 @@ export default function LoginScreen() {
                     accessibilityLabel="Fill in the demo account credentials"
                     style={styles.demo}>
                     <Text style={styles.demoText}>
-                      Development build · use {demoCredentials.email}
+                      Development build · use {demoCredentials.email} · {BUILD_MARKER}
                     </Text>
                   </Pressable>
                 ) : null}
