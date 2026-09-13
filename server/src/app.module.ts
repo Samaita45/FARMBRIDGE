@@ -11,6 +11,7 @@ import { PermissionsGuard } from '@/common/guards/permissions.guard';
 import { HealthController } from '@/health/health.controller';
 import { MapsModule } from '@/maps/maps.module';
 import { PaymentsModule } from '@/payments/payments.module';
+import { ProductsModule } from '@/products/products.module';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { TransportModule } from '@/transport/transport.module';
 
@@ -41,6 +42,7 @@ import { TransportModule } from '@/transport/transport.module';
     AuditModule,
     AuthModule,
     PaymentsModule,
+    ProductsModule,
     MapsModule,
     TransportModule,
   ],

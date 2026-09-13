@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +16,10 @@ import { ProductCard } from '@/components/market/product-card';
 import { DS } from '@/constants/design-system';
 import { imageSourceFor } from '@/constants/produce-imagery';
 import { MARKET_CATEGORIES, MARKET_PRODUCTS } from '@/constants/zimbabwe-data';
+import { SEED_CATALOGUE_ZWG_RATE } from '@/constants/zimbabwe-data/provinces-seasons';
+import { IS_API_ENABLED } from '@/services/api/config';
+import { toMarketProduct } from '@/services/api/product-mapper';
+import { productsApi } from '@/services/api/products.api';
 import { asHref } from '@/lib/href';
 import { extraTopPad } from '@/lib/platform-ui';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
@@ -41,6 +45,39 @@ export default function MarketplaceScreen() {
 
   const [filters, setFilters] = useState<MarketFilters>(DEFAULT_FILTERS);
   const [filterOpen, setFilterOpen] = useState(false);
+
+  /*
+    LISTINGS PEOPLE ACTUALLY POSTED.
+
+    MARKET_PRODUCTS is a bundled catalogue of agricultural supplies — seed,
+    equipment, agrochemicals — and it is what the shelf shows with no network.
+    These are the ones farmers have listed through Add produce, and without
+    them the whole add-product flow ends in a drawer nobody opens.
+
+    They are kept in their own list rather than merged into the catalogue. The
+    catalogue entries carry seeded ratings and certification flags; a real
+    listing has neither, and shuffling the two together would leave a buyer
+    comparing a reviewed supplier against a farmer whose blank rating looks
+    like a bad one.
+  */
+  const [live, setLive] = useState<MarketProduct[]>([]);
+
+  useEffect(() => {
+    if (!IS_API_ENABLED) return;
+    let cancelled = false;
+    void productsApi
+      .list({ limit: 20 })
+      .then(({ products }) => {
+        if (cancelled) return;
+        setLive(products.map((dto) => toMarketProduct(dto, SEED_CATALOGUE_ZWG_RATE)));
+      })
+      .catch(() => {
+        /* the catalogue below still renders; a toast on a tab open helps nobody */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const showSeller = user?.role === 'farmer' || user?.role === 'both';
   const filterCount = activeFilterCount(filters);
@@ -261,6 +298,30 @@ export default function MarketplaceScreen() {
                         <Text style={styles.sellerRatingText}>{item.rating}</Text>
                       </View>
                     </Pressable>
+                  )}
+                />
+              </View>
+            ) : null}
+
+            {/*
+              Fresh listings sit above the catalogue and are labelled as what
+              they are. Their cards carry no rating, because nobody has left
+              one — the card hides the stars at zero rather than showing an
+              empty score that reads as a bad one.
+            */}
+            {live.length > 0 ? (
+              <View style={styles.liveSection}>
+                <Text style={styles.sectionTitle}>Fresh from farmers</Text>
+                <FlatList
+                  data={live}
+                  keyExtractor={(p) => p.id}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.liveRow}
+                  renderItem={({ item }) => (
+                    <View style={styles.liveCard}>
+                      <ProductCard product={item} />
+                    </View>
                   )}
                 />
               </View>
@@ -501,6 +562,11 @@ const styles = StyleSheet.create({
     color: DS.colors.textMuted,
   },
 
+  liveSection: { gap: DS.spacing.sm, marginBottom: DS.spacing.md },
+  liveRow: { gap: DS.spacing.sm, paddingRight: DS.spacing.md },
+  // The grid cards size themselves to a column; in a horizontal strip they
+  // need an explicit width or they collapse to their content.
+  liveCard: { width: 168 },
   resultsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   clearText: {
     fontSize: DS.typography.caption.fontSize,

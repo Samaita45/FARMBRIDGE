@@ -1,18 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/design-system';
+import { Button, LoadingState } from '@/components/design-system';
 import { ProductCard } from '@/components/market/product-card';
 import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
 import { whatsAppUrl } from '@/constants/support';
 import { getProductById, MARKET_PRODUCTS } from '@/constants/zimbabwe-data';
+import { SEED_CATALOGUE_ZWG_RATE } from '@/constants/zimbabwe-data/provinces-seasons';
+import { IS_API_ENABLED } from '@/services/api/config';
+import { toMarketProduct } from '@/services/api/product-mapper';
+import { productsApi } from '@/services/api/products.api';
 import { asHref } from '@/lib/href';
 import { useCartStore, type CartState } from '@/stores/cartStore';
+import type { MarketProduct } from '@/types';
 import { getProductImage } from '@/utils/product-emoji';
 
 /**
@@ -40,7 +45,40 @@ export default function ProductDetailScreen() {
   const cartCount = useCartStore((s: CartState) => s.getItemCount());
   const [quantity, setQuantity] = useState(1);
 
-  const product = getProductById(id ?? '');
+  /*
+    The bundled catalogue first, then the server.
+
+    A listing a farmer posted through Add produce is not in MARKET_PRODUCTS, so
+    looking only there gave every fresh listing a "product not found". The
+    catalogue lookup is synchronous and covers the offline case; the fetch only
+    runs when the id is not one of ours.
+  */
+  const catalogue = getProductById(id ?? '');
+  const [fetched, setFetched] = useState<MarketProduct | null>(null);
+  // Settled, not loading. Whether to show the spinner is derived below: setting
+  // state in an effect body is a cascading render and the compiler rejects it.
+  const [settled, setSettled] = useState(false);
+
+  useEffect(() => {
+    if (catalogue || !id || !IS_API_ENABLED) return;
+    let cancelled = false;
+    void productsApi
+      .get(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setFetched(dto ? toMarketProduct(dto, SEED_CATALOGUE_ZWG_RATE) : null);
+      })
+      .finally(() => {
+        if (!cancelled) setSettled(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, catalogue]);
+
+  const looking = !catalogue && Boolean(id) && IS_API_ENABLED && !settled;
+
+  const product = catalogue ?? fetched;
 
   const similar = useMemo(
     () =>
@@ -51,6 +89,13 @@ export default function ProductDetailScreen() {
         : [],
     [product]
   );
+
+  /*
+    "No longer available" is a claim, and it must not be made while the answer
+    is still in the post. Without this the screen flashes that message for every
+    fresh listing before the fetch lands.
+  */
+  if (!product && looking) return <LoadingState title="Loading listing" />;
 
   if (!product) {
     return (
@@ -150,10 +195,16 @@ export default function ProductDetailScreen() {
               <View style={styles.sellerMeta}>
                 <Ionicons name="location-outline" size={12} color={DS.colors.textSoft} />
                 <Text style={styles.sellerMetaText}>{product.location}</Text>
-                <Ionicons name="star" size={12} color={DS.semantic.warning.solid} />
-                <Text style={styles.sellerMetaText}>
-                  {product.rating} ({product.reviewCount})
-                </Text>
+                {/* Hidden at zero: "0 (0)" beside a seller reads as a bad
+                    score rather than as no score at all. */}
+                {product.reviewCount > 0 ? (
+                  <>
+                    <Ionicons name="star" size={12} color={DS.semantic.warning.solid} />
+                    <Text style={styles.sellerMetaText}>
+                      {product.rating} ({product.reviewCount})
+                    </Text>
+                  </>
+                ) : null}
               </View>
             </View>
             <Ionicons name="chevron-forward" size={18} color={DS.colors.textFaint} />
@@ -165,8 +216,9 @@ export default function ProductDetailScreen() {
           <View style={styles.reviewsEmpty}>
             <Ionicons name="chatbubble-ellipses-outline" size={18} color={DS.colors.textSoft} />
             <Text style={styles.reviewsEmptyText}>
-              FarmBridge does not collect written reviews yet. The {product.rating} rating comes
-              with the listing; there is nothing here that a buyer has typed.
+              {product.reviewCount > 0
+                ? `FarmBridge does not collect written reviews yet. The ${product.rating} rating comes with the listing; there is nothing here that a buyer has typed.`
+                : 'Nobody has reviewed this listing. FarmBridge does not collect reviews yet, so there is no score to show rather than a zero.'}
             </Text>
           </View>
 

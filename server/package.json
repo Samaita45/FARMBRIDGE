@@ -21,6 +21,7 @@
     "prisma:seed": "prisma db seed",
     "test:transport-e2e": "node scripts/transport-e2e.mjs",
     "test:auth-e2e": "node scripts/auth-e2e.mjs",
+    "test:products-e2e": "node scripts/products-e2e.mjs",
     "test:maps-fallback": "npm run build && node scripts/maps-fallback-check.mjs"
   },
   "dependencies": {
