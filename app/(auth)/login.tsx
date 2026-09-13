@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import {
@@ -37,9 +37,18 @@ export default function LoginScreen() {
   const { showToast } = useToast();
   const login = useAuthStore((s: AuthState) => s.login);
   const setLoading = useAuthStore((s: AuthState) => s.setLoading);
-  const isLoading = useAuthStore((s: AuthState) => s.isLoading);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  /*
+    THE BUTTON'S OWN BUSY FLAG, NOT THE STORE'S.
+
+    It was reading `isLoading` from the auth store, which is app-wide state also
+    set during session hydration and by the route guards. Anything else that
+    left it true turned this button into a disabled spinner at 45% opacity, and
+    the person looking at the screen just sees a sign-in button that has gone
+    faint and stopped responding. A submit spinner belongs to the submit.
+  */
+  const [submitting, setSubmitting] = useState(false);
 
   const {
     control,
@@ -73,6 +82,7 @@ export default function LoginScreen() {
   }, [setValue]);
 
   const onSubmit = async (data: LoginFormData) => {
+    setSubmitting(true);
     setLoading(true);
     setFormError(null);
     try {
@@ -97,6 +107,7 @@ export default function LoginScreen() {
       }
     } finally {
       setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -233,20 +244,29 @@ export default function LoginScreen() {
               <Button
                 title="Sign in"
                 size="lg"
-                loading={isLoading}
+                icon="log-in-outline"
+                loading={submitting}
                 onPress={handleSubmit(onSubmit)}
+                accessibilityLabel="Sign in to your FarmBridge account"
               />
 
-              <Link href="/(auth)/register" asChild>
-                <Pressable
-                  accessibilityRole="link"
-                  accessibilityLabel="Create a new account"
-                  style={styles.registerRow}>
-                  <Text style={styles.registerText}>
-                    Don’t have an account? <Text style={styles.link}>Register</Text>
-                  </Text>
-                </Pressable>
-              </Link>
+              {/*
+                Navigated with router.push rather than <Link asChild>. The two
+                hand-rolled pills on the onboarding screen used asChild and came
+                out unstyled on device; there is no reason for the way out of a
+                sign-in screen to depend on that, and a plain Pressable keeps
+                its own styles no matter what the router does with cloned props.
+              */}
+              <Pressable
+                onPress={() => router.push(asHref('/(auth)/register'))}
+                accessibilityRole="button"
+                accessibilityLabel="Create a new account"
+                hitSlop={8}
+                style={({ pressed }) => [styles.registerRow, pressed && styles.pressed]}>
+                <Text style={styles.registerText}>
+                  New to FarmBridge? <Text style={styles.link}>Create an account</Text>
+                </Text>
+              </Pressable>
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
@@ -306,12 +326,13 @@ const styles = StyleSheet.create({
   footer: {
     gap: DS.spacing.sm,
     paddingHorizontal: DS.spacing.md,
-    paddingTop: DS.spacing.sm + 4,
-    paddingBottom: DS.spacing.sm + 4,
+    paddingTop: DS.spacing.md,
+    paddingBottom: DS.spacing.md,
     backgroundColor: DS.colors.surface,
     borderTopWidth: DS.layout.hairline,
     borderTopColor: DS.colors.border,
   },
+  pressed: { opacity: 0.7 },
 
   header: { alignItems: 'center', gap: 4 },
   title: {

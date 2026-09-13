@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   Dimensions,
-  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -16,9 +15,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { SlideToAct } from '@/components/design-system';
+import { Button, SlideToAct } from '@/components/design-system';
 import { AppLogo } from '@/components/ui/app-logo';
 import { DS } from '@/constants/design-system';
+import { asHref } from '@/lib/href';
 import { AuthImages, RemoteImages } from '@/constants/images';
 import { imageSourceFor } from '@/constants/produce-imagery';
 import type { IconName } from '@/types/icons';
@@ -211,29 +211,36 @@ function Choice({ size }: { size: PageSize }) {
           </View>
 
           {/*
-            Both routes as equal, explicitly labelled actions. A new user should
-            not have to infer that "sign in" implies a separate place to register.
-          */}
-          <Link href="/(auth)/register" asChild>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Create an account"
-              style={({ pressed }) => [styles.primaryAction, pressed && styles.pressed]}>
-              <Text style={styles.primaryActionText}>Create an account</Text>
-              <View style={styles.primaryActionIcon}>
-                <Ionicons name="arrow-forward" size={17} color={DS.colors.primary} />
-              </View>
-            </Pressable>
-          </Link>
+            BOTH ROUTES ARE BUTTONS, AND BOTH SAY WHAT THEY DO.
 
-          <Link href="/(auth)/login" asChild>
-            <Pressable
-              accessibilityRole="button"
+            These were hand-rolled pills wrapped in <Link asChild>, and on device
+            they rendered as a bare arrow with no pill and no label — white text
+            on a white panel. Whatever the cause, a screen's only way in is the
+            wrong place to keep a bespoke control: Button is the component the
+            rest of the app uses, it carries its own colours, and it is exercised
+            on every other screen.
+
+            "Sign in" is also a named action now rather than the sentence "I
+            already have an account", which reads as a note rather than a way
+            forward — and returning users are the ones opening this screen most.
+          */}
+          <View style={styles.actions}>
+            <Button
+              title="Create an account"
+              size="lg"
+              icon="arrow-forward"
+              iconPosition="right"
+              onPress={() => router.push(asHref('/(auth)/register'))}
+              accessibilityLabel="Create a new FarmBridge account"
+            />
+            <Button
+              title="Sign in"
+              variant="outline"
+              size="lg"
+              onPress={() => router.push(asHref('/(auth)/login'))}
               accessibilityLabel="Sign in to an existing account"
-              style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressed]}>
-              <Text style={styles.secondaryActionText}>I already have an account</Text>
-            </Pressable>
-          </Link>
+            />
+          </View>
         </View>
       </SafeAreaView>
     </View>
@@ -247,7 +254,6 @@ const styles = StyleSheet.create({
   // its own, so a flexed child collapses; the width and height are given.
   page: {},
   flex: { flex: 1 },
-  pressed: { opacity: 0.9 },
 
   dots: {
     position: 'absolute',
@@ -371,44 +377,6 @@ const styles = StyleSheet.create({
     color: DS.colors.primaryDark,
   },
 
-  primaryAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: DS.spacing.sm,
-    minHeight: 58,
-    paddingLeft: DS.spacing.lg,
-    paddingRight: 6,
-    borderRadius: DS.radius.full,
-    backgroundColor: DS.colors.primary,
-    marginTop: DS.spacing.xs,
-  },
-  primaryActionText: {
-    flex: 1,
-    fontSize: DS.typography.h3.fontSize,
-    fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.textInverse,
-  },
-  primaryActionIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: DS.radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: DS.colors.surface,
-  },
+  actions: { gap: DS.spacing.sm, marginTop: DS.spacing.xs },
 
-  secondaryAction: {
-    minHeight: DS.layout.touchTarget,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: DS.radius.full,
-    borderWidth: 1,
-    borderColor: DS.colors.borderControl,
-  },
-  secondaryActionText: {
-    fontSize: DS.typography.bodySm.fontSize,
-    fontFamily: DS.fontFamily.semibold,
-    color: DS.colors.primary,
-  },
 });
