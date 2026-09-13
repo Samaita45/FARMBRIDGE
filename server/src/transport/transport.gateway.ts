@@ -15,6 +15,7 @@ import type { Server, Socket } from 'socket.io';
 
 import type { AccessTokenPayload, AuthenticatedUser } from '@/auth/authenticated-user';
 import { PrismaService } from '@/prisma/prisma.service';
+import { isTokenRevoked } from '@/auth/token-validity';
 import { PERMISSIONS, resolvePermissions, type RoleName } from '@/rbac/permissions';
 
 import { bookingRoom, transportersRoom, userRoom } from './transport.events';
@@ -128,7 +129,7 @@ export class TransportGateway implements OnGatewayConnection, OnGatewayDisconnec
     if (!user || !user.isActive || user.deletedAt) throw new Error('inactive');
     if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) throw new Error('locked');
     if (payload.tid !== user.tenantId) throw new Error('tenant mismatch');
-    if (payload.iat * 1000 < user.tokensValidFrom.getTime()) throw new Error('revoked');
+    if (isTokenRevoked(payload.iat, user.tokensValidFrom)) throw new Error('revoked');
 
     return {
       id: user.id,

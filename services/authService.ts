@@ -219,9 +219,15 @@ async function readValidSession(): Promise<Session | null> {
 
 export async function registerUser(input: RegisterInput): Promise<User> {
   if (IS_API_ENABLED) {
-    const user = await apiRegister(input);
-    await setJSON(CACHED_PROFILE_KEY, user);
-    return user;
+    try {
+      const user = await apiRegister(input);
+      await setJSON(CACHED_PROFILE_KEY, user);
+      return user;
+    } catch (error) {
+      // A phone that cannot reach the API must still be able to create a
+      // local account — otherwise Expo Go and offline demos are locked out.
+      if (!isOfflineError(error)) throw error;
+    }
   }
 
   const users = await getAllUsers();
@@ -251,9 +257,15 @@ export async function registerUser(input: RegisterInput): Promise<User> {
 
 export async function loginUser(email: string, password: string): Promise<User> {
   if (IS_API_ENABLED) {
-    const user = await apiLogin(email, password);
-    await setJSON(CACHED_PROFILE_KEY, user);
-    return user;
+    try {
+      const user = await apiLogin(email, password);
+      await setJSON(CACHED_PROFILE_KEY, user);
+      return user;
+    } catch (error) {
+      // Same rule as register: unreachable API falls through to the device
+      // store so demo@farmbridge.zw and local accounts still work.
+      if (!isOfflineError(error)) throw error;
+    }
   }
 
   const users = await getAllUsers();

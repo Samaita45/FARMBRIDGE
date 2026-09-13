@@ -122,7 +122,9 @@ export default function RegisterScreen() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}>
               {/* The same crest as the sign-in screen. See login.tsx. */}
-              <View style={styles.sheetCurve} pointerEvents="none" />
+              <View style={styles.curveClip} pointerEvents="none">
+                <View style={styles.sheetCurve} />
+              </View>
 
               <View style={styles.sheet}>
                 <View style={styles.header}>
@@ -361,12 +363,11 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, paddingTop: 96 },
 
   // Matches login.tsx exactly — the two screens are one surface in two states.
+  curveClip: { overflow: 'hidden', marginBottom: -1 },
   sheetCurve: {
-    height: 64,
-    marginHorizontal: -140,
-    marginBottom: -1,
-    borderTopLeftRadius: 400,
-    borderTopRightRadius: 400,
+    height: 56,
+    borderTopLeftRadius: 260,
+    borderTopRightRadius: 260,
     backgroundColor: DS.colors.surface,
   },
   sheet: {

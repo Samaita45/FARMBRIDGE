@@ -153,7 +153,9 @@ export default function LoginScreen() {
                 only the crest of that ellipse is visible, which is the shape
                 the reference draws. It costs nothing and needs no rebuild.
               */}
-              <View style={styles.sheetCurve} pointerEvents="none" />
+              <View style={styles.curveClip} pointerEvents="none">
+                <View style={styles.sheetCurve} />
+              </View>
 
               <View style={styles.sheet}>
                 <View style={styles.header}>
@@ -255,9 +257,7 @@ export default function LoginScreen() {
                 */}
                 <Button
                   title="Sign in"
-                  variant="success"
                   size="lg"
-                  icon="log-in-outline"
                   loading={submitting}
                   onPress={handleSubmit(onSubmit)}
                   accessibilityLabel="Sign in to your FarmBridge account"
@@ -367,12 +367,21 @@ const styles = StyleSheet.create({
     sides so the visible slice is the shallow middle of the arc rather than two
     tight corners — the sweep the reference draws, without an SVG dependency.
   */
+  /*
+    The clip is what keeps the trick honest. The crest below is wider than the
+    screen on purpose, and without a parent that hides the overflow that extra
+    width becomes layout width: every field and button stretched past the right
+    edge and "Forgot password?" was cut in half.
+  */
+  curveClip: { overflow: 'hidden', marginBottom: -1 },
   sheetCurve: {
-    height: 64,
-    marginHorizontal: -140,
-    marginBottom: -1,
-    borderTopLeftRadius: 400,
-    borderTopRightRadius: 400,
+    height: 56,
+    // No negative margin. Spreading the crest wider than the screen pushes both
+    // corners out of view and leaves the flat middle of the arc — a straight
+    // edge that looks like a mistake. Kept at screen width, the radius reads as
+    // the sweep it is.
+    borderTopLeftRadius: 260,
+    borderTopRightRadius: 260,
     backgroundColor: DS.colors.surface,
   },
   sheet: {

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -69,6 +70,24 @@ export class AuthService {
   async register(dto: RegisterDto, context: AuditContext): Promise<AuthResult> {
     const email = dto.email.trim().toLowerCase();
     const phone = normalizePhone(dto.phone);
+
+    /*
+      Check the tenant before writing anything. Without this the create below
+      fails on a foreign key and Prisma's error escapes as a 500 — the app
+      shows "something went wrong" for what is really a misconfigured build,
+      and the server logs a stack trace for a bad request.
+
+      Naming it plainly is right here: a tenant id is build configuration, it
+      ships in EXPO_PUBLIC_TENANT_ID, and the person who sees this message is
+      the one who has to fix it.
+    */
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: dto.tenantId },
+      select: { id: true },
+    });
+    if (!tenant) {
+      throw new BadRequestException('Unknown tenant. Check EXPO_PUBLIC_TENANT_ID for this build.');
+    }
 
     const existing = await this.prisma.user.findFirst({
       where: { tenantId: dto.tenantId, OR: [{ email }, { phone }] },

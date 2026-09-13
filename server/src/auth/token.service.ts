@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
 import { PrismaService } from '@/prisma/prisma.service';
+import { isTokenRevoked } from './token-validity';
 import type { RoleName } from '@/rbac/permissions';
 
 import type {
@@ -151,7 +152,7 @@ export class TokenService {
 
     // Password changes, role changes and "sign out everywhere" bump
     // tokensValidFrom, which invalidates every token issued before it.
-    if (payload.iat && payload.iat * 1000 < user.tokensValidFrom.getTime()) {
+    if (isTokenRevoked(payload.iat, user.tokensValidFrom)) {
       await this.revokeFamily(stored.familyId, 'tokens-invalidated');
       throw new UnauthorizedException('Please sign in again.');
     }

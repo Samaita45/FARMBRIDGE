@@ -13,6 +13,7 @@ import type { Request } from 'express';
 import type { AccessTokenPayload, AuthenticatedUser } from '@/auth/authenticated-user';
 import { IS_PUBLIC_KEY } from '@/common/decorators/public.decorator';
 import { PrismaService } from '@/prisma/prisma.service';
+import { isTokenRevoked } from '@/auth/token-validity';
 import { resolvePermissions, type RoleName } from '@/rbac/permissions';
 
 /**
@@ -85,7 +86,7 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('This account is temporarily locked.');
     }
 
-    if (payload.iat * 1000 < user.tokensValidFrom.getTime()) {
+    if (isTokenRevoked(payload.iat, user.tokensValidFrom)) {
       throw new UnauthorizedException('Please sign in again.');
     }
 
