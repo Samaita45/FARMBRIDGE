@@ -24,8 +24,17 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   rightIcon?: keyof typeof Ionicons.glyphMap;
   onRightIconPress?: () => void;
   rightIconLabel?: string;
+  /** Trailing icon colour. A validity tick is green; a reveal toggle is not. */
+  rightIconColor?: string;
   required?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
+  /**
+   * `outlined` is the form field used across the app. `filled` is the soft
+   * tinted pill the auth screens use — no border, the placeholder carrying the
+   * label, and a leading icon. It exists as a variant rather than a second
+   * component so validation, focus, error and accessibility stay in one place.
+   */
+  variant?: 'outlined' | 'filled';
 }
 
 /**
@@ -42,8 +51,10 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
     rightIcon,
     onRightIconPress,
     rightIconLabel,
+    rightIconColor,
     required,
     containerStyle,
+    variant = 'outlined',
     onFocus,
     onBlur,
     editable = true,
@@ -53,11 +64,21 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
 ) {
   const [focused, setFocused] = useState(false);
 
+  const filled = variant === 'filled';
+
+  /*
+    A filled field shows focus with its border rather than a colour change, so
+    it needs a visible ring when focused and an invisible one otherwise —
+    transparent, not zero-width, so the field does not resize as you tab
+    through it.
+  */
   const borderColor = error
     ? DS.semantic.danger.solid
     : focused
       ? DS.colors.primary
-      : DS.colors.borderControl;
+      : filled
+        ? 'transparent'
+        : DS.colors.borderControl;
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -71,6 +92,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
       <View
         style={[
           styles.field,
+          filled && styles.fieldFilled,
           { borderColor },
           !editable && styles.fieldDisabled,
           error ? styles.fieldError : null,
@@ -79,7 +101,13 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
           <Ionicons
             name={icon}
             size={18}
-            color={error ? DS.semantic.danger.solid : focused ? DS.colors.primary : DS.colors.textSoft}
+            color={
+              error
+                ? DS.semantic.danger.solid
+                : focused || filled
+                  ? DS.colors.primary
+                  : DS.colors.textSoft
+            }
           />
         ) : null}
 
@@ -109,7 +137,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
             accessibilityRole="button"
             accessibilityLabel={rightIconLabel ?? 'Toggle'}
             hitSlop={12}>
-            <Ionicons name={rightIcon} size={18} color={DS.colors.textSoft} />
+            <Ionicons name={rightIcon} size={18} color={rightIconColor ?? DS.colors.textSoft} />
           </Pressable>
         ) : null}
       </View>
@@ -148,6 +176,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: DS.radius.md,
     backgroundColor: DS.colors.surface,
+  },
+  fieldFilled: {
+    backgroundColor: DS.colors.forest[100],
+    borderRadius: DS.radius.lg,
+    minHeight: 56,
+    paddingHorizontal: 16,
   },
   fieldError: {
     backgroundColor: DS.semantic.danger.bg,

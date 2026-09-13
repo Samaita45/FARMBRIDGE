@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import {
@@ -18,7 +19,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, IconButton, Input } from '@/components/design-system';
 import { ProvincePicker } from '@/components/forms/province-picker';
 import { RoleSelector } from '@/components/forms/role-selector';
-import { AppLogo } from '@/components/ui/app-logo';
 import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
 import { AuthImages } from '@/constants/images';
@@ -121,17 +121,30 @@ export default function RegisterScreen() {
               contentContainerStyle={styles.scroll}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}>
-              <View style={styles.header}>
-                <AppLogo size={48} />
-                <Text style={styles.title} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-                  Create your account
-                </Text>
-                <Text style={styles.subtitle} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-                  Join Zimbabwe’s farming community
-                </Text>
-              </View>
+              {/* The same crest as the sign-in screen. See login.tsx. */}
+              <View style={styles.sheetCurve} pointerEvents="none" />
 
-              <View style={styles.card}>
+              <View style={styles.sheet}>
+                <View style={styles.header}>
+                  <View style={styles.titleRow}>
+                    <Text style={styles.title} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+                      Register
+                    </Text>
+                    <Ionicons
+                      name="leaf"
+                      size={24}
+                      color={DS.colors.forest[400]}
+                      style={styles.titleLeaf}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no"
+                    />
+                  </View>
+                  <Text style={styles.subtitle} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+                    Create your new account
+                  </Text>
+                </View>
+
+                <View style={styles.card}>
                 {formError ? (
                   <View style={styles.alert} accessibilityRole="alert">
                     <Text style={styles.alertText}>{formError}</Text>
@@ -143,7 +156,8 @@ export default function RegisterScreen() {
                   name="name"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                      label="Full name"
+                      variant="filled"
+                      accessibilityLabel="Full name"
                       icon="person-outline"
                       placeholder="Tendai Moyo"
                       autoComplete="name"
@@ -162,7 +176,8 @@ export default function RegisterScreen() {
                   name="email"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                      label="Email address"
+                      variant="filled"
+                      accessibilityLabel="Email address"
                       icon="mail-outline"
                       placeholder="you@example.com"
                       keyboardType="email-address"
@@ -183,7 +198,8 @@ export default function RegisterScreen() {
                   name="phone"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                      label="Mobile number"
+                      variant="filled"
+                      accessibilityLabel="Mobile number"
                       icon="call-outline"
                       placeholder="077 123 4567"
                       keyboardType="phone-pad"
@@ -253,6 +269,7 @@ export default function RegisterScreen() {
                   )}
                 />
 
+                </View>
               </View>
             </ScrollView>
 
@@ -267,20 +284,23 @@ export default function RegisterScreen() {
               <Button
                 title="Create account"
                 size="lg"
+                icon="arrow-forward"
+                iconPosition="right"
                 loading={isLoading}
                 onPress={handleSubmit(onSubmit)}
               />
 
-              <Link href={asHref('/(auth)/login')} asChild>
-                <Pressable
-                  accessibilityRole="link"
-                  accessibilityLabel="Sign in to an existing account"
-                  style={styles.loginRow}>
-                  <Text style={styles.loginText}>
-                    Already have an account? <Text style={styles.link}>Sign in</Text>
-                  </Text>
-                </Pressable>
-              </Link>
+              {/* router.push, not <Link asChild> — see the note in login.tsx. */}
+              <Pressable
+                onPress={() => router.push(asHref('/(auth)/login'))}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in to an existing account"
+                hitSlop={8}
+                style={({ pressed }) => [styles.loginRow, pressed && styles.pressed]}>
+                <Text style={styles.loginText}>
+                  Already have an account? <Text style={styles.link}>Sign in</Text>
+                </Text>
+              </Pressable>
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
@@ -311,7 +331,8 @@ function PasswordField({
   const [revealed, setRevealed] = useState(false);
   return (
     <Input
-      label={label}
+      variant="filled"
+      accessibilityLabel={label}
       icon="lock-closed-outline"
       placeholder={placeholder}
       hint={hint}
@@ -334,10 +355,27 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: DS.colors.text },
   flex: { flex: 1 },
   bg: { flex: 1 },
-  scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.58)' },
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.35)' },
   safe: { flex: 1 },
   backRow: { paddingHorizontal: DS.spacing.md, paddingTop: DS.spacing.sm },
-  scroll: { flexGrow: 1, padding: DS.spacing.md, gap: DS.spacing.md },
+  scroll: { flexGrow: 1, paddingTop: 96 },
+
+  // Matches login.tsx exactly — the two screens are one surface in two states.
+  sheetCurve: {
+    height: 64,
+    marginHorizontal: -140,
+    marginBottom: -1,
+    borderTopLeftRadius: 400,
+    borderTopRightRadius: 400,
+    backgroundColor: DS.colors.surface,
+  },
+  sheet: {
+    flexGrow: 1,
+    backgroundColor: DS.colors.surface,
+    paddingHorizontal: DS.spacing.lg,
+    paddingBottom: DS.spacing.lg,
+    gap: DS.spacing.md,
+  },
   footer: {
     gap: DS.spacing.sm,
     paddingHorizontal: DS.spacing.md,
@@ -348,25 +386,22 @@ const styles = StyleSheet.create({
     borderTopColor: DS.colors.border,
   },
 
-  header: { alignItems: 'center', gap: 3, marginTop: DS.spacing.sm },
+  header: { gap: 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: DS.spacing.xs },
   title: {
-    fontSize: DS.typography.h1.fontSize,
+    fontSize: DS.typography.display.fontSize,
+    lineHeight: DS.typography.display.fontSize * 1.15,
     fontFamily: DS.fontFamily.display,
-    color: DS.colors.textInverse,
-    marginTop: DS.spacing.sm,
+    color: DS.colors.forest[700],
   },
+  titleLeaf: { marginTop: 4, transform: [{ rotate: '-25deg' }] },
   subtitle: {
     fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.regular,
-    color: 'rgba(255, 255, 255, 0.82)',
+    color: DS.colors.textMuted,
   },
 
-  card: {
-    backgroundColor: DS.colors.surface,
-    borderRadius: DS.radius.xl,
-    padding: DS.spacing.lg,
-    gap: DS.spacing.md,
-  },
+  card: { gap: DS.spacing.sm + 2 },
 
   alert: {
     backgroundColor: DS.semantic.danger.bg,
@@ -389,6 +424,7 @@ const styles = StyleSheet.create({
     color: DS.colors.text,
   },
 
+  pressed: { opacity: 0.7 },
   loginRow: { alignItems: 'center', paddingVertical: DS.spacing.sm },
   // White on the photograph before; the bar it lives on now is a surface, and
   // primaryLight measured 2.6:1 there.

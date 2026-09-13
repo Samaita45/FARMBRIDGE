@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   Dimensions,
+  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -23,8 +24,6 @@ import { AuthImages, RemoteImages } from '@/constants/images';
 import { imageSourceFor } from '@/constants/produce-imagery';
 import type { IconName } from '@/types/icons';
 
-// Only the first paint uses this. Everything after comes from onLayout, which
-// is correct in split screen and after a rotation.
 const INITIAL = Dimensions.get('window');
 
 interface PageSize {
@@ -33,43 +32,23 @@ interface PageSize {
 }
 
 const FEATURES: { icon: IconName; label: string }[] = [
-  { icon: 'leaf-outline', label: 'Crop management' },
-  { icon: 'storefront-outline', label: 'Marketplace' },
+  { icon: 'leaf-outline', label: 'Crops' },
+  { icon: 'storefront-outline', label: 'Market' },
   { icon: 'bus-outline', label: 'Transport' },
-  { icon: 'wallet-outline', label: 'Financials' },
+  { icon: 'wallet-outline', label: 'Money' },
 ];
 
 /**
  * Onboarding, in two pages you swipe between.
  *
- * The first is the Farm UI reference as drawn: large type on a clean ground
- * with an inline photo chip, a photograph filling the lower two thirds under a
- * rounded top edge, and a translucent Get Started bar with the circular arrow.
- * The second is the choice of route in — create an account, or sign in.
- *
- * WHY TWO PAGES RATHER THAN ONE. The reference has a single Get Started, which
- * works when there is one way in. FarmBridge has two, and the version that
- * offered only "sign in" left new users to work out that registering lived
- * somewhere else. Splitting them keeps the reference's uncluttered first
- * screen and still puts both routes in front of you, each labelled.
- *
- * THE PAGES ARE SIZED, NOT FLEXED. A horizontal ScrollView gives its content
- * container no height of its own, so a child with `flex: 1` collapses to
- * nothing — which is what happened here: the hero on page one and the whole
- * panel on page two, Create an account and Sign in with it, rendered with zero
- * height and could not be seen. Both pages take an explicit width and height
- * measured from the container.
- *
- * THE HERO IS REMOTE WITH A BUNDLED FALLBACK. The Unsplash photograph is the
- * one the reference uses — a tractor working a green field — but this is the
- * screen someone opens before the app has ever had a network, on a new phone
- * or a new SIM. `placeholder` holds the bundled photo underneath, so the screen
- * is never empty and is at its best when there is signal.
+ * Page one: brand + slide to continue.
+ * Page two: create an account or sign in — both as full-width buttons.
  */
 export default function OnboardingScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState({ width: INITIAL.width, height: INITIAL.height });
+  const [pagerLocked, setPagerLocked] = useState(false);
 
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -85,35 +64,55 @@ export default function OnboardingScreen() {
 
   return (
     <View style={styles.root} onLayout={onLayout}>
-      {/*
-        Page one is white at the top and page two is a dark photograph, so a
-        single bar style would hide the clock on one of them.
-      */}
       <StatusBar barStyle={page === 0 ? 'dark-content' : 'light-content'} />
 
       <ScrollView
         ref={scrollRef}
         horizontal
         pagingEnabled
+        scrollEnabled={!pagerLocked}
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onScroll}
         scrollEventThrottle={16}
+        // Keep the pager from fighting the slide control on Android.
+        nestedScrollEnabled={false}
         style={styles.pager}>
-        <Intro size={size} onStart={goToChoice} />
+        <Intro
+          size={size}
+          onStart={goToChoice}
+          onSlidingChange={setPagerLocked}
+          onSignIn={() => router.push(asHref('/(auth)/login'))}
+        />
         <Choice size={size} />
       </ScrollView>
 
-      <View style={styles.dots} pointerEvents="none">
+      <View style={[styles.dots, page === 0 && styles.dotsOnLight]} pointerEvents="none">
         {[0, 1].map((i) => (
-          <View key={i} style={[styles.dot, page === i && styles.dotActive]} />
+          <View
+            key={i}
+            style={[
+              styles.dot,
+              page === 0 && styles.dotOnLight,
+              page === i && (page === 0 ? styles.dotActiveOnLight : styles.dotActive),
+            ]}
+          />
         ))}
       </View>
     </View>
   );
 }
 
-/** Page one — the reference. */
-function Intro({ size, onStart }: { size: PageSize; onStart: () => void }) {
+function Intro({
+  size,
+  onStart,
+  onSlidingChange,
+  onSignIn,
+}: {
+  size: PageSize;
+  onStart: () => void;
+  onSlidingChange: (sliding: boolean) => void;
+  onSignIn: () => void;
+}) {
   return (
     <View style={[styles.page, size]}>
       <SafeAreaView edges={['top']} style={styles.introTopSafe}>
@@ -125,7 +124,6 @@ function Intro({ size, onStart }: { size: PageSize; onStart: () => void }) {
           </Text>
 
           <View style={styles.headlineRow}>
-            {/* Decorative: the words either side carry the meaning. */}
             <Image
               source={imageSourceFor('tomato vegetables')}
               style={styles.headlineChip}
@@ -163,14 +161,22 @@ function Intro({ size, onStart }: { size: PageSize; onStart: () => void }) {
             label="Slide to get started"
             accessibilityLabel="Get started"
             onComplete={onStart}
+            onSlidingChange={onSlidingChange}
           />
+          <Pressable
+            onPress={onSignIn}
+            accessibilityRole="button"
+            accessibilityLabel="Sign in to an existing account"
+            hitSlop={10}
+            style={({ pressed }) => [styles.signInLink, pressed && styles.pressed]}>
+            <Text style={styles.signInLinkText}>Already have an account? Sign in</Text>
+          </Pressable>
         </SafeAreaView>
       </View>
     </View>
   );
 }
 
-/** Page two — the two ways in. */
 function Choice({ size }: { size: PageSize }) {
   return (
     <View style={[styles.page, styles.choicePage, size]}>
@@ -202,7 +208,7 @@ function Choice({ size }: { size: PageSize }) {
           <View style={styles.features}>
             {FEATURES.map((feature) => (
               <View key={feature.label} style={styles.feature}>
-                <Ionicons name={feature.icon} size={15} color={DS.colors.primary} />
+                <Ionicons name={feature.icon} size={14} color={DS.colors.primary} />
                 <Text style={styles.featureLabel} maxFontSizeMultiplier={DS.layout.maxFontScale}>
                   {feature.label}
                 </Text>
@@ -210,23 +216,10 @@ function Choice({ size }: { size: PageSize }) {
             ))}
           </View>
 
-          {/*
-            BOTH ROUTES ARE BUTTONS, AND BOTH SAY WHAT THEY DO.
-
-            These were hand-rolled pills wrapped in <Link asChild>, and on device
-            they rendered as a bare arrow with no pill and no label — white text
-            on a white panel. Whatever the cause, a screen's only way in is the
-            wrong place to keep a bespoke control: Button is the component the
-            rest of the app uses, it carries its own colours, and it is exercised
-            on every other screen.
-
-            "Sign in" is also a named action now rather than the sentence "I
-            already have an account", which reads as a note rather than a way
-            forward — and returning users are the ones opening this screen most.
-          */}
           <View style={styles.actions}>
             <Button
               title="Create an account"
+              variant="success"
               size="lg"
               icon="arrow-forward"
               iconPosition="right"
@@ -235,8 +228,9 @@ function Choice({ size }: { size: PageSize }) {
             />
             <Button
               title="Sign in"
-              variant="outline"
+              variant="success"
               size="lg"
+              icon="log-in-outline"
               onPress={() => router.push(asHref('/(auth)/login'))}
               accessibilityLabel="Sign in to an existing account"
             />
@@ -250,29 +244,30 @@ function Choice({ size }: { size: PageSize }) {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: DS.colors.surface },
   pager: { flex: 1 },
-  // No `flex: 1`. A horizontal ScrollView's content container has no height of
-  // its own, so a flexed child collapses; the width and height are given.
   page: {},
   flex: { flex: 1 },
+  pressed: { opacity: 0.75 },
 
   dots: {
     position: 'absolute',
-    bottom: 8,
+    bottom: 10,
     left: 0,
     right: 0,
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 6,
   },
+  dotsOnLight: { bottom: 14 },
   dot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.5)',
+    backgroundColor: 'rgba(255,255,255,0.45)',
   },
+  dotOnLight: { backgroundColor: 'rgba(15, 23, 42, 0.2)' },
   dotActive: { width: 18, backgroundColor: DS.colors.textInverse },
+  dotActiveOnLight: { width: 18, backgroundColor: DS.colors.primary },
 
-  // ── Page one ──────────────────────────────────────────────────────────────
   introTopSafe: { backgroundColor: DS.colors.surface },
   introTop: {
     paddingHorizontal: DS.spacing.lg,
@@ -312,13 +307,25 @@ const styles = StyleSheet.create({
   },
   heroScrim: {
     ...StyleSheet.absoluteFill,
-    top: '55%',
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    top: '50%',
+    backgroundColor: 'rgba(15, 23, 42, 0.58)',
   },
-  heroSafe: { padding: DS.spacing.md, paddingBottom: DS.spacing.lg },
+  heroSafe: {
+    paddingHorizontal: DS.spacing.md,
+    paddingTop: DS.spacing.md,
+    paddingBottom: DS.spacing.xl,
+    gap: DS.spacing.sm,
+  },
+  signInLink: {
+    alignItems: 'center',
+    paddingVertical: DS.spacing.sm,
+  },
+  signInLinkText: {
+    fontSize: DS.typography.bodySm.fontSize,
+    fontFamily: DS.fontFamily.semibold,
+    color: DS.colors.textInverse,
+  },
 
-
-  // ── Page two ──────────────────────────────────────────────────────────────
   choicePage: { backgroundColor: DS.colors.text },
   choiceScrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.55)' },
   choiceSafe: { flex: 1, justifyContent: 'space-between', padding: DS.spacing.md },
@@ -346,7 +353,8 @@ const styles = StyleSheet.create({
     borderRadius: DS.radius.xxl,
     padding: DS.spacing.lg,
     gap: DS.spacing.sm + 4,
-    marginBottom: DS.spacing.md,
+    marginBottom: DS.spacing.lg,
+    ...DS.shadow.elevated,
   },
   panelTitle: {
     fontSize: DS.typography.display.fontSize,
@@ -372,11 +380,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   featureLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.primaryDark,
   },
 
-  actions: { gap: DS.spacing.sm, marginTop: DS.spacing.xs },
-
+  actions: { gap: DS.spacing.sm, marginTop: DS.spacing.sm },
 });

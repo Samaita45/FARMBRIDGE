@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -18,7 +19,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ForgotPasswordModal } from '@/components/auth/forgot-password-modal';
 import { Button, IconButton, Input } from '@/components/design-system';
-import { AppLogo } from '@/components/ui/app-logo';
 import { useToast } from '@/components/ui/toast-provider';
 import { DS } from '@/constants/design-system';
 import { AuthImages } from '@/constants/images';
@@ -115,6 +115,10 @@ export default function LoginScreen() {
     <View style={styles.root}>
       <StatusBar barStyle="light-content" />
       <ImageBackground source={AuthImages.loginProduce} style={styles.bg} resizeMode="cover">
+        {/*
+          A soft scrim only over the photograph's own band. The sheet below is
+          opaque, so darkening the whole screen would only dull the form.
+        */}
         <View style={styles.scrim} />
 
         <SafeAreaView style={styles.safe}>
@@ -140,31 +144,59 @@ export default function LoginScreen() {
               contentContainerStyle={styles.scroll}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}>
-              <View style={styles.header}>
-                <AppLogo size={56} />
-                <Text style={styles.title} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-                  Welcome back
-                </Text>
-                <Text style={styles.subtitle} maxFontSizeMultiplier={DS.layout.maxFontScale}>
-                  Sign in to your FarmBridge account
-                </Text>
-              </View>
+              {/*
+                THE CURVE.
 
-              <View style={styles.card}>
+                react-native-svg is not installed and adding a native module
+                would invalidate a build that is already hard to produce here,
+                so the sweep is an over-wide view with a very large top radius:
+                only the crest of that ellipse is visible, which is the shape
+                the reference draws. It costs nothing and needs no rebuild.
+              */}
+              <View style={styles.sheetCurve} pointerEvents="none" />
+
+              <View style={styles.sheet}>
+                <View style={styles.header}>
+                  <View style={styles.titleRow}>
+                    <Text style={styles.title} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+                      Welcome back
+                    </Text>
+                    {/* Decorative. The heading beside it carries the meaning. */}
+                    <Ionicons
+                      name="leaf"
+                      size={26}
+                      color={DS.colors.forest[400]}
+                      style={styles.titleLeaf}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no"
+                    />
+                  </View>
+                  <Text style={styles.subtitle} maxFontSizeMultiplier={DS.layout.maxFontScale}>
+                    Login to your account
+                  </Text>
+                </View>
+
+                <View style={styles.card}>
                 {formError ? (
                   <View style={styles.alert} accessibilityRole="alert">
                     <Text style={styles.alertText}>{formError}</Text>
                   </View>
                 ) : null}
 
+                {/*
+                  The reference ticks a valid email. The tick appears only once
+                  the value actually parses, so it means "accepted", not merely
+                  "not empty".
+                */}
                 <Controller
                   control={control}
                   name="email"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                      label="Email address"
+                      variant="filled"
+                      accessibilityLabel="Email address"
                       icon="mail-outline"
-                      placeholder="you@example.com"
+                      placeholder="user@mail.com"
                       keyboardType="email-address"
                       autoCapitalize="none"
                       autoComplete="email"
@@ -173,6 +205,11 @@ export default function LoginScreen() {
                       onChangeText={onChange}
                       onBlur={onBlur}
                       error={errors.email?.message}
+                      rightIcon={
+                        !errors.email && emailLooksValid(value) ? 'checkmark-circle' : undefined
+                      }
+                      rightIconColor={DS.semantic.success.solid}
+                      rightIconLabel="Email address looks valid"
                     />
                   )}
                 />
@@ -211,6 +248,21 @@ export default function LoginScreen() {
                   </Pressable>
                 </View>
 
+                {/*
+                  Sign in sits in the card so it is never clipped by keyboard
+                  resize or mistaken for a missing action. The sticky footer
+                  below only carries the register route.
+                */}
+                <Button
+                  title="Sign in"
+                  variant="success"
+                  size="lg"
+                  icon="log-in-outline"
+                  loading={submitting}
+                  onPress={handleSubmit(onSubmit)}
+                  accessibilityLabel="Sign in to your FarmBridge account"
+                />
+
                 {demoCredentials ? (
                   <Pressable
                     onPress={() => {
@@ -225,38 +277,12 @@ export default function LoginScreen() {
                     </Text>
                   </Pressable>
                 ) : null}
+                </View>
               </View>
 
             </ScrollView>
 
-            {/*
-              THE ACTION LIVES OUTSIDE THE SCROLL VIEW ON PURPOSE.
-
-              It used to be the last child of a card inside a ScrollView whose
-              content was centred (`justifyContent: 'center'`). Once the
-              keyboard opened, the viewport shrank, the centred content was
-              clipped at both ends, and the button was below the fold with no
-              reliable way to scroll to it — which is why it read as missing
-              after you filled the form in. It is now pinned above the keyboard
-              and is always on screen.
-            */}
             <View style={styles.footer}>
-              <Button
-                title="Sign in"
-                size="lg"
-                icon="log-in-outline"
-                loading={submitting}
-                onPress={handleSubmit(onSubmit)}
-                accessibilityLabel="Sign in to your FarmBridge account"
-              />
-
-              {/*
-                Navigated with router.push rather than <Link asChild>. The two
-                hand-rolled pills on the onboarding screen used asChild and came
-                out unstyled on device; there is no reason for the way out of a
-                sign-in screen to depend on that, and a plain Pressable keeps
-                its own styles no matter what the router does with cloned props.
-              */}
               <Pressable
                 onPress={() => router.push(asHref('/(auth)/register'))}
                 accessibilityRole="button"
@@ -264,7 +290,7 @@ export default function LoginScreen() {
                 hitSlop={8}
                 style={({ pressed }) => [styles.registerRow, pressed && styles.pressed]}>
                 <Text style={styles.registerText}>
-                  New to FarmBridge? <Text style={styles.link}>Create an account</Text>
+                  Don’t have an account? <Text style={styles.link}>Register</Text>
                 </Text>
               </Pressable>
             </View>
@@ -275,6 +301,19 @@ export default function LoginScreen() {
       <ForgotPasswordModal visible={forgotOpen} onClose={() => setForgotOpen(false)} />
     </View>
   );
+}
+
+/**
+ * Whether the address is complete enough to tick.
+ *
+ * Deliberately the same shape the submit validator uses rather than something
+ * looser: a tick that appears before the value would be accepted is a promise
+ * the form then breaks.
+ */
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function emailLooksValid(value: string): boolean {
+  return EMAIL_SHAPE.test(value.trim());
 }
 
 function PasswordField({
@@ -291,9 +330,10 @@ function PasswordField({
   const [revealed, setRevealed] = useState(false);
   return (
     <Input
-      label="Password"
+      variant="filled"
+      accessibilityLabel="Password"
       icon="lock-closed-outline"
-      placeholder="Enter your password"
+      placeholder="Password"
       secureTextEntry={!revealed}
       autoComplete="password"
       textContentType="password"
@@ -312,21 +352,39 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: DS.colors.text },
   flex: { flex: 1 },
   bg: { flex: 1 },
-  scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.55)' },
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15, 23, 42, 0.35)' },
   safe: { flex: 1 },
   backRow: { paddingHorizontal: DS.spacing.md, paddingTop: DS.spacing.sm },
   scroll: {
     flexGrow: 1,
     // Not `justifyContent: 'center'`. Centring inside a container the keyboard
     // shrinks pushes the ends of the content out of reach.
-    padding: DS.spacing.md,
-    paddingBottom: DS.spacing.md,
+    paddingTop: 120,
+  },
+
+  /*
+    The crest of a very wide ellipse. Its width overflows the screen on both
+    sides so the visible slice is the shallow middle of the arc rather than two
+    tight corners — the sweep the reference draws, without an SVG dependency.
+  */
+  sheetCurve: {
+    height: 64,
+    marginHorizontal: -140,
+    marginBottom: -1,
+    borderTopLeftRadius: 400,
+    borderTopRightRadius: 400,
+    backgroundColor: DS.colors.surface,
+  },
+  sheet: {
+    flexGrow: 1,
+    backgroundColor: DS.colors.surface,
+    paddingHorizontal: DS.spacing.lg,
+    paddingBottom: DS.spacing.lg,
     gap: DS.spacing.lg,
   },
   footer: {
-    gap: DS.spacing.sm,
     paddingHorizontal: DS.spacing.md,
-    paddingTop: DS.spacing.md,
+    paddingTop: DS.spacing.sm,
     paddingBottom: DS.spacing.md,
     backgroundColor: DS.colors.surface,
     borderTopWidth: DS.layout.hairline,
@@ -334,25 +392,24 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.7 },
 
-  header: { alignItems: 'center', gap: 4 },
+  header: { gap: 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: DS.spacing.xs },
   title: {
     fontSize: DS.typography.display.fontSize,
+    lineHeight: DS.typography.display.fontSize * 1.15,
     fontFamily: DS.fontFamily.display,
-    color: DS.colors.textInverse,
-    marginTop: DS.spacing.sm,
+    color: DS.colors.forest[700],
   },
+  titleLeaf: { marginTop: 4, transform: [{ rotate: '-25deg' }] },
   subtitle: {
     fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.regular,
-    color: 'rgba(255, 255, 255, 0.82)',
+    color: DS.colors.textMuted,
   },
 
-  card: {
-    backgroundColor: DS.colors.surface,
-    borderRadius: DS.radius.xl,
-    padding: DS.spacing.lg,
-    gap: DS.spacing.md,
-  },
+  // The sheet is the card now. Nesting a second surface inside it only draws a
+  // box around fields that already read as a group.
+  card: { gap: DS.spacing.sm + 4 },
 
   alert: {
     backgroundColor: DS.semantic.danger.bg,
