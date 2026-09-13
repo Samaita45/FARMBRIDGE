@@ -20,6 +20,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { BUTTON_VARIANTS } from '@/constants/button-variants';
 import { DS } from '@/constants/design-system';
 
 /**
@@ -63,55 +64,13 @@ interface VariantTokens {
   pressedBackground: string;
 }
 
-const VARIANTS: Record<ButtonVariant, VariantTokens> = {
-  primary: {
-    background: DS.colors.primary,
-    border: DS.colors.primary,
-    foreground: DS.colors.textInverse,
-    pressedBackground: DS.colors.primaryDark,
-  },
-  secondary: {
-    background: DS.colors.primaryMid,
-    border: DS.colors.primaryMid,
-    foreground: DS.colors.primaryDark,
-    pressedBackground: DS.colors.blue[200],
-  },
-  outline: {
-    background: 'transparent',
-    border: DS.colors.border,
-    foreground: DS.colors.text,
-    pressedBackground: DS.colors.surfaceMuted,
-  },
-  ghost: {
-    background: 'transparent',
-    border: 'transparent',
-    foreground: DS.colors.primary,
-    pressedBackground: DS.colors.primaryBg,
-  },
-  danger: {
-    background: DS.semantic.danger.solid,
-    border: DS.semantic.danger.solid,
-    foreground: DS.semantic.danger.onSolid,
-    pressedBackground: DS.semantic.danger.fg,
-  },
-  success: {
-    background: DS.semantic.success.solid,
-    border: DS.semantic.success.solid,
-    foreground: DS.semantic.success.onSolid,
-    pressedBackground: DS.semantic.success.fg,
-  },
-  /**
-   * For controls placed over photography, where neither a light nor a dark
-   * token can be relied on to contrast with whatever is behind them. A dark
-   * scrim disc with a white glyph reads on any image.
-   */
-  onImage: {
-    background: 'rgba(15, 23, 42, 0.55)',
-    border: 'rgba(255, 255, 255, 0.35)',
-    foreground: DS.colors.textInverse,
-    pressedBackground: 'rgba(15, 23, 42, 0.75)',
-  },
-};
+/*
+  The table lives in constants/button-variants.js so that
+  scripts/contrast-check.mjs can measure exactly what this renders. A checker
+  with its own copy of these colours keeps passing while the component drifts
+  away from it, which is worse than having no checker at all.
+*/
+const VARIANTS = BUTTON_VARIANTS as Record<ButtonVariant, VariantTokens & { stroked: boolean }>;
 
 /** Every height clears `DS.layout.touchTarget` (48). */
 const SIZES: Record<
@@ -203,7 +162,7 @@ export function Button({
               pressed && !isDisabled ? tokens.pressedBackground : tokens.background,
             borderColor: tokens.border,
           },
-          variant === 'outline' && styles.outlineBorder,
+          tokens.stroked && styles.outlineBorder,
           stretches && styles.fill,
           isDisabled && styles.disabled,
         ]}

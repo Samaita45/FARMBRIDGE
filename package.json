@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test:migration": "tsx scripts/test-kv-migration.ts"
+    "test:migration": "tsx scripts/test-kv-migration.ts",
+    "test:contrast": "node scripts/contrast-check.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/fraunces": "^0.4.1",

@@ -1,3 +1,6 @@
+import { isRunningInExpoGo } from 'expo';
+import { Platform } from 'react-native';
+
 import type { FarmTask } from '@/types/crop-management';
 import type { AppNotification } from '@/types/notifications';
 
@@ -7,12 +10,40 @@ import { isOnline } from './syncService';
 import { sendTaskSmsReminder } from './smsService';
 import { useSettingsStore } from '@/stores/settingsStore';
 
-// Set notification handler lazily so the module doesn't crash when
-// expo-notifications is not installed yet.
+/**
+ * expo-notifications on Android Expo Go (SDK 53+) throws as soon as the
+ * package is imported, because remote push was removed from Expo Go. Local
+ * scheduling still works in a development build and on iOS Expo Go.
+ */
+function notificationsUnavailable(): boolean {
+  return isRunningInExpoGo() && Platform.OS === 'android';
+}
+
+type NotificationsModule = typeof import('expo-notifications');
+
+let cached: NotificationsModule | null | undefined;
 let notifHandlerSet = false;
+
+async function loadNotifications(): Promise<NotificationsModule | null> {
+  if (notificationsUnavailable()) return null;
+  if (cached !== undefined) return cached;
+  try {
+    const mod = await import('expo-notifications');
+    if (typeof mod.setNotificationHandler !== 'function') {
+      cached = null;
+      return null;
+    }
+    cached = mod;
+    return mod;
+  } catch {
+    cached = null;
+    return null;
+  }
+}
+
 async function ensureHandler() {
   if (notifHandlerSet) return;
-  const Notifications = await import('expo-notifications').catch(() => null);
+  const Notifications = await loadNotifications();
   if (!Notifications) return;
   notifHandlerSet = true;
   Notifications.setNotificationHandler({
@@ -25,7 +56,6 @@ async function ensureHandler() {
     }),
   });
 }
-void ensureHandler();
 
 const DIGEST_STORAGE_KEY = 'farmbridge_digest_notif_id';
 const APP_NAME = 'FarmBridge';
@@ -36,10 +66,10 @@ function pushEnabled(): boolean {
 
 /** Listen for foreground push notifications and mirror into the in-app inbox. */
 export async function registerNotificationListeners(
-  onInboxItem: (item: AppNotification) => void,
+  onInboxItem: (item: AppNotification) => void
 ): Promise<(() => void) | null> {
   await ensureHandler();
-  const Notifications = await import('expo-notifications').catch(() => null);
+  const Notifications = await loadNotifications();
   if (!Notifications?.addNotificationReceivedListener) return null;
 
   const sub = Notifications.addNotificationReceivedListener((notification) => {
@@ -62,18 +92,22 @@ export async function registerNotificationListeners(
 }
 
 export async function requestNotificationPermissions(): Promise<boolean> {
-  const Notifications = await import('expo-notifications').catch(() => null);
-  if (!Notifications) return false;
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  if (existing === 'granted') return true;
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === 'granted';
+  const Notifications = await loadNotifications();
+  if (!Notifications?.getPermissionsAsync) return false;
+  try {
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    if (existing === 'granted') return true;
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === 'granted';
+  } catch {
+    return false;
+  }
 }
 
 export async function scheduleTaskNotification(task: FarmTask): Promise<string | null> {
   if (!pushEnabled()) return null;
-  const Notifications = await import('expo-notifications').catch(() => null);
-  if (!Notifications) return null;
+  const Notifications = await loadNotifications();
+  if (!Notifications?.scheduleNotificationAsync) return null;
 
   const granted = await requestNotificationPermissions();
   if (!granted) return null;
@@ -116,8 +150,8 @@ export async function scheduleTaskNotification(task: FarmTask): Promise<string |
 
 export async function cancelTaskNotification(notificationId: string | null): Promise<void> {
   if (!notificationId) return;
-  const Notifications = await import('expo-notifications').catch(() => null);
-  if (!Notifications) return;
+  const Notifications = await loadNotifications();
+  if (!Notifications?.cancelScheduledNotificationAsync) return;
   try {
     await Notifications.cancelScheduledNotificationAsync(notificationId);
   } catch {
@@ -144,8 +178,8 @@ function nextSixAm(): Date {
 export async function cancelDailyDigestNotification(): Promise<void> {
   const prev = await fastGetAsync(DIGEST_STORAGE_KEY);
   if (!prev) return;
-  const Notifications = await import('expo-notifications').catch(() => null);
-  if (!Notifications) return;
+  const Notifications = await loadNotifications();
+  if (!Notifications?.cancelScheduledNotificationAsync) return;
   try {
     await Notifications.cancelScheduledNotificationAsync(prev);
   } catch {
@@ -160,8 +194,8 @@ export async function rescheduleDailyDigestNotification(taskCountToday: number):
     await cancelDailyDigestNotification();
     return;
   }
-  const Notifications = await import('expo-notifications').catch(() => null);
-  if (!Notifications) return;
+  const Notifications = await loadNotifications();
+  if (!Notifications?.scheduleNotificationAsync) return;
 
   await cancelDailyDigestNotification();
   const granted = await requestNotificationPermissions();
