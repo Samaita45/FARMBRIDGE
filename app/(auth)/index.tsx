@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useRef } from 'react';
 import {
   Pressable,
   StatusBar,
@@ -9,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { SlideToAct } from '@/components/design-system';
+import { SlideToAct, type SlideToActHandle } from '@/components/design-system';
 import { AppLogo } from '@/components/ui/app-logo';
 import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
@@ -37,6 +38,24 @@ import { imageSourceFor } from '@/constants/produce-imagery';
  * is never empty and is at its best when there is signal.
  */
 export default function OnboardingScreen() {
+  const slide = useRef<SlideToActHandle>(null);
+
+  /*
+    Re-arm the slide every time this screen comes back into view.
+
+    Sliding through to register does not unmount this screen — expo-router
+    pushes on top of it — so the control kept the `finished` flag it set on the
+    way out. Anyone who backed out of registration found a slide that no longer
+    moved, with nothing on screen to explain why. Focus is the right moment
+    because it covers the back gesture, the header button and a programmatic
+    pop alike.
+  */
+  useFocusEffect(
+    useCallback(() => {
+      slide.current?.reset();
+    }, [])
+  );
+
   return (
     <View style={styles.root}>
       {/* The top half is a white sheet, so the clock has to be dark. */}
@@ -86,6 +105,7 @@ export default function OnboardingScreen() {
 
         <SafeAreaView edges={['bottom']} style={styles.heroSafe}>
           <SlideToAct
+            ref={slide}
             label="Slide to get started"
             accessibilityLabel="Get started and create an account"
             onComplete={() => router.push(asHref('/(auth)/register'))}

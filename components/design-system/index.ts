@@ -9,6 +9,7 @@ export { EmptyState } from './EmptyState';
 export { FadeInView } from './FadeInView';
 export { LiquidSelection } from './LiquidSelection';
 export { SlideToAct } from './SlideToAct';
+export type { SlideToActHandle } from './SlideToAct';
 export { Input } from './Input';
 export type { InputProps } from './Input';
 export { ProfileScreenHeader } from './ProfileScreenHeader';
