@@ -66,53 +66,53 @@ export default function EditFarmScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-surface p-4" keyboardShouldPersistTaps="handled">
-      <Text className="font-sans-semibold text-dark">Farm name</Text>
+    <ScrollView className="flex-1 bg-surface p-4 dark:bg-dSurface" keyboardShouldPersistTaps="handled">
+      <Text className="font-sans-semibold text-dark dark:text-dText">Farm name</Text>
       <TextInput
-        className="mt-2 rounded-xl bg-white px-4 py-3 font-sans"
+        className="mt-2 rounded-xl bg-white px-4 py-3 font-sans dark:bg-dCard"
         placeholder="e.g. Moyo Family Farm"
         value={farm.farmName}
         onChangeText={(farmName) => setFarm((f) => ({ ...f, farmName }))}
       />
 
-      <Text className="mt-4 font-sans-semibold text-dark">Size (hectares)</Text>
+      <Text className="mt-4 font-sans-semibold text-dark dark:text-dText">Size (hectares)</Text>
       <TextInput
-        className="mt-2 rounded-xl bg-white px-4 py-3 font-sans"
+        className="mt-2 rounded-xl bg-white px-4 py-3 font-sans dark:bg-dCard"
         placeholder="2.5"
         keyboardType="decimal-pad"
         value={farm.farmSizeHa ? String(farm.farmSizeHa) : ''}
         onChangeText={(v) => setFarm((f) => ({ ...f, farmSizeHa: parseFloat(v) || 0 }))}
       />
 
-      <Text className="mt-4 font-sans-semibold text-dark">Farm type</Text>
+      <Text className="mt-4 font-sans-semibold text-dark dark:text-dText">Farm type</Text>
       <View className="mt-2 flex-row flex-wrap gap-2">
         {FARM_TYPES.map((type) => (
           <Pressable
             key={type}
             onPress={() => setFarm((f) => ({ ...f, farmType: type }))}
-            className={`rounded-full px-4 py-2 ${farm.farmType === type ? 'bg-primary' : 'bg-white'}`}>
-            <Text className={`font-sans text-sm capitalize ${farm.farmType === type ? 'text-white' : 'text-gray-600'}`}>
+            className={`rounded-full px-4 py-2 ${farm.farmType === type ? 'bg-primary dark:bg-dPrimary' : 'bg-white dark:bg-dCard'}`}>
+            <Text className={`font-sans text-sm capitalize ${farm.farmType === type ? 'text-white dark:text-dOnPrimary' : 'text-gray-600 dark:text-dMuted'}`}>
               {type}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      <Text className="mt-4 font-sans-semibold text-dark">GPS coordinates</Text>
-      <Pressable onPress={useGps} className="mt-2 rounded-xl bg-primary/10 px-4 py-3">
-        <Text className="font-sans text-primary">Use current location ({location.label})</Text>
+      <Text className="mt-4 font-sans-semibold text-dark dark:text-dText">GPS coordinates</Text>
+      <Pressable onPress={useGps} className="mt-2 rounded-xl bg-primary/10 px-4 py-3 dark:bg-dPrimary/20">
+        <Text className="font-sans text-primary dark:text-dPrimary">Use current location ({location.label})</Text>
       </Pressable>
       {farm.coordinates ? (
-        <Text className="mt-2 font-sans text-xs text-gray-500">
+        <Text className="mt-2 font-sans text-xs text-gray-500 dark:text-dSoft">
           {farm.coordinates.lat.toFixed(5)}, {farm.coordinates.lng.toFixed(5)}
         </Text>
       ) : null}
 
       {activeCrops.length > 0 ? (
-        <View className="mt-4 rounded-xl bg-white p-4">
-          <Text className="font-sans-semibold text-dark">Active crops (from planner)</Text>
+        <View className="mt-4 rounded-xl bg-white p-4 dark:bg-dCard">
+          <Text className="font-sans-semibold text-dark dark:text-dText">Active crops (from planner)</Text>
           {activeCrops.map((c) => (
-            <Text key={c} className="mt-1 font-sans text-gray-600">
+            <Text key={c} className="mt-1 font-sans text-gray-600 dark:text-dMuted">
               · {c}
             </Text>
           ))}

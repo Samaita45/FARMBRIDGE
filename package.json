@@ -13,7 +13,9 @@
     "test:migration": "tsx scripts/test-kv-migration.ts",
     "test:contrast": "node scripts/contrast-check.mjs",
     "test:hero": "node scripts/hero-contrast-check.mjs",
-    "test:palette": "node scripts/palette-check.mjs"
+    "test:palette": "node scripts/palette-check.mjs",
+    "test:nativewind": "node scripts/nativewind-dark.mjs --check",
+    "test:theme": "npm run -s test:palette && npm run -s test:hero && npm run -s test:contrast && npm run -s test:nativewind"
   },
   "dependencies": {
     "@expo-google-fonts/fraunces": "^0.4.1",

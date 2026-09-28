@@ -16,6 +16,7 @@ import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
 import { AuthImages, RemoteImages } from '@/constants/images';
 import { imageSourceFor } from '@/constants/produce-imagery';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 /**
  * Onboarding. One screen.
@@ -38,6 +39,7 @@ import { imageSourceFor } from '@/constants/produce-imagery';
  * is never empty and is at its best when there is signal.
  */
 export default function OnboardingScreen() {
+  const styles = useStyles();
   const slide = useRef<SlideToActHandle>(null);
 
   /*
@@ -124,7 +126,7 @@ export default function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.surface },
   pressed: { opacity: 0.75 },
 
@@ -185,4 +187,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.textInverse,
   },
-});
+}));

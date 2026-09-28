@@ -52,7 +52,8 @@ const darkColors = {
   textInverse: '#0E1512',
 
   border: '#2B372F',
-  borderLight: '#222D27',
+  // #222D27 measured 1.19:1 against surface — a card edge nobody could see.
+  borderLight: '#2E3B33',
   borderStrong: '#3D4C42',
   // 3:1 against `surface`, for the outline that tells you a control is there.
   borderControl: '#7F9285',

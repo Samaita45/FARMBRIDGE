@@ -27,7 +27,7 @@ export function Skeleton({ className, height = 16, width = '100%', style, ...pro
   return (
     <Animated.View
       style={[{ height, width } as object, animatedStyle, style]}
-      className={`rounded-lg bg-gray-200 ${className ?? ''}`}
+      className={`rounded-lg bg-gray-200  dark:bg-dBorder${className ?? ''}`}
       accessibilityLabel="Loading"
       {...props}
     />
@@ -36,7 +36,7 @@ export function Skeleton({ className, height = 16, width = '100%', style, ...pro
 
 export function WidgetSkeleton() {
   return (
-    <View className="mr-3 h-28 w-36 rounded-2xl bg-white p-3">
+    <View className="mr-3 h-28 w-36 rounded-2xl bg-white p-3 dark:bg-dCard">
       <Skeleton height={24} width={24} />
       <Skeleton height={12} className="mt-2" />
       <Skeleton height={10} width="60%" className="mt-2" />
@@ -46,7 +46,7 @@ export function WidgetSkeleton() {
 
 export function CropCardSkeleton() {
   return (
-    <View className="mr-3 h-40 w-36 rounded-2xl bg-white p-3">
+    <View className="mr-3 h-40 w-36 rounded-2xl bg-white p-3 dark:bg-dCard">
       <Skeleton height={32} width={32} />
       <Skeleton height={14} className="mt-2" />
       <Skeleton height={12} width="70%" className="mt-2" />

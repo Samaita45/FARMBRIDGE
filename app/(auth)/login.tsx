@@ -21,7 +21,6 @@ import { ForgotPasswordModal } from '@/components/auth/forgot-password-modal';
 import { Button, IconButton, Input } from '@/components/design-system';
 import { useToast } from '@/components/ui/toast-provider';
 import { BUILD_MARKER } from '@/constants/build-marker';
-import { DS } from '@/constants/design-system';
 import { AuthImages } from '@/constants/images';
 import { asHref } from '@/lib/href';
 import { loginSchema, type LoginFormData } from '@/lib/validation';
@@ -33,8 +32,12 @@ import {
   setRememberMe,
 } from '@/services/authService';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export default function LoginScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { showToast } = useToast();
   const login = useAuthStore((s: AuthState) => s.login);
   const setLoading = useAuthStore((s: AuthState) => s.setLoading);
@@ -349,7 +352,7 @@ function PasswordField({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.text },
   flex: { flex: 1 },
   bg: { flex: 1 },
@@ -467,4 +470,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
-});
+}));

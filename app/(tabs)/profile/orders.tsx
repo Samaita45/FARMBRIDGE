@@ -55,10 +55,10 @@ export default function OrdersScreen() {
 
   if (orders.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface p-8">
+      <View className="flex-1 items-center justify-center bg-surface p-8 dark:bg-dSurface">
         <Ionicons name="cube-outline" size={40} color={DS.colors.textFaint} />
-        <Text className="mt-2 font-sans text-gray-500">No orders yet</Text>
-        <Text className="mt-1 text-center font-sans text-sm text-gray-400">
+        <Text className="mt-2 font-sans text-gray-500 dark:text-dSoft">No orders yet</Text>
+        <Text className="mt-1 text-center font-sans text-sm text-gray-400 dark:text-dSoft">
           Browse the marketplace to place your first order
         </Text>
       </View>
@@ -66,31 +66,31 @@ export default function OrdersScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-surface p-4">
+    <ScrollView className="flex-1 bg-surface p-4 dark:bg-dSurface">
       {orders.map((order) => (
         <View
           key={order.id}
-          className="mb-3 rounded-2xl bg-white p-4"
+          className="mb-3 rounded-2xl bg-white p-4 dark:bg-dCard"
           style={{ shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 }}>
           <View className="flex-row items-center justify-between">
-            <Text className="font-sans-semibold text-dark">#{order.id.slice(-8)}</Text>
+            <Text className="font-sans-semibold text-dark dark:text-dText">#{order.id.slice(-8)}</Text>
             <Text className={`font-sans-semibold text-sm capitalize ${STATUS_COLORS[order.status]}`}>
               {order.status}
             </Text>
           </View>
-          <Text className="mt-1 font-sans text-xs text-gray-400">
+          <Text className="mt-1 font-sans text-xs text-gray-400 dark:text-dSoft">
             {new Date(order.createdAt).toLocaleDateString()}
           </Text>
           {order.items.map((item) => (
-            <Text key={item.productId} className="mt-1 font-sans text-sm text-gray-600">
+            <Text key={item.productId} className="mt-1 font-sans text-sm text-gray-600 dark:text-dMuted">
               {item.quantity}× {item.productName}
             </Text>
           ))}
-          <Text className="mt-2 font-sans-semibold text-primary">
+          <Text className="mt-2 font-sans-semibold text-primary dark:text-dPrimary">
             ${order.subtotalUSD.toFixed(2)} · ZWG {order.subtotalZWG.toLocaleString()}
           </Text>
-          <Pressable onPress={() => reorder(order)} className="mt-3 rounded-xl bg-surface py-2">
-            <Text className="text-center font-sans-semibold text-sm text-primary">Reorder</Text>
+          <Pressable onPress={() => reorder(order)} className="mt-3 rounded-xl bg-surface py-2 dark:bg-dSurface">
+            <Text className="text-center font-sans-semibold text-sm text-primary dark:text-dPrimary">Reorder</Text>
           </Pressable>
         </View>
       ))}

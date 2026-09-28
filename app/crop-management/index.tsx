@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Card } from '@/components/design-system';
 import { HeroHeader } from '@/components/ui/hero-header';
@@ -10,6 +10,8 @@ import { CROPS, getCropsForMonth, getCurrentSeason } from '@/constants/zimbabwe-
 import { useCropPlans } from '@/hooks/useCropPlans';
 import { useFarmTasks } from '@/hooks/useFarmTasks';
 import type { IconName } from '@/types/icons';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const MONTH = new Date().getMonth() + 1;
 
@@ -53,6 +55,8 @@ const MODULES: ModuleLink[] = [
 ];
 
 export default function CropManagementHub() {
+  const DS = useDS();
+  const styles = useStyles();
   const { plans } = useCropPlans();
   const { allTasks, completionRate } = useFarmTasks();
   const pendingTasks = allTasks.filter((t) => t.status !== 'completed').length;
@@ -180,6 +184,8 @@ function Stat({
   label: string;
   tone?: keyof typeof DS.semantic;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   const color = tone ? DS.semantic[tone].solid : DS.colors.primary;
   return (
     <Card style={styles.statCard} accessibilityRole="summary" accessibilityLabel={`${value} ${label}`}>
@@ -194,7 +200,7 @@ function Stat({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
 
 
@@ -289,4 +295,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.primary,
   },
-});
+}));

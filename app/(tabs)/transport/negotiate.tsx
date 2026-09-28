@@ -1,16 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 
 import { Button, Card, EmptyState, Input } from '@/components/design-system';
 import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
-import { DS } from '@/constants/design-system';
 import { TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
 import { asHref } from '@/lib/href';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export default function NegotiateScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const selectedProviderId = useTransportStore((s: TransportState) => s.selectedProviderId);
   const askingPriceUSD = useTransportStore((s: TransportState) => s.askingPriceUSD);
   const setCounterPrice = useTransportStore((s: TransportState) => s.setCounterPrice);
@@ -157,7 +160,7 @@ export default function NegotiateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   centre: { flex: 1, justifyContent: 'center', backgroundColor: DS.colors.background },
   flex: { flex: 1 },
@@ -243,4 +246,4 @@ const styles = StyleSheet.create({
     borderTopColor: DS.colors.borderLight,
     backgroundColor: DS.colors.surface,
   },
-});
+}));

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -12,7 +11,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TutorialCard } from '@/components/cards/tutorial-card';
-import { DS } from '@/constants/design-system';
 import { getFeaturedTutorial, TUTORIALS } from '@/constants/tutorials-data';
 import { asHref } from '@/lib/href';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
@@ -20,6 +18,8 @@ import { useTutorialsStore, type TutorialsState } from '@/stores/tutorialsStore'
 import type { TutorialCategoryFilter } from '@/types/tutorials';
 import { TUTORIAL_CATEGORIES } from '@/types/tutorials';
 import { ProgressBar } from '@/components/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const CAT_MAP: Record<TutorialCategoryFilter, string | null> = {
   All: null, Planting: 'planting', Watering: 'watering',
@@ -27,6 +27,8 @@ const CAT_MAP: Record<TutorialCategoryFilter, string | null> = {
 };
 
 export default function TutorialsHubScreen() {
+  const DS = useDS();
+  const s = useStyles();
   const user = useAuthStore((s: AuthState) => s.user);
   const hydrate = useTutorialsStore((s: TutorialsState) => s.hydrate);
   const completedIds = useTutorialsStore((s: TutorialsState) => s.completedIds);
@@ -169,7 +171,7 @@ export default function TutorialsHubScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.primaryBg },
 
   header: { backgroundColor: DS.colors.primary, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
@@ -239,4 +241,4 @@ const s = StyleSheet.create({
   empty: { alignItems: 'center', paddingVertical: 40, gap: 8 },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: DS.colors.text },
   emptyHint: { fontSize: 13, color: DS.colors.textMuted },
-});
+}));

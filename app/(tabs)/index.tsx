@@ -1,6 +1,6 @@
 import { type Href, router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 
 import { CropTrendCard } from '@/components/cards/crop-trend-card';
 import { FadeInView } from '@/components/design-system/FadeInView';
@@ -14,9 +14,8 @@ import { WeatherHero } from '@/components/home/weather-hero';
 import { CropCardSkeleton } from '@/components/ui/skeleton';
 import type { InsightItem } from '@/components/home/insight-strip';
 import { WeatherForecastModal } from '@/components/weather/weather-forecast-modal';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useDS, useTheme } from '@/contexts/theme';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
-import { DS } from '@/constants/design-system';
 import {
   CROPS,
   MARKET_PRODUCTS,
@@ -29,6 +28,7 @@ import { useProfileAvatar } from '@/hooks/useProfileAvatar';
 import { useWeather } from '@/hooks/useWeather';
 import { upsertCachedCropData, upsertCachedProduct } from '@/services/database';
 import { isOnline } from '@/services/syncService';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 const MONTH = new Date().getMonth() + 1;
 const MONTH_NAME = new Date().toLocaleDateString('en-ZW', { month: 'long' });
@@ -39,6 +39,8 @@ const GREETING =
 const FEATURED_CROP_IDS = ['tomatoes', 'maize', 'potatoes', 'groundnuts', 'mushrooms'];
 
 export default function HomeScreen() {
+  const DS = useDS();
+  const s = useStyles();
   const { unreadCount, refresh: refreshNotifications } = useNotifications();
   const { avatarUri, initials: avatarInitials, refresh: refreshAvatar } = useProfileAvatar();
   const {
@@ -59,7 +61,7 @@ export default function HomeScreen() {
     "will the cold kill anything tonight". That is what the separate Tonight
     card used to say, and why it is no longer a card.
   */
-  const night = useColorScheme() === 'dark';
+  const night = useTheme().scheme === 'dark';
 
 
   const topCrops = useMemo(() => {
@@ -319,7 +321,7 @@ export default function HomeScreen() {
   );
 }
 
-const s = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 40 },
@@ -347,4 +349,4 @@ const s = StyleSheet.create({
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.primary,
   },
-});
+}));

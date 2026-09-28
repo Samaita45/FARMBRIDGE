@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Sidebar, type SidebarItem } from '@/components/design-system';
@@ -11,7 +11,6 @@ import { BottomPanel } from '@/components/transport/bottom-panel';
 import { FullMap } from '@/components/transport/full-map';
 import { VehicleIcon } from '@/components/transport/vehicle-icon';
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
-import { DS } from '@/constants/design-system';
 import { ScreenImages } from '@/constants/images';
 import { SOCIAL_LINKS, whatsAppUrl } from '@/constants/support';
 import { distanceKmBetween, nearestPlace, PLACES } from '@/constants/zimbabwe-data/places';
@@ -22,6 +21,8 @@ import { topChrome } from '@/lib/platform-ui';
 import { getBookings } from '@/services/transportDb';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import type { TransportBooking } from '@/types/transport';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const MENU_SIZE = 48;
 
@@ -44,6 +45,8 @@ function openRequest(to?: string) {
  * the point of this screen.
  */
 export default function TransportHubScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s: AuthState) => s.user);
   const { location, refresh, loading: locating, permission } = useLocation();
@@ -337,7 +340,7 @@ export default function TransportHubScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.surfaceMuted },
   pressed: { opacity: 0.85 },
   pressedRow: { backgroundColor: DS.colors.surfaceMuted },
@@ -498,4 +501,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
-});
+}));

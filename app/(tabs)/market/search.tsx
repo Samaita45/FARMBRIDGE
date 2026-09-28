@@ -7,7 +7,6 @@ import {
   FlatList,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -22,7 +21,6 @@ import {
   type MarketFilters,
 } from '@/components/market/filter-sheet';
 import { ProductCard } from '@/components/market/product-card';
-import { DS } from '@/constants/design-system';
 import { imageSourceFor } from '@/constants/produce-imagery';
 import { MARKET_CATEGORIES, MARKET_PRODUCTS } from '@/constants/zimbabwe-data';
 import { asHref } from '@/lib/href';
@@ -33,6 +31,8 @@ import {
   removeRecentSearch,
 } from '@/services/recentSearches';
 import type { MarketProduct } from '@/types';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * Marketplace search.
@@ -49,6 +49,8 @@ import type { MarketProduct } from '@/types';
  * amount of work; claiming it means popularity is the part that would be made up.
  */
 export default function MarketSearchScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const inputRef = useRef<TextInput>(null);
   // Arriving from a seller chip on the marketplace lands here with the term
   // already filled in, so the keyboard should not steal the screen.
@@ -121,7 +123,7 @@ export default function MarketSearchScreen() {
         <ProductCard product={item} />
       </View>
     ),
-    []
+    [styles]
   );
 
   return (
@@ -350,7 +352,7 @@ export default function MarketSearchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   pressed: { opacity: 0.9 },
 
@@ -529,4 +531,4 @@ const styles = StyleSheet.create({
     color: DS.colors.textMuted,
     marginBottom: DS.spacing.sm,
   },
-});
+}));

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, router } from 'expo-router';
 import { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -16,7 +16,6 @@ import { Button, ButtonRow } from '@/components/design-system';
 import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { SparkCurve, valueToY } from '@/components/weather/spark-curve';
 import { pointOnArc, sunPosition } from '@/components/weather/sun-path';
-import { DS } from '@/constants/design-system';
 import sky from '@/constants/sky-gradients';
 import { asHref } from '@/lib/href';
 import { topChrome } from '@/lib/platform-ui';
@@ -26,6 +25,8 @@ import type {
   CurrentWeather,
   DailyForecast,
 } from '@/services/weatherService';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface WeatherHeroProps {
   greeting: string;
@@ -125,6 +126,8 @@ export function WeatherHero({
   onOpenForecast,
   night = false,
 }: WeatherHeroProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const reducedMotion = useReducedMotion();
@@ -195,15 +198,9 @@ export function WeatherHero({
     card and measured 2.73:1 under the condition line at this height.
   */
   const stops = night ? sky.NIGHT_SKY : sky.DAY_SKY;
-  /*
-    The tiles and the search pill sit on solid ground, not on the gradient,
-    so they do not follow the sky on their own. Left alone they stayed white
-    under a night sky — a hero dark at the top and daylight at the bottom.
-  */
-  const surf = night ? sky.NIGHT_SURFACES : null;
 
   return (
-    <View style={[styles.wrap, surf && { backgroundColor: surf.surface }]}>
+    <View style={styles.wrap}>
       <LinearGradient
         colors={stops}
         locations={sky.SKY_LOCATIONS}
@@ -379,11 +376,10 @@ export function WeatherHero({
           accessibilityLabel="Search the marketplace"
           style={({ pressed }) => [
             styles.searchPill,
-            surf && { backgroundColor: surf.tile },
             pressed && styles.pressed,
           ]}>
-          <Ionicons name="search" size={17} color={surf ? surf.muted : DS.colors.textSoft} />
-          <Text style={[styles.searchText, surf && { color: surf.muted }]} numberOfLines={1}>
+          <Ionicons name="search" size={17} color={DS.colors.textSoft} />
+          <Text style={styles.searchText} numberOfLines={1}>
             Search seeds, produce, equipment
           </Text>
         </Pressable>
@@ -406,11 +402,10 @@ export function WeatherHero({
         2:1 — the readings that decide an irrigation go on a ground that holds
         them at full contrast.
       */}
-      <View style={[styles.tiles, surf && { backgroundColor: surf.surface }]}>
+      <View style={styles.tiles}>
         {night ? (
           <>
             <StatTile
-              surf={surf}
               icon="snow-outline"
               label="Coldest night"
               value={coldest ? `${Math.round(coldest.minTemp)}` : '—'}
@@ -418,7 +413,6 @@ export function WeatherHero({
               caption={coldest ? weekday(coldest.date) : 'No forecast yet'}
             />
             <StatTile
-              surf={surf}
               icon="alert-circle-outline"
               label="Frost risk"
               value={lows.length ? `${frostNights}` : '—'}
@@ -435,7 +429,6 @@ export function WeatherHero({
         ) : (
           <>
             <StatTile
-              surf={surf}
               icon="water-outline"
               label="Soil moisture"
               value={soil != null ? `${soil}` : '—'}
@@ -443,7 +436,6 @@ export function WeatherHero({
               caption={soilCaption(soil)}
             />
             <StatTile
-              surf={surf}
               icon="rainy-outline"
               label="Rain chance"
               value={rainChance != null ? `${rainChance}` : '—'}
@@ -470,39 +462,35 @@ function StatTile({
   value,
   suffix,
   caption,
-  surf,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
   suffix?: string;
   caption: string;
-  /** Dark-scheme grounds, or null in the light scheme. */
-  surf: typeof sky.NIGHT_SURFACES | null;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <View
-      style={[
-        styles.tile,
-        surf && { backgroundColor: surf.tile, borderColor: surf.tileBorder },
-      ]}>
+      style={styles.tile}>
       <View style={styles.tileHead}>
-        <Ionicons name={icon} size={14} color={surf ? surf.muted : DS.colors.textMuted} />
-        <Text style={[styles.tileLabel, surf && { color: surf.muted }]} numberOfLines={1}>
+        <Ionicons name={icon} size={14} color={DS.colors.textMuted} />
+        <Text style={styles.tileLabel} numberOfLines={1}>
           {label}
         </Text>
       </View>
       <View style={styles.tileValueRow}>
         <Text
-          style={[styles.tileValue, surf && { color: surf.text }]}
+          style={styles.tileValue}
           maxFontSizeMultiplier={DS.layout.maxFontScale}>
           {value}
         </Text>
         {suffix ? (
-          <Text style={[styles.tileSuffix, surf && { color: surf.muted }]}>{suffix}</Text>
+          <Text style={styles.tileSuffix}>{suffix}</Text>
         ) : null}
       </View>
-      <Text style={[styles.tileCaption, surf && { color: surf.muted }]} numberOfLines={1}>
+      <Text style={styles.tileCaption} numberOfLines={1}>
         {caption}
       </Text>
     </View>
@@ -535,7 +523,7 @@ function weekday(iso: string): string {
   return d.toLocaleDateString('en-ZW', { weekday: 'long' });
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: {
     backgroundColor: DS.colors.surface,
     borderBottomLeftRadius: DS.radius.xxl,
@@ -727,4 +715,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
-});
+}));

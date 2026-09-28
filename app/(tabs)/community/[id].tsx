@@ -25,8 +25,8 @@ export default function PostDetailScreen() {
 
   if (!post) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface p-4">
-        <Text className="font-sans text-gray-500">Post not found</Text>
+      <View className="flex-1 items-center justify-center bg-surface p-4 dark:bg-dSurface">
+        <Text className="font-sans text-gray-500 dark:text-dSoft">Post not found</Text>
       </View>
     );
   }
@@ -52,26 +52,26 @@ export default function PostDetailScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-surface" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+    <ScrollView className="flex-1 bg-surface dark:bg-dSurface" contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
       {currentPost.isPinned ? (
         <View className="mb-2 flex-row items-center gap-1">
           <Ionicons name="pin" size={12} color={DS.colors.primary} />
-          <Text className="font-sans text-xs text-primary">Pinned · Agritex</Text>
+          <Text className="font-sans text-xs text-primary dark:text-dPrimary">Pinned · Agritex</Text>
         </View>
       ) : null}
-      <Text className="font-display text-xl text-dark">{currentPost.title}</Text>
-      <Text className="mt-2 font-sans text-gray-600">{currentPost.body}</Text>
+      <Text className="font-display text-xl text-dark dark:text-dText">{currentPost.title}</Text>
+      <Text className="mt-2 font-sans text-gray-600 dark:text-dMuted">{currentPost.body}</Text>
 
       <View className="mt-3 flex-row flex-wrap gap-2">
         {currentPost.tags.map((t) => (
-          <Text key={t} className="font-sans text-xs text-primary">
+          <Text key={t} className="font-sans text-xs text-primary dark:text-dPrimary">
             #{t}
           </Text>
         ))}
         {currentPost.isSolved ? (
           <View className="flex-row items-center gap-1">
             <Ionicons name="checkmark-circle" size={12} color={DS.colors.primary} />
-            <Text className="font-sans text-xs text-primary">Solved</Text>
+            <Text className="font-sans text-xs text-primary dark:text-dPrimary">Solved</Text>
           </View>
         ) : null}
       </View>
@@ -89,51 +89,55 @@ export default function PostDetailScreen() {
             size={16}
             color={liked ? DS.colors.primary : DS.colors.textMuted}
           />
-          <Text className={liked ? 'font-sans text-sm text-primary' : 'font-sans text-sm text-gray-600'}>
+          <Text className={
+              liked
+                ? 'font-sans text-sm text-primary dark:text-dPrimary'
+                : 'font-sans text-sm text-gray-600 dark:text-dMuted'
+            }>
             {currentPost.likes}
           </Text>
         </Pressable>
         <View className="flex-row items-center gap-1">
           <Ionicons name="chatbubble-outline" size={16} color={DS.colors.textMuted} />
-          <Text className="font-sans text-sm text-gray-600">{currentPost.commentCount}</Text>
+          <Text className="font-sans text-sm text-gray-600 dark:text-dMuted">{currentPost.commentCount}</Text>
         </View>
         {currentPost.category === 'question' && !currentPost.isSolved ? (
           <Pressable onPress={() => markSolved(currentPost.id)}>
-            <Text className="font-sans text-sm text-primary">Mark solved</Text>
+            <Text className="font-sans text-sm text-primary dark:text-dPrimary">Mark solved</Text>
           </Pressable>
         ) : null}
       </View>
 
-      <Text className="mt-6 font-sans-semibold text-dark">
+      <Text className="mt-6 font-sans-semibold text-dark dark:text-dText">
         Replies ({sortedReplies.length})
       </Text>
       {sortedReplies.map((r) => (
         <View
           key={r.id}
-          className={`mt-3 rounded-2xl bg-white p-4 ${r.isExpert ? 'border border-primary/20' : ''}`}>
+          className={`mt-3 rounded-2xl bg-white p-4  dark:bg-dCard${r.isExpert ? 'border border-primary/20 dark:border-dPrimary/30' : ''}`}>
           <View className="flex-row items-center gap-2">
-            <Text className="font-sans-semibold text-dark">{r.authorName}</Text>
+            <Text className="font-sans-semibold text-dark dark:text-dText">{r.authorName}</Text>
             {r.isExpert ? (
-              <View className="flex-row items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5">
+              <View className="flex-row items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 dark:bg-dPrimary/20">
                 <Ionicons name="checkmark-circle" size={10} color={DS.colors.primary} />
-                <Text className="font-sans text-[10px] text-primary">Expert</Text>
+                <Text className="font-sans text-[10px] text-primary dark:text-dPrimary">Expert</Text>
               </View>
             ) : null}
           </View>
-          <Text className="font-sans text-xs text-gray-400">{r.province}</Text>
-          <Text className="mt-2 font-sans text-gray-700">{r.body}</Text>
+          <Text className="font-sans text-xs text-gray-400 dark:text-dSoft">{r.province}</Text>
+          <Text className="mt-2 font-sans text-gray-700 dark:text-dMuted">{r.body}</Text>
           <Pressable onPress={() => upvoteReply(currentPost.id, r.id)} className="mt-2">
             <View className="flex-row items-center gap-1">
               <Ionicons name="thumbs-up-outline" size={14} color={DS.colors.textSoft} />
-              <Text className="font-sans text-sm text-gray-500">{r.upvotes} helpful</Text>
+              <Text className="font-sans text-sm text-gray-500 dark:text-dSoft">{r.upvotes} helpful</Text>
             </View>
           </Pressable>
         </View>
       ))}
 
-      <Text className="mt-6 font-sans-semibold text-dark">Add a reply</Text>
+      <Text className="mt-6 font-sans-semibold text-dark dark:text-dText">Add a reply</Text>
       <TextInput
-        className="mt-2 min-h-[80] rounded-xl bg-white px-4 py-3 font-sans"
+        className="mt-2 min-h-[80] rounded-xl bg-white px-4 py-3 font-sans dark:bg-dCard"
         placeholder="Share your experience or advice..."
         value={reply}
         onChangeText={setReply}

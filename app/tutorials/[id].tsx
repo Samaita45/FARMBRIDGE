@@ -25,8 +25,8 @@ export default function TutorialDetailScreen() {
 
   if (!tutorial) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface">
-        <Text className="font-sans text-gray-500">Tutorial not found</Text>
+      <View className="flex-1 items-center justify-center bg-surface dark:bg-dSurface">
+        <Text className="font-sans text-gray-500 dark:text-dSoft">Tutorial not found</Text>
       </View>
     );
   }
@@ -44,39 +44,39 @@ export default function TutorialDetailScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-surface" contentContainerStyle={{ paddingBottom: 40 }}>
-      <View className="items-center bg-primary/10 py-8">
+    <ScrollView className="flex-1 bg-surface dark:bg-dSurface" contentContainerStyle={{ paddingBottom: 40 }}>
+      <View className="items-center bg-primary/10 py-8 dark:bg-dPrimary/20">
         <Ionicons name={tutorial.icon} size={56} color={DS.colors.primary} />
       </View>
 
       <View className="p-4">
-        <Text className="font-display text-xl text-dark">{tutorial.title}</Text>
-        <Text className="mt-2 font-sans text-sm text-gray-500">
+        <Text className="font-display text-xl text-dark dark:text-dText">{tutorial.title}</Text>
+        <Text className="mt-2 font-sans text-sm text-gray-500 dark:text-dSoft">
           {tutorial.durationMin} min · {tutorial.difficulty} · {tutorial.language.toUpperCase()}
         </Text>
 
         {tutorial.sections.map((sec, i) => (
           <View key={i} className="mt-4">
             {sec.heading ? (
-              <Text className="font-sans-semibold text-lg text-dark">{sec.heading}</Text>
+              <Text className="font-sans-semibold text-lg text-dark dark:text-dText">{sec.heading}</Text>
             ) : null}
-            <Text className="mt-1 font-sans text-gray-700 leading-6">{sec.body}</Text>
+            <Text className="mt-1 font-sans text-gray-700 leading-6 dark:text-dMuted">{sec.body}</Text>
             {sec.tip ? (
-              <View className="mt-2 rounded-xl bg-amber-50 border border-amber-100 p-3">
+              <View className="mt-2 rounded-xl bg-amber-50 border border-amber-100 p-3 dark:bg-dWarnBg dark:border-dWarnBorder">
                 <View className="flex-row items-center gap-1">
                   <Ionicons name="bulb-outline" size={14} color={DS.semantic.warning.fg} />
-                  <Text className="font-sans-semibold text-sm text-amber-800">Tip</Text>
+                  <Text className="font-sans-semibold text-sm text-amber-800 dark:text-dWarnText">Tip</Text>
                 </View>
-                <Text className="font-sans text-sm text-amber-900">{sec.tip}</Text>
+                <Text className="font-sans text-sm text-amber-900 dark:text-dWarnText">{sec.tip}</Text>
               </View>
             ) : null}
           </View>
         ))}
 
         <View className="mt-4 flex-row gap-3">
-          <Pressable onPress={onShare} className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-primary py-3">
+          <Pressable onPress={onShare} className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-primary py-3 dark:border-dPrimary">
             <Ionicons name="share-outline" size={18} color={DS.colors.primary} />
-            <Text className="font-sans-semibold text-primary">Share</Text>
+            <Text className="font-sans-semibold text-primary dark:text-dPrimary">Share</Text>
           </Pressable>
         </View>
 
@@ -91,13 +91,13 @@ export default function TutorialDetailScreen() {
 
         <Pressable
           onPress={() => Linking.openURL(whatsAppUrl('Expert question from FarmBridge'))}
-          className="mt-3 rounded-xl bg-surface py-3">
-          <Text className="text-center font-sans-semibold text-primary">Ask an expert</Text>
+          className="mt-3 rounded-xl bg-surface py-3 dark:bg-dSurface">
+          <Text className="text-center font-sans-semibold text-primary dark:text-dPrimary">Ask an expert</Text>
         </Pressable>
 
         {related.length > 0 ? (
           <View className="mt-6">
-            <Text className="font-sans-semibold text-dark">Related tutorials</Text>
+            <Text className="font-sans-semibold text-dark dark:text-dText">Related tutorials</Text>
             {related.map((t) => (t ? <TutorialCard key={t.id} tutorial={t} completed={completedIds.includes(t.id)} /> : null))}
           </View>
         ) : null}

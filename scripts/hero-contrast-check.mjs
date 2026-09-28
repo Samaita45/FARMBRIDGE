@@ -21,11 +21,11 @@ const {
   SKY_LOCATIONS,
   SKY_TEXT,
   SKY_HEIGHT,
-  NIGHT_SURFACES,
   SUN_GLOW_SPEC,
   MOON_GLOW_SPEC,
 } = require('../constants/sky-gradients.js');
 const tokens = require('../constants/design-tokens.js');
+const { darkColors } = require('../constants/dark-palette.js');
 
 const channel = (c) => {
   const v = c / 255;
@@ -114,12 +114,17 @@ report('tile value on surfaceMuted', contrast(c.text, c.surfaceMuted), 4.5);
 report('tile label on surfaceMuted', contrast(c.textMuted, c.surfaceMuted), 4.5);
 report('search text on surface', contrast(c.textSoft, c.surface), 4.5);
 
-const n = NIGHT_SURFACES;
+/*
+  The hero used to state its own dark grounds, because there was no dark
+  palette to read. There is one now and the hero reads it like everything else,
+  so this checks the palette the hero actually renders with.
+*/
+const d = darkColors;
 console.log('\ntiles and search, dark scheme');
-report('tile value on tile', contrast(n.text, n.tile), 4.5);
-report('tile label on tile', contrast(n.muted, n.tile), 4.5);
-report('search text on tile', contrast(n.muted, n.tile), 4.5);
-report('tile edge on its surface', contrast(n.tileBorder, n.surface), 1.2);
+report('tile value on surfaceMuted', contrast(d.text, d.surfaceMuted), 4.5);
+report('tile label on surfaceMuted', contrast(d.textMuted, d.surfaceMuted), 4.5);
+report('search text on surface', contrast(d.textSoft, d.surface), 4.5);
+report('tile edge on surface', contrast(d.borderLight, d.surface), 1.2);
 
 console.log('\nfoot of each sky (no text may land here)');
 console.log(`  day   ${DAY_SKY[3]}  white would be ${contrast('#FFFFFF', DAY_SKY[3]).toFixed(2)}:1`);

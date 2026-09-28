@@ -1,13 +1,12 @@
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, EmptyState } from '@/components/design-system';
 import { RouteMap } from '@/components/transport/route-map';
 import { TransporterRow } from '@/components/transport/transporter-row';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
 import { asHref } from '@/lib/href';
 import { IS_API_ENABLED } from '@/services/api/config';
@@ -15,6 +14,7 @@ import { transportApi } from '@/services/api/transport.api';
 import { estimatePrice } from '@/services/transportDb';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
 import type { TransportProvider } from '@/types';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 interface Quote {
   provider: TransportProvider;
@@ -54,6 +54,7 @@ interface Quote {
  * or call somebody from below.
  */
 export default function ProvidersScreen() {
+  const styles = useStyles();
   const request = useTransportStore((s: TransportState) => s.request);
   const distanceKm = useTransportStore((s: TransportState) => s.distanceKm);
   const selectedId = useTransportStore((s: TransportState) => s.selectedProviderId);
@@ -276,7 +277,7 @@ export default function ProvidersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   centre: { flex: 1, justifyContent: 'center', backgroundColor: DS.colors.background },
   list: { padding: DS.spacing.md, paddingBottom: DS.spacing.lg, gap: DS.spacing.sm + 2 },
@@ -360,4 +361,4 @@ const styles = StyleSheet.create({
     color: DS.colors.textMuted,
     marginTop: 1,
   },
-});
+}));

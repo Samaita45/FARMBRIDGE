@@ -76,17 +76,17 @@ export default function RegisterTransporterScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-surface px-4" contentContainerStyle={{ paddingBottom: 32, paddingTop: 8 }}>
+    <ScrollView className="flex-1 bg-surface px-4 dark:bg-dSurface" contentContainerStyle={{ paddingBottom: 32, paddingTop: 8 }}>
       {existing ? (
-        <View className="mb-4 rounded-xl bg-amber-50 p-3">
-          <Text className="font-sans-semibold text-dark">Existing profile</Text>
-          <Text className="font-sans text-sm text-gray-600">
+        <View className="mb-4 rounded-xl bg-amber-50 p-3 dark:bg-dWarnBg">
+          <Text className="font-sans-semibold text-dark dark:text-dText">Existing profile</Text>
+          <Text className="font-sans text-sm text-gray-600 dark:text-dMuted">
             {existing.verified ? 'Verified' : 'Awaiting verification'} — update below
           </Text>
         </View>
       ) : (
-        <View className="mb-4 rounded-xl bg-primary/10 p-3">
-          <Text className="font-sans text-sm text-gray-600">
+        <View className="mb-4 rounded-xl bg-primary/10 p-3 dark:bg-dPrimary/20">
+          <Text className="font-sans text-sm text-gray-600 dark:text-dMuted">
             Register your vehicle to receive transport requests from farmers.
           </Text>
         </View>
@@ -96,7 +96,7 @@ export default function RegisterTransporterScreen() {
       <FormField label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
       <FormField label="National ID" value={nationalId} onChangeText={setNationalId} />
 
-      <Text className="mb-2 font-sans text-sm text-gray-600">Vehicle type</Text>
+      <Text className="mb-2 font-sans text-sm text-gray-600 dark:text-dMuted">Vehicle type</Text>
       <View className="mb-4 flex-row flex-wrap gap-2">
         {VEHICLE_TYPES.map((vt) => {
           const active = vehicleType === vt;
@@ -108,10 +108,14 @@ export default function RegisterTransporterScreen() {
               accessibilityState={{ selected: active }}
               accessibilityLabel={VEHICLE_LABELS[vt]}
               className={`min-h-[40px] flex-row items-center gap-2 rounded-lg border px-3 ${
-                active ? 'border-primary bg-primary' : 'border-border bg-card'
+                active ? 'border-primary bg-primary dark:border-dPrimary dark:bg-dPrimary' : 'border-border bg-card dark:border-dBorder dark:bg-dCard'
               }`}>
               <VehicleIcon type={vt} size={16} color={active ? DS.colors.textInverse : undefined} />
-              <Text className={active ? 'font-sans-semibold text-white' : 'font-sans-semibold text-dark'}>
+              <Text className={
+                active
+                  ? 'font-sans-semibold text-white dark:text-dOnPrimary'
+                  : 'font-sans-semibold text-dark dark:text-dText'
+              }>
                 {VEHICLE_LABELS[vt]}
               </Text>
             </Pressable>
@@ -123,14 +127,14 @@ export default function RegisterTransporterScreen() {
       <FormField label="Capacity (tons)" value={capacity} onChangeText={setCapacity} keyboardType="decimal-pad" />
       <FormField label="Rate per km (USD)" value={pricePerKm} onChangeText={setPricePerKm} keyboardType="decimal-pad" />
 
-      <Text className="mb-2 font-sans text-sm text-gray-600">Coverage areas</Text>
+      <Text className="mb-2 font-sans text-sm text-gray-600 dark:text-dMuted">Coverage areas</Text>
       <View className="mb-6 flex-row flex-wrap gap-2">
         {PROVINCES.map((p) => (
           <Pressable
             key={p.id}
             onPress={() => toggleCoverage(p.name)}
-            className={`rounded-full px-3 py-1.5 ${coverage.includes(p.name) ? 'bg-secondary' : 'bg-white border border-gray-200'}`}>
-            <Text className={`font-sans text-xs ${coverage.includes(p.name) ? 'text-white' : 'text-gray-600'}`}>
+            className={`rounded-full px-3 py-1.5 ${coverage.includes(p.name) ? 'bg-secondary dark:bg-dPrimary' : 'bg-white border border-gray-200 dark:bg-dCard dark:border-dBorder'}`}>
+            <Text className={`font-sans text-xs ${coverage.includes(p.name) ? 'text-white dark:text-dOnPrimary' : 'text-gray-600 dark:text-dMuted'}`}>
               {p.name}
             </Text>
           </Pressable>
@@ -159,9 +163,9 @@ function FormField({
 }) {
   return (
     <View className="mb-3">
-      <Text className="mb-1 font-sans text-sm text-gray-600">{label}</Text>
+      <Text className="mb-1 font-sans text-sm text-gray-600 dark:text-dMuted">{label}</Text>
       <TextInput
-        className="rounded-xl border border-gray-200 bg-white px-4 py-3 font-sans text-dark"
+        className="rounded-xl border border-gray-200 bg-white px-4 py-3 font-sans text-dark dark:border-dBorder dark:bg-dCard dark:text-dText"
         value={value}
         onChangeText={onChangeText}
         keyboardType={keyboardType}

@@ -6,7 +6,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -17,7 +16,6 @@ import { matchPlace } from '@/components/forms/place-field';
 import { PriceField } from '@/components/transport/price-field';
 import { RouteFields } from '@/components/transport/route-fields';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { useLocation } from '@/hooks/useLocation';
 import { asHref } from '@/lib/href';
 import { TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
@@ -31,6 +29,8 @@ import {
   SPECIAL_REQUIREMENTS,
   type GoodsCategory,
 } from '@/types/transport';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * The order: where, for how much, and what is being moved.
@@ -50,6 +50,8 @@ import {
  * button appeared broken. Errors are now shown against the fields.
  */
 export default function TransportRequestScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { location } = useLocation();
   const { showToast } = useToast();
   // Tapping a recent destination on the hub arrives with it already filled in.
@@ -383,7 +385,7 @@ export default function TransportRequestScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   flex: { flex: 1 },
   body: {
@@ -448,4 +450,4 @@ const styles = StyleSheet.create({
     borderTopColor: DS.colors.border,
     padding: DS.spacing.md,
   },
-});
+}));

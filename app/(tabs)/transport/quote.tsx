@@ -1,16 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, EmptyState } from '@/components/design-system';
 import { RouteMap } from '@/components/transport/route-map';
 import { TransporterRow } from '@/components/transport/transporter-row';
 import { VEHICLE_LABELS } from '@/components/transport/vehicle-icon';
-import { DS } from '@/constants/design-system';
 import { TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
 import { asHref } from '@/lib/href';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * The transporter you picked, before you commit to them.
@@ -26,6 +27,8 @@ import { useTransportStore, type TransportState } from '@/stores/transportStore'
  * confident "12 min" the app cannot honour.
  */
 export default function QuoteScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const request = useTransportStore((s: TransportState) => s.request);
   const distanceKm = useTransportStore((s: TransportState) => s.distanceKm);
   const selectedId = useTransportStore((s: TransportState) => s.selectedProviderId);
@@ -152,6 +155,7 @@ function Row({
   last?: boolean;
   tone?: 'danger';
 }) {
+  const styles = useStyles();
   return (
     <View style={[styles.row, !last && styles.rowDivider]}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -168,7 +172,7 @@ function Row({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   centre: { flex: 1, justifyContent: 'center', backgroundColor: DS.colors.background },
   body: { padding: DS.spacing.md, paddingBottom: DS.spacing.lg, gap: DS.spacing.md },
@@ -250,4 +254,4 @@ const styles = StyleSheet.create({
     borderTopColor: DS.colors.border,
     padding: DS.spacing.md,
   },
-});
+}));

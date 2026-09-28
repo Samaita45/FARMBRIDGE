@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, Input } from '@/components/design-system';
 import { BUDGET_DISCLAIMER, getCropBudget } from '@/constants/crop-budgets';
-import { DS } from '@/constants/design-system';
 import { CROPS } from '@/constants/zimbabwe-data';
 import {
   breakEvenPricePerKg,
@@ -15,6 +14,8 @@ import {
   rankCropProfitability,
   returnOnInvestment,
 } from '@/lib/farm-finance';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const COMPARE_CROP_IDS = ['maize', 'tomatoes', 'groundnuts', 'potatoes'];
 
@@ -24,6 +25,8 @@ function num(value: string): number {
 }
 
 export default function ProfitCalculatorScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const [cropId, setCropId] = useState('maize');
   const [hectares, setHectares] = useState('1');
   const [price, setPrice] = useState('');
@@ -283,6 +286,8 @@ function Metric({
   tone?: 'success' | 'danger';
   large?: boolean;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <View style={styles.metric} accessibilityRole="summary" accessibilityLabel={`${label}: ${value}`}>
       <View style={styles.metricHead}>
@@ -300,7 +305,7 @@ function Metric({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   flex: { flex: 1 },
   body: { padding: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.md },
@@ -398,4 +403,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textSoft,
   },
-});
+}));

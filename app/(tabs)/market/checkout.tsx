@@ -6,7 +6,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -15,7 +14,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card, Input } from '@/components/design-system';
 import { CheckoutSteps, StepHeading } from '@/components/market/checkout-steps';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { PAYMENT_METHODS, PROVINCES } from '@/constants/zimbabwe-data';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { asHref } from '@/lib/href';
@@ -23,6 +21,8 @@ import { insertOrder } from '@/services/orderService';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useCartStore, type CartItem } from '@/stores/cartStore';
 import type { MarketOrder } from '@/types/market';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * Checkout, in the two steps the reference lays out: delivery, then payment.
@@ -45,6 +45,8 @@ function newOrderReference(): string {
 }
 
 export default function CheckoutScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { showToast } = useToast();
   const user = useAuthStore((s: AuthState) => s.user);
   const { items, getTotalUSD, clearCart } = useCartStore();
@@ -328,7 +330,7 @@ export default function CheckoutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   flex: { flex: 1 },
   body: { padding: DS.spacing.md, paddingBottom: DS.spacing.lg, gap: DS.spacing.md },
@@ -449,4 +451,4 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: DS.colors.border,
   },
-});
+}));

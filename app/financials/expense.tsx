@@ -78,42 +78,42 @@ export default function ExpenseScreen() {
     currency === 'USD' ? `$${usd.toFixed(2)}` : `ZWG ${(usd * RATE).toFixed(0)}`;
 
   return (
-    <ScrollView className="flex-1 bg-surface p-4" keyboardShouldPersistTaps="handled">
+    <ScrollView className="flex-1 bg-surface p-4 dark:bg-dSurface" keyboardShouldPersistTaps="handled">
       <ExpensePieBreakdown expenses={entries} />
-      <View className="mt-4 rounded-2xl bg-amber-50 p-4">
-        <Text className="font-sans text-gray-600">Total expenses</Text>
-        <Text className="font-display text-2xl text-amber-700">{fmt(total)}</Text>
+      <View className="mt-4 rounded-2xl bg-amber-50 p-4 dark:bg-dWarnBg">
+        <Text className="font-sans text-gray-600 dark:text-dMuted">Total expenses</Text>
+        <Text className="font-display text-2xl text-amber-700 dark:text-dWarnText">{fmt(total)}</Text>
       </View>
 
-      <Text className="mt-4 font-sans-semibold text-dark">Category</Text>
+      <Text className="mt-4 font-sans-semibold text-dark dark:text-dText">Category</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-2">
         {CATEGORIES.map((c) => (
           <Pressable
             key={c}
             onPress={() => setCategory(c)}
-            className={`mr-2 rounded-full px-3 py-2 ${category === c ? 'bg-primary' : 'bg-white'}`}>
-            <Text className={`font-sans text-xs ${category === c ? 'text-white' : 'text-gray-600'}`}>
+            className={`mr-2 rounded-full px-3 py-2 ${category === c ? 'bg-primary dark:bg-dPrimary' : 'bg-white dark:bg-dCard'}`}>
+            <Text className={`font-sans text-xs ${category === c ? 'text-white dark:text-dOnPrimary' : 'text-gray-600 dark:text-dMuted'}`}>
               {EXPENSE_CATEGORY_LABELS[c]}
             </Text>
           </Pressable>
         ))}
       </ScrollView>
 
-      <TextInput className="mt-3 rounded-xl bg-white px-4 py-3 font-sans" placeholder={`Amount (${currency})`} keyboardType="decimal-pad" value={amount} onChangeText={setAmount} />
-      <TextInput className="mt-2 rounded-xl bg-white px-4 py-3 font-sans" placeholder="Notes" value={notes} onChangeText={setNotes} />
+      <TextInput className="mt-3 rounded-xl bg-white px-4 py-3 font-sans dark:bg-dCard" placeholder={`Amount (${currency})`} keyboardType="decimal-pad" value={amount} onChangeText={setAmount} />
+      <TextInput className="mt-2 rounded-xl bg-white px-4 py-3 font-sans dark:bg-dCard" placeholder="Notes" value={notes} onChangeText={setNotes} />
       <View className="mt-3">
         <PrimaryButton title="Add Expense" onPress={add} />
       </View>
 
-      <Text className="mt-6 font-sans-semibold text-dark">History</Text>
+      <Text className="mt-6 font-sans-semibold text-dark dark:text-dText">History</Text>
       {entries.map((e) => (
-        <View key={e.id} className="mt-2 rounded-xl bg-white p-3">
+        <View key={e.id} className="mt-2 rounded-xl bg-white p-3 dark:bg-dCard">
           <View className="flex-row justify-between">
-            <Text className="font-sans-semibold text-dark">{EXPENSE_CATEGORY_LABELS[e.category]}</Text>
-            <Text className="font-sans text-primary">{fmt(toUSD(e.amount, e.currency, e.rateUsed))}</Text>
+            <Text className="font-sans-semibold text-dark dark:text-dText">{EXPENSE_CATEGORY_LABELS[e.category]}</Text>
+            <Text className="font-sans text-primary dark:text-dPrimary">{fmt(toUSD(e.amount, e.currency, e.rateUsed))}</Text>
           </View>
-          {e.notes ? <Text className="font-sans text-sm text-gray-500">{e.notes}</Text> : null}
-          <Text className="font-sans text-xs text-gray-400">{e.date}</Text>
+          {e.notes ? <Text className="font-sans text-sm text-gray-500 dark:text-dSoft">{e.notes}</Text> : null}
+          <Text className="font-sans text-xs text-gray-400 dark:text-dSoft">{e.date}</Text>
         </View>
       ))}
     </ScrollView>

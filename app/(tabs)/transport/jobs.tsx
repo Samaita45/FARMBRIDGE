@@ -1,18 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, EmptyState, LoadingState } from '@/components/design-system';
 import { BidSheet } from '@/components/transport/bid-sheet';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { useLocation } from '@/hooks/useLocation';
 import { useRealtimeEvent, useRealtimeStatus } from '@/hooks/useRealtime';
 import { asHref } from '@/lib/href';
 import { IS_API_ENABLED } from '@/services/api/config';
 import { transportApi, type NearbyTransportRequest } from '@/services/api/transport.api';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * Work available near a transporter, and the place they bid on it.
@@ -34,6 +35,8 @@ import { transportApi, type NearbyTransportRequest } from '@/services/api/transp
  * starts disagreeing with the database.
  */
 export default function TransporterJobsScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { showToast } = useToast();
   const { location } = useLocation();
   const realtime = useRealtimeStatus();
@@ -173,6 +176,7 @@ export default function TransporterJobsScreen() {
 }
 
 function JobCard({ job, onBid }: { job: NearbyTransportRequest; onBid: () => void }) {
+  const styles = useStyles();
   const km = Math.round(job.distanceMeters / 1000);
   const minutes = Math.round(job.durationSeconds / 60);
   const suggested = (job.estimatedPriceUsdCents / 100).toFixed(0);
@@ -242,6 +246,8 @@ function JobCard({ job, onBid }: { job: NearbyTransportRequest; onBid: () => voi
 }
 
 function Fact({ icon, text }: { icon: React.ComponentProps<typeof Ionicons>['name']; text: string }) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <View style={styles.fact}>
       <Ionicons name={icon} size={13} color={DS.colors.textSoft} />
@@ -258,7 +264,7 @@ function formatDuration(minutes: number): string {
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   centre: { flex: 1, justifyContent: 'center' },
   flex: { flex: 1 },
@@ -339,4 +345,4 @@ const styles = StyleSheet.create({
 
   actions: { flexDirection: 'row', gap: DS.spacing.sm },
   action: { flex: 1 },
-});
+}));

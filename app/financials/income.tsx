@@ -109,40 +109,40 @@ export default function IncomeScreen() {
     currency === 'USD' ? `$${usd.toFixed(2)}` : `ZWG ${(usd * RATE).toFixed(0)}`;
 
   return (
-    <ScrollView className="flex-1 bg-surface p-4" keyboardShouldPersistTaps="handled">
-      <View className="rounded-2xl bg-primary/10 p-4">
-        <Text className="font-sans text-gray-600">Total income</Text>
-        <Text className="font-display text-2xl text-primary">{fmt(total)}</Text>
+    <ScrollView className="flex-1 bg-surface p-4 dark:bg-dSurface" keyboardShouldPersistTaps="handled">
+      <View className="rounded-2xl bg-primary/10 p-4 dark:bg-dPrimary/20">
+        <Text className="font-sans text-gray-600 dark:text-dMuted">Total income</Text>
+        <Text className="font-display text-2xl text-primary dark:text-dPrimary">{fmt(total)}</Text>
       </View>
 
-      <Text className="mt-4 font-sans-semibold text-dark">Add income</Text>
-      <TextInput className="mt-2 rounded-xl bg-white px-4 py-3 font-sans" placeholder="Crop name" value={cropName} onChangeText={setCropName} />
-      <TextInput className="mt-2 rounded-xl bg-white px-4 py-3 font-sans" placeholder="Quantity (kg)" keyboardType="decimal-pad" value={quantity} onChangeText={setQuantity} />
-      <TextInput className="mt-2 rounded-xl bg-white px-4 py-3 font-sans" placeholder={`Price per kg (${currency})`} keyboardType="decimal-pad" value={price} onChangeText={setPrice} />
-      <TextInput className="mt-2 rounded-xl bg-white px-4 py-3 font-sans" placeholder="Buyer" value={buyer} onChangeText={setBuyer} />
+      <Text className="mt-4 font-sans-semibold text-dark dark:text-dText">Add income</Text>
+      <TextInput className="mt-2 rounded-xl bg-white px-4 py-3 font-sans dark:bg-dCard" placeholder="Crop name" value={cropName} onChangeText={setCropName} />
+      <TextInput className="mt-2 rounded-xl bg-white px-4 py-3 font-sans dark:bg-dCard" placeholder="Quantity (kg)" keyboardType="decimal-pad" value={quantity} onChangeText={setQuantity} />
+      <TextInput className="mt-2 rounded-xl bg-white px-4 py-3 font-sans dark:bg-dCard" placeholder={`Price per kg (${currency})`} keyboardType="decimal-pad" value={price} onChangeText={setPrice} />
+      <TextInput className="mt-2 rounded-xl bg-white px-4 py-3 font-sans dark:bg-dCard" placeholder="Buyer" value={buyer} onChangeText={setBuyer} />
       <View className="mt-3">
         <PrimaryButton title="Add Income" onPress={add} />
       </View>
 
       <View className="mt-4 flex-row gap-2">
-        <TextInput className="flex-1 rounded-xl bg-white px-4 py-2 font-sans" placeholder="Filter crop/date" value={filter} onChangeText={setFilter} />
-        <Pressable onPress={exportCsv} className="rounded-xl bg-white px-4 py-2 justify-center">
-          <Text className="font-sans-semibold text-sm text-primary">Export</Text>
+        <TextInput className="flex-1 rounded-xl bg-white px-4 py-2 font-sans dark:bg-dCard" placeholder="Filter crop/date" value={filter} onChangeText={setFilter} />
+        <Pressable onPress={exportCsv} className="rounded-xl bg-white px-4 py-2 justify-center dark:bg-dCard">
+          <Text className="font-sans-semibold text-sm text-primary dark:text-dPrimary">Export</Text>
         </Pressable>
       </View>
 
       {filtered.map((e) => (
-        <View key={e.id} className="mt-3 rounded-xl bg-white p-4">
+        <View key={e.id} className="mt-3 rounded-xl bg-white p-4 dark:bg-dCard">
           <View className="flex-row justify-between">
-            <Text className="font-sans-semibold text-dark">{e.cropName}</Text>
-            <Text className="font-sans-semibold text-primary">
+            <Text className="font-sans-semibold text-dark dark:text-dText">{e.cropName}</Text>
+            <Text className="font-sans-semibold text-primary dark:text-dPrimary">
               {fmt(toUSD(e.quantity * e.pricePerUnit, e.currency, e.rateUsed))}
             </Text>
           </View>
-          <Text className="font-sans text-sm text-gray-500">
+          <Text className="font-sans text-sm text-gray-500 dark:text-dSoft">
             {e.quantity} {e.unit} @ {e.pricePerUnit} · {e.buyer}
           </Text>
-          <Text className="font-sans text-xs text-gray-400">{e.date}</Text>
+          <Text className="font-sans text-xs text-gray-400 dark:text-dSoft">{e.date}</Text>
           <Pressable
             onPress={() =>
               Alert.alert('Delete?', '', [
@@ -158,7 +158,7 @@ export default function IncomeScreen() {
               ])
             }
             className="mt-2">
-            <Text className="font-sans text-sm text-error">Remove</Text>
+            <Text className="font-sans text-sm text-error dark:text-dDanger">Remove</Text>
           </Pressable>
         </View>
       ))}

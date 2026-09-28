@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Card } from '@/components/design-system';
@@ -9,6 +9,8 @@ import { DS } from '@/constants/design-system';
 import { CROPS, FERTILIZER_RECOMMENDATIONS } from '@/constants/zimbabwe-data';
 import type { IconName } from '@/types/icons';
 import { getCropIcon } from '@/utils/crop-emoji';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const SOIL_TYPES = ['Sandy', 'Clay', 'Loam', 'Sandy-Loam', 'Clay-Loam'] as const;
 const PH_LEVELS = [4.5, 5.5, 6.5, 7.5, 8.5];
@@ -30,6 +32,8 @@ function moistureAdvice(moisture: number): { label: string; tone: Tone } {
 }
 
 export default function SoilScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const [soilType, setSoilType] = useState<string>('Loam');
   const [ph, setPh] = useState(6.5);
   const [cropId, setCropId] = useState('maize');
@@ -267,7 +271,7 @@ export default function SoilScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   body: { padding: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.md },
   flex: { flex: 1 },
@@ -430,4 +434,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
-});
+}));

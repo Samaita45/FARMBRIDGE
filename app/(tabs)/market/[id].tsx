@@ -8,7 +8,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, LoadingState } from '@/components/design-system';
 import { ProductCard } from '@/components/market/product-card';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { whatsAppUrl } from '@/constants/support';
 import { getProductById, MARKET_PRODUCTS } from '@/constants/zimbabwe-data';
 import { SEED_CATALOGUE_ZWG_RATE } from '@/constants/zimbabwe-data/provinces-seasons';
@@ -19,6 +18,8 @@ import { asHref } from '@/lib/href';
 import { useCartStore, type CartState } from '@/stores/cartStore';
 import type { MarketProduct } from '@/types';
 import { getProductImage } from '@/utils/product-emoji';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * A marketplace listing, laid out to the reference's detail screen: the
@@ -39,6 +40,8 @@ import { getProductImage } from '@/utils/product-emoji';
  * rest of the category, which is what it always claimed to be.
  */
 export default function ProductDetailScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { showToast } = useToast();
   const addItem = useCartStore((s: CartState) => s.addItem);
@@ -321,6 +324,8 @@ function Badge({
   text: string;
   tone: 'success' | 'info' | 'danger';
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   const role = DS.semantic[tone];
   return (
     <View style={[styles.badge, { backgroundColor: role.bg, borderColor: role.border }]}>
@@ -330,7 +335,7 @@ function Badge({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   flex: { flex: 1 },
   pressed: { opacity: 0.9 },
@@ -566,4 +571,4 @@ const styles = StyleSheet.create({
     paddingVertical: DS.spacing.sm + 4,
   },
   barBtn: { flex: 1 },
-});
+}));

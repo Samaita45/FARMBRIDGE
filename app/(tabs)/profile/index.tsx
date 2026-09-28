@@ -5,7 +5,6 @@ import {
   Linking,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -15,7 +14,6 @@ import { ProfileAvatar } from '@/components/profile/profile-avatar';
 import { ProfileMenuRow } from '@/components/profile/profile-menu-row';
 import { useToast } from '@/components/ui/toast-provider';
 import { whatsAppUrl } from '@/constants/support';
-import { DS } from '@/constants/design-system';
 import { t } from '@/constants/profile-i18n';
 import { TUTORIALS } from '@/constants/tutorials-data';
 import { getCropPlans } from '@/services/database';
@@ -29,6 +27,8 @@ import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useSettingsStore, selectLanguage, type SettingsState } from '@/stores/settingsStore';
 import { useTutorialsStore, type TutorialsState } from '@/stores/tutorialsStore';
 import type { FarmProfile, ProfileStats } from '@/types/profile';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const ROLE_LABELS: Record<string, string> = {
   farmer: 'Farmer',
@@ -37,6 +37,8 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default function ProfileScreen() {
+  const DS = useDS();
+  const s = useStyles();
   const user = useAuthStore((s: AuthState) => s.user);
   const logout = useAuthStore((s: AuthState) => s.logout);
   const lang = useSettingsStore(selectLanguage);
@@ -286,6 +288,8 @@ export default function ProfileScreen() {
 }
 
 function StatCell({ value, label, icon }: { value: number; label: string; icon: keyof typeof Ionicons.glyphMap }) {
+  const DS = useDS();
+  const s = useStyles();
   return (
     <View style={s.statCell}>
       <Ionicons name={icon} size={16} color={DS.colors.textSoft} style={{ marginBottom: 4 }} />
@@ -295,7 +299,7 @@ function StatCell({ value, label, icon }: { value: number; label: string; icon: 
   );
 }
 
-const s = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   scroll: { paddingBottom: 48 },
   avatarWrap: { marginBottom: 4 },
@@ -357,4 +361,4 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: DS.semantic.danger.border,
   },
   logoutText: { fontSize: 15, fontWeight: '700', color: DS.colors.red },
-});
+}));

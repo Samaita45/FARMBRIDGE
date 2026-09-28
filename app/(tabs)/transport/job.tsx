@@ -1,14 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Badge, Button, EmptyState, LoadingState } from '@/components/design-system';
 import { BidSheet } from '@/components/transport/bid-sheet';
 import { RouteMap } from '@/components/transport/route-map';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { IS_API_ENABLED } from '@/services/api/config';
 import {
   transportApi,
@@ -16,6 +15,8 @@ import {
   type ServerTransportRequest,
   type TransportBidDto,
 } from '@/services/api/transport.api';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * One load, seen by a transporter deciding whether to carry it.
@@ -32,6 +33,8 @@ import {
  * re-checked here — what arrives is what may be shown.
  */
 export default function JobDetailScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { showToast } = useToast();
 
@@ -195,6 +198,8 @@ function Row({
   label: string;
   value: string;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <Ionicons name={icon} size={15} color={DS.colors.textSoft} />
@@ -212,7 +217,7 @@ function formatDuration(seconds: number): string {
   return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   centre: { flex: 1, justifyContent: 'center' },
   scroll: { padding: DS.spacing.md, gap: DS.spacing.md },
@@ -277,4 +282,4 @@ const styles = StyleSheet.create({
     borderTopColor: DS.colors.border,
     backgroundColor: DS.colors.surface,
   },
-});
+}));

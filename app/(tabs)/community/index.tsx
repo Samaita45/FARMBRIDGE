@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -21,7 +20,6 @@ import {
   type ChipTabItem,
 } from '@/components/design-system';
 import { PostCard } from '@/components/community/post-card';
-import { DS } from '@/constants/design-system';
 import { SUCCESS_STORIES, TRENDING_TOPICS } from '@/constants/community-data';
 import { asHref } from '@/lib/href';
 import { extraTopPad } from '@/lib/platform-ui';
@@ -29,8 +27,12 @@ import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useCommunityStore, type CommunityState } from '@/stores/communityStore';
 import type { CommunityPost, FeedFilter } from '@/types/community';
 import { FEED_FILTERS } from '@/types/community';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export default function CommunityHubScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s: AuthState) => s.user);
   const hydrate = useCommunityStore((s: CommunityState) => s.hydrate);
@@ -179,7 +181,7 @@ export default function CommunityHubScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   newPostBtn: {
     flexDirection: 'row',
@@ -249,4 +251,4 @@ const styles = StyleSheet.create({
     borderColor: DS.colors.primaryMid,
   },
   refreshText: { fontSize: 14, fontWeight: '700', color: DS.colors.primary },
-});
+}));

@@ -20,7 +20,6 @@ import { Button, IconButton, Input } from '@/components/design-system';
 import { ProvincePicker } from '@/components/forms/province-picker';
 import { RoleSelector } from '@/components/forms/role-selector';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { AuthImages } from '@/constants/images';
 import { asHref } from '@/lib/href';
 import { registerSchema, type RegisterFormData } from '@/lib/validation';
@@ -28,8 +27,12 @@ import { isApiError } from '@/services/api/errors';
 import { registerUser } from '@/services/authService';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import type { UserRole } from '@/types';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export default function RegisterScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { showToast } = useToast();
   const login = useAuthStore((s: AuthState) => s.login);
   const setLoading = useAuthStore((s: AuthState) => s.setLoading);
@@ -353,7 +356,7 @@ function PasswordField({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.text },
   flex: { flex: 1 },
   bg: { flex: 1 },
@@ -435,4 +438,4 @@ const styles = StyleSheet.create({
     color: DS.colors.textMuted,
   },
   link: { fontFamily: DS.fontFamily.semibold, color: DS.colors.primary },
-});
+}));

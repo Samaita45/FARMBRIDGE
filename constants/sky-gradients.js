@@ -53,26 +53,6 @@ const SKY_TEXT = [
 
 module.exports = { DAY_SKY, NIGHT_SKY, SKY_LOCATIONS, SKY_TEXT, SKY_HEIGHT };
 
-/**
- * The hero's lower half — the search pill and the stat tiles.
- *
- * These sit on their own solid ground rather than on the gradient, so in dark
- * mode they need their own dark values: leaving them on the static
- * `DS.colors.surface` produced a hero whose sky was night and whose bottom
- * third was white. The app's palette is light-only today, so the dark values
- * are stated here rather than read from a theme that does not exist yet.
- *
- * @type {{surface: string, tile: string, tileBorder: string, text: string, muted: string}}
- */
-const NIGHT_SURFACES = {
-  surface: '#171532',
-  tile: '#241F4B',
-  tileBorder: '#332C63',
-  text: '#F5F3FF',
-  muted: '#BFB8E0',
-};
-
-module.exports.NIGHT_SURFACES = NIGHT_SURFACES;
 
 /**
  * The glow stacks, and where their centres sit in the hero.

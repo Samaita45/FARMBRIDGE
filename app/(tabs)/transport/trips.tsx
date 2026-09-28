@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 
 import { Button, Card, EmptyState, LoadingState } from '@/components/design-system';
 import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
@@ -18,6 +18,8 @@ import {
 import { getBookings, updateBookingStatus } from '@/services/transportDb';
 import { useAuthStore } from '@/stores/authStore';
 import type { BookingStatus, TransportBooking } from '@/types/transport';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 type TripTab = 'active' | 'history';
 
@@ -61,6 +63,8 @@ async function serverBookings(): Promise<TransportBookingDto[]> {
 }
 
 export default function TripsScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { showToast } = useToast();
   const user = useAuthStore((s) => s.user);
   const [tab, setTab] = useState<TripTab>('active');
@@ -250,7 +254,7 @@ export default function TripsScreen() {
         </Card>
       );
     },
-    [tab, advanceStatus]
+    [tab, advanceStatus, DS, styles]
   );
 
   return (
@@ -381,7 +385,7 @@ export default function TripsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
 
   tabs: {
@@ -518,4 +522,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textSoft,
   },
-});
+}));

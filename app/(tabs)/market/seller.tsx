@@ -1,14 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Badge, Button, EmptyState, LoadingState, Sheet } from '@/components/design-system';
 import { ProductForm, type ProductFormValues } from '@/components/market/product-form';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { IS_API_ENABLED } from '@/services/api/config';
 import { productsApi, type ProductDto } from '@/services/api/products.api';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 type Editing = { mode: 'add' } | { mode: 'edit'; product: ProductDto } | null;
 
@@ -28,6 +29,8 @@ type Editing = { mode: 'add' } | { mode: 'edit'; product: ProductDto } | null;
  * install with no backend is told plainly where listings live.
  */
 export default function SellerDashboardScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { showToast } = useToast();
 
   const [products, setProducts] = useState<ProductDto[]>([]);
@@ -227,6 +230,8 @@ function ListingCard({
   onPublish: () => void;
   onRemove: () => void;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   const price = (product.priceUsdCents / 100).toFixed(2);
 
   return (
@@ -285,7 +290,7 @@ function ListingCard({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   centre: { flex: 1, justifyContent: 'center' },
   flex: { flex: 1 },
@@ -350,4 +355,4 @@ const styles = StyleSheet.create({
     borderTopColor: DS.colors.border,
     backgroundColor: DS.colors.surface,
   },
-});
+}));

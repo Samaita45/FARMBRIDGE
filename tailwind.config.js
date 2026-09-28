@@ -1,11 +1,18 @@
 /** @type {import('tailwindcss').Config} */
 const tokens = require('./constants/design-tokens');
+const { darkColors, darkSemantic } = require('./constants/dark-palette');
 
 // NativeWind classes and StyleSheet styles are both in use across the app, so
 // both have to resolve to the same palette. Everything below is derived from
 // constants/design-tokens.js — do not hardcode a colour or size here.
 module.exports = {
   content: ['./app/**/*.{js,jsx,ts,tsx}', './components/**/*.{js,jsx,ts,tsx}'],
+  /*
+    Class-based, not media-based: the scheme has to follow the person's choice
+    in Settings, not only the OS. ThemeProvider pushes it with NativeWind's
+    `colorScheme.set`, so the class and the StyleSheet palette always agree.
+  */
+  darkMode: 'class',
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
@@ -36,6 +43,27 @@ module.exports = {
         gray: tokens.colors.gray,
         blue: tokens.colors.blue,
         green: tokens.colors.green,
+
+        /*
+          The dark scheme's counterparts, for `dark:` variants. Named rather
+          than written as arbitrary hex in markup, for the same reason
+          everything above is: one palette, and it lives in the tokens.
+        */
+        dSurface: darkColors.background,
+        dCard: darkColors.surface,
+        dCardMuted: darkColors.surfaceMuted,
+        dBorder: darkColors.border,
+        dText: darkColors.text,
+        dMuted: darkColors.textMuted,
+        dSoft: darkColors.textSoft,
+        dPrimary: darkColors.primary,
+        dPrimaryBg: darkColors.primaryBg,
+        dOnPrimary: darkColors.textInverse,
+        dDanger: darkColors.danger,
+        dWarn: darkColors.warning,
+        dWarnBg: darkSemantic.warning.bg,
+        dWarnBorder: darkSemantic.warning.border,
+        dWarnText: darkSemantic.warning.fg,
       },
       spacing: {
         xs: tokens.spacing.xs,

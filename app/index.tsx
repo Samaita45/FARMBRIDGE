@@ -11,7 +11,7 @@ export default function Index() {
 
   if (!isHydrated) {
     return (
-      <View className="flex-1 items-center justify-center bg-surface">
+      <View className="flex-1 items-center justify-center bg-surface dark:bg-dSurface">
         <ActivityIndicator size="large" color={DS.colors.primary} />
       </View>
     );

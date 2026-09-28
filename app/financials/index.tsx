@@ -18,6 +18,8 @@ import { asHref } from '@/lib/href';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useSettingsStore, selectCurrency } from '@/stores/settingsStore';
 import type { ExpenseEntry, MonthlyFinanceSummary, SeasonTotals } from '@/types/financials';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const LINKS: { label: string; icon: keyof typeof Ionicons.glyphMap; href: string; desc: string }[] = [
   { label: 'Income Tracker',    icon: 'trending-up',   href: '/financials/income',     desc: 'Log your farm sales' },
@@ -28,6 +30,8 @@ const LINKS: { label: string; icon: keyof typeof Ionicons.glyphMap; href: string
 ];
 
 export default function FinancialsHubScreen() {
+  const DS = useDS();
+  const s = useStyles();
   const user = useAuthStore((s: AuthState) => s.user);
   const currency = useSettingsStore(selectCurrency);
   const { rate, description: rateDescription, isIndicative } = useExchangeRate();
@@ -194,7 +198,7 @@ function StatCard({ label, value, icon, color }: {
   );
 }
 
-const s = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.primaryBg },
 
   // Header
@@ -280,7 +284,7 @@ const s = StyleSheet.create({
   moduleBtnContent: { flex: 1 },
   moduleBtnLabel: { fontSize: 14, fontWeight: '700', color: DS.colors.text },
   moduleBtnDesc: { fontSize: 11, color: DS.colors.textMuted, marginTop: 2 },
-});
+}));
 
 const sc = StyleSheet.create({
   card: {

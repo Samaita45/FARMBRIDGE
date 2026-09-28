@@ -2,15 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, EmptyState } from '@/components/design-system';
-import { DS } from '@/constants/design-system';
 import { imageSourceFor } from '@/constants/produce-imagery';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { asHref } from '@/lib/href';
 import { useCartStore, type CartItem, type CartState } from '@/stores/cartStore';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * The cart, following the reference layout: a photograph of each item, its
@@ -20,6 +21,8 @@ import { useCartStore, type CartItem, type CartState } from '@/stores/cartStore'
  * only thing anyone does on this screen is adjust amounts and check the total.
  */
 export default function CartScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const items = useCartStore((s: CartState) => s.items);
   const updateQuantity = useCartStore((s: CartState) => s.updateQuantity);
   const removeItem = useCartStore((s: CartState) => s.removeItem);
@@ -90,7 +93,7 @@ export default function CartScreen() {
         </View>
       </View>
     ),
-    [updateQuantity, removeItem]
+    [updateQuantity, removeItem, DS, styles]
   );
 
   if (items.length === 0) {
@@ -155,6 +158,7 @@ function SummaryRow({
   value: string;
   muted?: boolean;
 }) {
+  const styles = useStyles();
   return (
     <View style={styles.summaryRow}>
       <Text style={styles.summaryLabel}>{label}</Text>
@@ -163,7 +167,7 @@ function SummaryRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   centre: { flex: 1, justifyContent: 'center' },
   list: { padding: DS.spacing.md, gap: DS.spacing.sm + 4 },
@@ -276,4 +280,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textSoft,
   },
-});
+}));

@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Badge, Button, EmptyState, LoadingState } from '@/components/design-system';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { useRealtimeEvent, useRealtimeStatus } from '@/hooks/useRealtime';
 import { asHref } from '@/lib/href';
 import { IS_API_ENABLED } from '@/services/api/config';
@@ -15,6 +14,8 @@ import {
   type ServerTransportRequest,
   type TransportBidDto,
 } from '@/services/api/transport.api';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * The offers on one load, and where the farmer chooses between them.
@@ -35,6 +36,8 @@ import {
  * the platform putting its thumb on a negotiation between two other parties.
  */
 export default function BidsScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { showToast } = useToast();
   const realtime = useRealtimeStatus();
@@ -196,6 +199,8 @@ function BidCard({
   busy: boolean;
   onAccept: () => void;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   const price = (bid.amountUsdCents / 100).toFixed(2);
   const accepted = bid.status === 'ACCEPTED';
 
@@ -254,7 +259,7 @@ function BidCard({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   centre: { flex: 1, justifyContent: 'center' },
   flex: { flex: 1 },
@@ -340,4 +345,4 @@ const styles = StyleSheet.create({
     color: DS.colors.textMuted,
   },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-});
+}));

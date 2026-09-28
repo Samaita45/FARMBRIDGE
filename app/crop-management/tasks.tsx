@@ -1,17 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TaskCard } from '@/components/crop-management/task-card';
 import { EmptyState, LoadingState } from '@/components/design-system';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { type TaskFilter, useFarmTasks } from '@/hooks/useFarmTasks';
 import { openSmsReminder } from '@/services/notificationService';
 import { useAuthStore } from '@/stores/authStore';
 import { useSettingsStore } from '@/stores/settingsStore';
 import type { FarmTask } from '@/types/crop-management';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const FILTERS: { key: TaskFilter; label: string }[] = [
   { key: 'today', label: 'Today' },
@@ -27,6 +28,8 @@ function addDays(dateStr: string, days: number): string {
 }
 
 export default function TasksScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { showToast } = useToast();
   const user = useAuthStore((s) => s.user);
   const settings = useSettingsStore();
@@ -85,7 +88,7 @@ export default function TasksScreen() {
         ) : null}
       </View>
     ),
-    [completeTask, rescheduleTask, handleSms, showToast]
+    [completeTask, rescheduleTask, handleSms, showToast, DS, styles]
   );
 
   return (
@@ -155,7 +158,7 @@ export default function TasksScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
 
   progressBar: {
@@ -248,4 +251,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textSoft,
   },
-});
+}));

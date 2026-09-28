@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -17,6 +16,8 @@ import { asHref } from '@/lib/href';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useNotificationStore } from '@/stores/notificationStore';
 import type { AppNotification, NotificationType } from '@/types/notifications';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const TYPE_META: Record<
   NotificationType,
@@ -47,6 +48,8 @@ function NotificationRow({
   item: AppNotification;
   onPress: () => void;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   const meta = TYPE_META[item.type];
   return (
     <Pressable
@@ -87,6 +90,8 @@ const TABS: { id: 'all' | NotificationType; label: string }[] = [
 ];
 
 export default function NotificationsScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { items, unreadCount, refresh, isHydrated, userId } = useNotifications();
   const markRead = useNotificationStore((s) => s.markRead);
   const markAllRead = useNotificationStore((s) => s.markAllRead);
@@ -182,7 +187,7 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   safe: { flex: 1, backgroundColor: DS.colors.background },
   tabs: { gap: 8, marginBottom: DS.spacing.md, paddingRight: 8 },
   tab: {
@@ -258,4 +263,4 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   ctaText: { color: DS.colors.surface, fontWeight: '700', fontSize: 15 },
-});
+}));

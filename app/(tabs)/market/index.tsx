@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/design-system';
@@ -13,7 +13,6 @@ import {
   type MarketFilters,
 } from '@/components/market/filter-sheet';
 import { ProductCard } from '@/components/market/product-card';
-import { DS } from '@/constants/design-system';
 import { imageSourceFor } from '@/constants/produce-imagery';
 import { MARKET_CATEGORIES, MARKET_PRODUCTS } from '@/constants/zimbabwe-data';
 import { SEED_CATALOGUE_ZWG_RATE } from '@/constants/zimbabwe-data/provinces-seasons';
@@ -25,6 +24,8 @@ import { extraTopPad } from '@/lib/platform-ui';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useCartStore, type CartState } from '@/stores/cartStore';
 import type { MarketProduct } from '@/types';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * The marketplace.
@@ -39,6 +40,8 @@ import type { MarketProduct } from '@/types';
  * money they may not have much of.
  */
 export default function MarketplaceScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s: AuthState) => s.user);
   const cartCount = useCartStore((s: CartState) => s.getItemCount());
@@ -127,7 +130,7 @@ export default function MarketplaceScreen() {
         <ProductCard product={item} />
       </View>
     ),
-    []
+    [styles]
   );
 
   return (
@@ -370,7 +373,7 @@ export default function MarketplaceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
 
   header: {
@@ -574,4 +577,4 @@ const styles = StyleSheet.create({
     color: DS.colors.primary,
     marginBottom: DS.spacing.sm,
   },
-});
+}));

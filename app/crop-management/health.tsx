@@ -6,7 +6,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -16,9 +15,10 @@ import { DiagnosisResultCard } from '@/components/crop-health/diagnosis-result-c
 import { ScanOverlay } from '@/components/crop-health/scan-overlay';
 import { Button, ButtonRow, Card, EmptyState, IconButton, Input } from '@/components/design-system';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { CROP_DISEASES, type CropDisease } from '@/constants/zimbabwe-data';
 import { useCropPlans } from '@/hooks/useCropPlans';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * Symptom-based diagnosis against the offline disease library.
@@ -34,6 +34,8 @@ function healthPercent(disease: CropDisease, matchedSymptoms: boolean): number {
 }
 
 export default function CropHealthScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { plans } = useCropPlans();
   const { showToast } = useToast();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -140,7 +142,7 @@ export default function CropHealthScreen() {
         </Text>
       </Pressable>
     ),
-    []
+    [styles]
   );
 
   return (
@@ -344,7 +346,7 @@ export default function CropHealthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   body: { padding: DS.spacing.md, paddingBottom: DS.spacing.xl, gap: DS.spacing.md },
   flex: { flex: 1 },
@@ -501,4 +503,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
-});
+}));

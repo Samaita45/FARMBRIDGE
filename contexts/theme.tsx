@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { Appearance } from 'react-native';
+import { colorScheme as nativewindScheme } from 'nativewind';
 
 import { tokensFor, type Scheme, type Tokens } from '@/constants/design-system';
 import { fastGetAsync, fastSetAsync } from '@/services/fastStorage';
@@ -88,6 +89,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const scheme: Scheme = preference === 'system' ? systemScheme : preference;
+
+  /*
+    NativeWind keeps its own idea of the scheme, and `dark:` utilities read
+    that one rather than this context. Pushing it here is what keeps the
+    className half of the app in step with the StyleSheet half — without it a
+    screen styled with utilities stays light under a dark palette.
+  */
+  useEffect(() => {
+    nativewindScheme.set(scheme);
+  }, [scheme]);
 
   const value = useMemo<ThemeValue>(
     () => ({ preference, scheme, tokens: tokensFor(scheme), setPreference, isHydrated }),

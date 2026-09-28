@@ -2,13 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Badge, EmptyState, LoadingState, SlideToAct, Toggle } from '@/components/design-system';
 import { FarmMap, type FarmMapMarker } from '@/components/maps/farm-map';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { useBookingSubscription, useRealtimeEvent, useRealtimeStatus } from '@/hooks/useRealtime';
 import { openExternalNavigation } from '@/lib/external-maps';
 import { IS_API_ENABLED } from '@/services/api/config';
@@ -20,6 +19,8 @@ import {
 import { transportApi, type TransportBookingDto } from '@/services/api/transport.api';
 import type { GeoPoint } from '@/types/geo';
 import type { TransportLifecycleStatus } from '@/types/transport';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * What a driver can do next, and what it is called on the button.
@@ -66,6 +67,8 @@ const STALE_AFTER_MS = 90_000;
  * last fix came in.
  */
 export default function TrackScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const realtime = useRealtimeStatus();
   const { showToast } = useToast();
@@ -495,7 +498,7 @@ function describeAge(at: number | null, now: number): string {
   return `${hours} h ago`;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   centre: { flex: 1, justifyContent: 'center' },
   mapBox: { flex: 1, minHeight: 240 },
@@ -553,4 +556,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.semantic.warning.fg,
   },
-});
+}));

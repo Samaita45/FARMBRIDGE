@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Card } from '@/components/design-system';
 import { CheckoutSteps } from '@/components/market/checkout-steps';
-import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * The end of checkout.
@@ -17,6 +18,8 @@ import { asHref } from '@/lib/href';
  * is the kind of thing they only discover when the goods do not arrive.
  */
 export default function OrderPlacedScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { orderId, total } = useLocalSearchParams<{ orderId?: string; total?: string }>();
   const amount = total ? Number(total) : 0;
 
@@ -72,7 +75,7 @@ export default function OrderPlacedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   body: { flex: 1, padding: DS.spacing.md, gap: DS.spacing.lg },
 
@@ -116,4 +119,4 @@ const styles = StyleSheet.create({
   },
 
   actions: { marginTop: 'auto', gap: DS.spacing.sm },
-});
+}));

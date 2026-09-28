@@ -56,33 +56,33 @@ export default function CreatePostScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-surface p-4" keyboardShouldPersistTaps="handled">
-      <Text className="font-sans-semibold text-dark">Category</Text>
+    <ScrollView className="flex-1 bg-surface p-4 dark:bg-dSurface" keyboardShouldPersistTaps="handled">
+      <Text className="font-sans-semibold text-dark dark:text-dText">Category</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-2">
         {CATEGORIES.map((c) => (
           <Pressable
             key={c}
             onPress={() => setCategory(c)}
-            className={`mr-2 rounded-full px-3 py-2 ${category === c ? 'bg-primary' : 'bg-white'}`}>
-            <Text className={`font-sans text-xs ${category === c ? 'text-white' : 'text-gray-600'}`}>
+            className={`mr-2 rounded-full px-3 py-2 ${category === c ? 'bg-primary dark:bg-dPrimary' : 'bg-white dark:bg-dCard'}`}>
+            <Text className={`font-sans text-xs ${category === c ? 'text-white dark:text-dOnPrimary' : 'text-gray-600 dark:text-dMuted'}`}>
               {POST_CATEGORY_LABELS[c]}
             </Text>
           </Pressable>
         ))}
       </ScrollView>
 
-      <Text className="mt-4 font-sans-semibold text-dark">Title</Text>
+      <Text className="mt-4 font-sans-semibold text-dark dark:text-dText">Title</Text>
       <TextInput
-        className="mt-2 rounded-xl bg-white px-4 py-3 font-sans text-dark"
+        className="mt-2 rounded-xl bg-white px-4 py-3 font-sans text-dark dark:bg-dCard dark:text-dText"
         placeholder="What's on your mind?"
         value={title}
         onChangeText={setTitle}
         maxLength={120}
       />
 
-      <Text className="mt-4 font-sans-semibold text-dark">Details</Text>
+      <Text className="mt-4 font-sans-semibold text-dark dark:text-dText">Details</Text>
       <TextInput
-        className="mt-2 min-h-[120] rounded-xl bg-white px-4 py-3 font-sans text-dark"
+        className="mt-2 min-h-[120] rounded-xl bg-white px-4 py-3 font-sans text-dark dark:bg-dCard dark:text-dText"
         placeholder="Share your question, tip, or story..."
         value={body}
         onChangeText={setBody}
@@ -90,17 +90,17 @@ export default function CreatePostScreen() {
         textAlignVertical="top"
       />
 
-      <Text className="mt-4 font-sans-semibold text-dark">Tags (comma separated)</Text>
+      <Text className="mt-4 font-sans-semibold text-dark dark:text-dText">Tags (comma separated)</Text>
       <TextInput
-        className="mt-2 rounded-xl bg-white px-4 py-3 font-sans text-dark"
+        className="mt-2 rounded-xl bg-white px-4 py-3 font-sans text-dark dark:bg-dCard dark:text-dText"
         placeholder="maize, harare, irrigation"
         value={tags}
         onChangeText={setTags}
         autoCapitalize="none"
       />
 
-      <View className="mt-4 flex-row items-center justify-between rounded-xl bg-white px-4 py-3">
-        <Text className="font-sans text-dark">Post anonymously</Text>
+      <View className="mt-4 flex-row items-center justify-between rounded-xl bg-white px-4 py-3 dark:bg-dCard">
+        <Text className="font-sans text-dark dark:text-dText">Post anonymously</Text>
         <Toggle
           value={anonymous}
           onValueChange={setAnonymous}

@@ -1,13 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button, Card, EmptyState } from '@/components/design-system';
 import { RouteMap } from '@/components/transport/route-map';
 import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { whatsAppUrl } from '@/constants/support';
 import { PAYMENT_METHODS, TRANSPORT_PROVIDERS } from '@/constants/zimbabwe-data';
 import { asHref } from '@/lib/href';
@@ -15,10 +14,14 @@ import { insertBooking } from '@/services/transportDb';
 import { useAuthStore, type AuthState } from '@/stores/authStore';
 import { useTransportStore, type TransportState } from '@/stores/transportStore';
 import type { TransportBooking } from '@/types/transport';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const PAYMENT_IDS = ['ecocash', 'onemoney', 'cash_usd', 'zwg'];
 
 export default function ConfirmScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { price: priceParam } = useLocalSearchParams<{ price?: string; mode?: string }>();
   const { showToast } = useToast();
   const user = useAuthStore((s: AuthState) => s.user);
@@ -243,6 +246,7 @@ export default function ConfirmScreen() {
 }
 
 function Row({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -253,7 +257,7 @@ function Row({ label, value, highlight }: { label: string; value: string; highli
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   centre: { flex: 1, justifyContent: 'center', backgroundColor: DS.colors.background },
   body: {
     padding: DS.spacing.md,
@@ -397,4 +401,4 @@ const styles = StyleSheet.create({
   },
 
   actions: { gap: DS.spacing.sm },
-});
+}));

@@ -19,6 +19,18 @@ import { buildSmsReminderBody } from '@/services/smsService';
 import type { AppCurrency, AppLanguage } from '@/types/profile';
 import type { FarmTask } from '@/types/crop-management';
 import { Toggle } from '@/components/design-system';
+import { useTheme, type ThemePreference } from '@/contexts/theme';
+
+/*
+  System first and default: most people never open this, and following the OS
+  is the right answer for them. Light and Dark are for the people the OS gets
+  wrong — a bright phone in a dark packing shed, or the reverse.
+*/
+const APPEARANCES: { id: ThemePreference; label: string }[] = [
+  { id: 'system', label: 'System' },
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
+];
 
 const LANGUAGES: { id: AppLanguage; label: string }[] = [
   { id: 'en', label: 'English' },
@@ -32,6 +44,7 @@ export default function SettingsScreen() {
   const user = useAuthStore((s: AuthState) => s.user);
   const logout = useAuthStore((s: AuthState) => s.logout);
   const updateUser = useAuthStore((s: AuthState) => s.updateUser);
+  const { preference, setPreference } = useTheme();
   const settings = useSettingsStore();
   const patch = useSettingsStore((s: SettingsState) => s.patch);
 
@@ -68,7 +81,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-surface" edges={['bottom']}>
+    <SafeAreaView className="flex-1 bg-surface dark:bg-dSurface" edges={['bottom']}>
         <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
           <Section title="Notifications">
             <SettingSwitch
@@ -81,12 +94,12 @@ export default function SettingsScreen() {
               value={settings.smsNotifications}
               onChange={(v) => void patch(userId, { smsNotifications: v })}
             />
-            <Text className="px-4 pb-2 font-sans text-xs text-gray-500">
+            <Text className="px-4 pb-2 font-sans text-xs text-gray-500 dark:text-dSoft">
               Daily reminder at {settings.reminderHour}:00
             </Text>
-            <Text className="px-4 pb-1 font-sans text-sm text-gray-600">SMS reminder number</Text>
+            <Text className="px-4 pb-1 font-sans text-sm text-gray-600 dark:text-dMuted">SMS reminder number</Text>
             <TextInput
-              className="mx-4 mb-2 rounded-xl bg-white px-4 py-3 font-sans"
+              className="mx-4 mb-2 rounded-xl bg-white px-4 py-3 font-sans dark:bg-dCard"
               placeholder={user?.phone ? `Default: ${user.phone}` : '+263…'}
               placeholderTextColor={DS.colors.textSoft}
               keyboardType="phone-pad"
@@ -97,9 +110,28 @@ export default function SettingsScreen() {
               onPress={() =>
                 Alert.alert('SMS preview', buildSmsReminderBody(demoTask), [{ text: 'OK' }])
               }
-              className="mx-4 mb-3 rounded-xl bg-white px-4 py-3">
-              <Text className="font-sans text-primary">Preview SMS template</Text>
+              className="mx-4 mb-3 rounded-xl bg-white px-4 py-3 dark:bg-dCard">
+              <Text className="font-sans text-primary dark:text-dPrimary">Preview SMS template</Text>
             </Pressable>
+          </Section>
+
+          <Section title="Appearance">
+            <View className="flex-row flex-wrap gap-2 px-4 pb-3">
+              {APPEARANCES.map((a) => (
+                <Pressable
+                  key={a.id}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: preference === a.id }}
+                  accessibilityLabel={`${a.label} appearance`}
+                  onPress={() => setPreference(a.id)}
+                  className={`rounded-full px-4 py-2 ${preference === a.id ? 'bg-primary dark:bg-dPrimary' : 'bg-white dark:bg-dCard'}`}>
+                  <Text
+                    className={`font-sans text-sm ${preference === a.id ? 'text-white dark:text-dOnPrimary' : 'text-gray-600 dark:text-dMuted'}`}>
+                    {a.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </Section>
 
           <Section title="Language">
@@ -108,9 +140,9 @@ export default function SettingsScreen() {
                 <Pressable
                   key={l.id}
                   onPress={() => void patch(userId, { language: l.id })}
-                  className={`rounded-full px-4 py-2 ${settings.language === l.id ? 'bg-primary' : 'bg-white'}`}>
+                  className={`rounded-full px-4 py-2 ${settings.language === l.id ? 'bg-primary dark:bg-dPrimary' : 'bg-white dark:bg-dCard'}`}>
                   <Text
-                    className={`font-sans text-sm ${settings.language === l.id ? 'text-white' : 'text-gray-600'}`}>
+                    className={`font-sans text-sm ${settings.language === l.id ? 'text-white dark:text-dOnPrimary' : 'text-gray-600 dark:text-dMuted'}`}>
                     {l.label}
                   </Text>
                 </Pressable>
@@ -119,15 +151,15 @@ export default function SettingsScreen() {
           </Section>
 
           <Section title="Preferences">
-            <Text className="px-4 pb-1 font-sans text-sm text-gray-600">Default currency</Text>
+            <Text className="px-4 pb-1 font-sans text-sm text-gray-600 dark:text-dMuted">Default currency</Text>
             <View className="flex-row gap-2 px-4 pb-3">
               {CURRENCIES.map((c) => (
                 <Pressable
                   key={c}
                   onPress={() => void patch(userId, { currency: c })}
-                  className={`rounded-full px-4 py-2 ${settings.currency === c ? 'bg-primary' : 'bg-white'}`}>
+                  className={`rounded-full px-4 py-2 ${settings.currency === c ? 'bg-primary dark:bg-dPrimary' : 'bg-white dark:bg-dCard'}`}>
                   <Text
-                    className={`font-sans text-sm ${settings.currency === c ? 'text-white' : 'text-gray-600'}`}>
+                    className={`font-sans text-sm ${settings.currency === c ? 'text-white dark:text-dOnPrimary' : 'text-gray-600 dark:text-dMuted'}`}>
                     {c}
                   </Text>
                 </Pressable>
@@ -158,9 +190,9 @@ export default function SettingsScreen() {
             />
             <Pressable
               onPress={() => void syncOffline()}
-              className="mx-4 mb-3 flex-row items-center justify-between rounded-xl bg-white px-4 py-3">
-              <Text className="font-sans text-dark">Download for offline</Text>
-              <Text className="font-sans text-sm text-primary">
+              className="mx-4 mb-3 flex-row items-center justify-between rounded-xl bg-white px-4 py-3 dark:bg-dCard">
+              <Text className="font-sans text-dark dark:text-dText">Download for offline</Text>
+              <Text className="font-sans text-sm text-primary dark:text-dPrimary">
                 {settings.offlineSyncEnabled ? 'Synced' : 'Sync now'}
               </Text>
             </Pressable>
@@ -171,9 +203,9 @@ export default function SettingsScreen() {
               onPress={() =>
                 Linking.openURL(SUPPORT_WHATSAPP_URL)
               }
-              className="mx-4 mb-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3">
+              className="mx-4 mb-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3 dark:bg-dCard">
               <Ionicons name="logo-whatsapp" size={22} color="#25D366" />
-              <Text className="font-sans text-dark">WhatsApp Support</Text>
+              <Text className="font-sans text-dark dark:text-dText">WhatsApp Support</Text>
             </Pressable>
             {/*
               These three had no onPress at all — rows that looked tappable and
@@ -185,14 +217,14 @@ export default function SettingsScreen() {
               onPress={() => Linking.openURL(whatsAppUrl('Hi FarmBridge, I have a question.'))}
               accessibilityRole="button"
               accessibilityLabel="Ask a question on WhatsApp"
-              className="mx-4 mb-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3">
+              className="mx-4 mb-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3 dark:bg-dCard">
               <Ionicons name="help-circle-outline" size={22} color={DS.colors.primary} />
-              <Text className="font-sans text-dark">FAQ & help</Text>
+              <Text className="font-sans text-dark dark:text-dText">FAQ & help</Text>
             </Pressable>
           </Section>
 
           <Section title="About">
-            <Text className="px-4 font-sans text-sm text-gray-500">
+            <Text className="px-4 font-sans text-sm text-gray-500 dark:text-dSoft">
               FarmBridge v{Constants.expoConfig?.version ?? '1.0.0'}
             </Text>
             <LegalRow label="Terms of service" url={TERMS_URL} />
@@ -200,12 +232,12 @@ export default function SettingsScreen() {
           </Section>
 
           <Pressable
-            className="mx-4 mt-4 rounded-2xl bg-error/10 py-4"
+            className="mx-4 mt-4 rounded-2xl bg-error/10 py-4 dark:bg-dDanger/20"
             onPress={async () => {
               await logout();
               router.replace(asHref('/(auth)'));
             }}>
-            <Text className="text-center font-sans-semibold text-error">Logout</Text>
+            <Text className="text-center font-sans-semibold text-error dark:text-dDanger">Logout</Text>
           </Pressable>
         </ScrollView>
     </SafeAreaView>
@@ -215,7 +247,7 @@ export default function SettingsScreen() {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View className="mt-4">
-      <Text className="mb-2 px-4 font-sans-semibold text-dark">{title}</Text>
+      <Text className="mb-2 px-4 font-sans-semibold text-dark dark:text-dText">{title}</Text>
       {children}
     </View>
   );
@@ -233,10 +265,10 @@ function SettingSwitch({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <View className="mx-4 mb-2 flex-row items-center justify-between rounded-xl bg-white px-4 py-3">
+    <View className="mx-4 mb-2 flex-row items-center justify-between rounded-xl bg-white px-4 py-3 dark:bg-dCard">
       <View className="flex-1 pr-2">
-        <Text className="font-sans text-dark">{label}</Text>
-        {subtitle ? <Text className="font-sans text-xs text-gray-500">{subtitle}</Text> : null}
+        <Text className="font-sans text-dark dark:text-dText">{label}</Text>
+        {subtitle ? <Text className="font-sans text-xs text-gray-500 dark:text-dSoft">{subtitle}</Text> : null}
       </View>
       <Toggle value={value} onValueChange={onChange} accessibilityLabel={label} />
     </View>
@@ -250,11 +282,11 @@ function SettingSwitch({
 function LegalRow({ label, url }: { label: string; url: string }) {
   if (!url) {
     return (
-      <View className="mx-4 mt-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3 opacity-60">
+      <View className="mx-4 mt-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3 opacity-60 dark:bg-dCard">
         <Ionicons name="document-text-outline" size={20} color={DS.colors.textSoft} />
         <View className="flex-1">
-          <Text className="font-sans text-dark">{label}</Text>
-          <Text className="font-sans text-xs text-muted">Not published yet</Text>
+          <Text className="font-sans text-dark dark:text-dText">{label}</Text>
+          <Text className="font-sans text-xs text-muted dark:text-dMuted">Not published yet</Text>
         </View>
       </View>
     );
@@ -265,9 +297,9 @@ function LegalRow({ label, url }: { label: string; url: string }) {
       onPress={() => Linking.openURL(url)}
       accessibilityRole="link"
       accessibilityLabel={`Open the ${label.toLowerCase()}`}
-      className="mx-4 mt-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3">
+      className="mx-4 mt-2 flex-row items-center gap-3 rounded-xl bg-white px-4 py-3 dark:bg-dCard">
       <Ionicons name="document-text-outline" size={20} color={DS.colors.primary} />
-      <Text className="flex-1 font-sans text-dark">{label}</Text>
+      <Text className="flex-1 font-sans text-dark dark:text-dText">{label}</Text>
       <Ionicons name="open-outline" size={16} color={DS.colors.textFaint} />
     </Pressable>
   );

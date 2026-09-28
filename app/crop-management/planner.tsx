@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Stack } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AddPlanModal } from '@/components/crop-management/add-plan-modal';
@@ -16,10 +16,14 @@ import { getRotationSuggestion } from '@/services/taskGenerator';
 import type { CropPlan, FarmTask } from '@/types/crop-management';
 import type { IconName } from '@/types/icons';
 import { getCropIcon } from '@/utils/crop-emoji';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const MONTH = new Date().getMonth() + 1;
 
 export default function CropPlannerScreen() {
+  const DS = useDS();
+  const styles = useStyles();
   const { showToast } = useToast();
   const { plans, loading, refresh, addPlan, removePlan } = useCropPlans();
   const { allTasks } = useFarmTasks();
@@ -208,6 +212,8 @@ function PlanCard({
   tasks: FarmTask[];
   onDelete: () => void;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   const crop = CROPS.find((c) => c.id === plan.cropId);
   const completed = tasks.filter((t) => t.status === 'completed').length;
   const donePct = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
@@ -280,6 +286,8 @@ function SectionHeading({
   tone: keyof typeof DS.semantic;
   count?: number;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <View style={styles.sectionHeader}>
       <Ionicons name={icon} size={16} color={DS.semantic[tone].solid} />
@@ -304,6 +312,8 @@ function StatPill({
   value: number;
   tone: keyof typeof DS.semantic;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   const colour = DS.semantic[tone];
   return (
     <View
@@ -328,6 +338,8 @@ function PlanStat({
   icon: IconName;
   tone?: keyof typeof DS.semantic;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <View style={styles.planStat}>
       <Ionicons name={icon} size={13} color={DS.colors.textSoft} />
@@ -341,7 +353,7 @@ function PlanStat({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   body: { padding: DS.spacing.md, paddingBottom: DS.spacing.xl },
   flex: { flex: 1 },
@@ -533,4 +545,4 @@ const styles = StyleSheet.create({
     borderRadius: DS.radius.full,
     backgroundColor: DS.colors.primary,
   },
-});
+}));
