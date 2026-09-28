@@ -1,11 +1,13 @@
 import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { asHref } from '@/lib/href';
 import { useCommunityStore, type CommunityState } from '@/stores/communityStore';
 import { DS } from '@/constants/design-system';
 import type { CommunityPost } from '@/types/community';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const ROLE_LABELS: Record<string, string> = {
   farmer: 'Farmer', buyer: 'Buyer', expert: 'Expert', both: 'Farmer & Buyer',
@@ -35,6 +37,8 @@ function timeAgo(iso: string): string {
 }
 
 export function PostCard({ post }: { post: CommunityPost }) {
+  const DS = useDS();
+  const s = useStyles();
   const toggleLike = useCommunityStore((s: CommunityState) => s.toggleLike);
   const liked = useCommunityStore((s: CommunityState) => s.likedPostIds.includes(post.id));
   const initial = post.isAnonymous ? '?' : post.authorName.charAt(0).toUpperCase();
@@ -112,7 +116,7 @@ export function PostCard({ post }: { post: CommunityPost }) {
   );
 }
 
-const s = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: {
     backgroundColor: DS.colors.surface,
     borderRadius: DS.radius.lg,
@@ -146,4 +150,4 @@ const s = StyleSheet.create({
   actions: { flexDirection: 'row', gap: 16, borderTopWidth: 1, borderTopColor: DS.colors.borderLight, paddingTop: 10 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   actionText: { fontSize: 12, fontWeight: '600', color: DS.colors.textSoft },
-});
+}));

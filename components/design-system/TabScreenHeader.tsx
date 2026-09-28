@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface TabScreenHeaderProps {
   title: string;
@@ -35,6 +36,8 @@ export function TabScreenHeader({
   searchPlaceholder = 'Search…',
   rightAction,
 }: TabScreenHeaderProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const showSearch = onSearchChange !== undefined;
 
   return (
@@ -90,7 +93,7 @@ export function TabScreenHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   header: {
     backgroundColor: DS.colors.surface,
     borderBottomWidth: DS.layout.hairline,
@@ -140,4 +143,4 @@ const styles = StyleSheet.create({
     color: DS.colors.text,
     fontFamily: DS.fontFamily.regular,
   },
-});
+}));

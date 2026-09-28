@@ -30,7 +30,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export interface SlideToActHandle {
   /** Return the control to its resting state, ready to be slid again. */
@@ -94,6 +95,8 @@ export const SlideToAct = forwardRef<SlideToActHandle, SlideToActProps>(function
   },
   ref
 ) {
+  const DS = useDS();
+  const styles = useStyles();
   const [trackWidth, setTrackWidth] = useState(0);
   const travel = Math.max(0, trackWidth - KNOB - PADDING * 2);
   const reducedMotion = useReducedMotion();
@@ -337,7 +340,7 @@ export const SlideToAct = forwardRef<SlideToActHandle, SlideToActProps>(function
   );
 });
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   track: {
     height: TRACK_HEIGHT,
     borderRadius: TRACK_HEIGHT / 2,
@@ -379,4 +382,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: DS.colors.primary,
   },
-});
+}));

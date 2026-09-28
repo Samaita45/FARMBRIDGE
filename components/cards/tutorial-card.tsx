@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
 import type { Tutorial } from '@/types/tutorials';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const DIFF_COLORS: Record<string, { bg: string; text: string }> = {
   beginner:     { bg: DS.semantic.success.bg, text: DS.semantic.success.fg },
@@ -21,6 +23,8 @@ interface TutorialCardProps {
 }
 
 export function TutorialCard({ tutorial, completed, bookmarked, onBookmark }: TutorialCardProps) {
+  const DS = useDS();
+  const s = useStyles();
   const diff = DIFF_COLORS[tutorial.difficulty] ?? DIFF_COLORS.beginner;
   return (
     <View style={[s.card, completed && s.cardDone]}>
@@ -71,7 +75,7 @@ export function TutorialCard({ tutorial, completed, bookmarked, onBookmark }: Tu
   );
 }
 
-const s = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: {
     flexDirection: 'row', marginBottom: 10,
     backgroundColor: DS.colors.surface, borderRadius: 16, overflow: 'hidden',
@@ -97,4 +101,4 @@ const s = StyleSheet.create({
     paddingHorizontal: 7, paddingVertical: 3,
   },
   metaChipText: { fontSize: 10, fontWeight: '600', color: DS.colors.textMuted },
-});
+}));

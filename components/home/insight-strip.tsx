@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 
 import { DS } from '@/constants/design-system';
 import type { IconName } from '@/types/icons';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export interface InsightItem {
   id: string;
@@ -26,6 +28,8 @@ interface InsightStripProps {
  * now flat surfaces and the only colour is the semantic tone on the icon.
  */
 export function InsightStrip({ items }: InsightStripProps) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <FlatList
       horizontal
@@ -64,7 +68,7 @@ export function InsightStrip({ items }: InsightStripProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   row: { gap: DS.spacing.sm + 2, paddingRight: DS.spacing.sm, paddingVertical: 2 },
   card: {
     width: 138,
@@ -100,4 +104,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
-});
+}));

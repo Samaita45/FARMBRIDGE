@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Button, ButtonRow, Card } from '@/components/design-system';
-import { DS } from '@/constants/design-system';
 import type { FarmTask, TaskPriority } from '@/types/crop-management';
 import { TASK_TYPE_META } from '@/types/crop-management';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface TaskCardProps {
   task: FarmTask;
@@ -19,6 +20,8 @@ const PRIORITY_TONE: Record<TaskPriority, 'neutral' | 'warning' | 'danger'> = {
 };
 
 export function TaskCard({ task, onComplete, onReschedule }: TaskCardProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const meta = TASK_TYPE_META[task.taskType];
   const overdue = task.status === 'overdue';
   const done = task.status === 'completed';
@@ -89,7 +92,7 @@ export function TaskCard({ task, onComplete, onReschedule }: TaskCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: {
     marginBottom: DS.spacing.sm + 4,
   },
@@ -175,4 +178,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.semibold,
     color: DS.semantic.success.fg,
   },
-});
+}));

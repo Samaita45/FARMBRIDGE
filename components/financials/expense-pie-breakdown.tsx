@@ -1,10 +1,11 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Card, EmptyState } from '@/components/design-system';
 import { DS } from '@/constants/design-system';
 import { expenseShares } from '@/lib/farm-finance';
 import { expenseTotalUSD, toUSD } from '@/services/financialsDb';
 import { EXPENSE_CATEGORY_LABELS, type ExpenseEntry } from '@/types/financials';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 interface ExpensePieBreakdownProps {
   expenses: ExpenseEntry[];
@@ -27,6 +28,7 @@ function rampColor(index: number, total: number): string {
 }
 
 export function ExpensePieBreakdown({ expenses }: ExpensePieBreakdownProps) {
+  const styles = useStyles();
   const total = expenseTotalUSD(expenses);
 
   if (total === 0) {
@@ -95,7 +97,7 @@ export function ExpensePieBreakdown({ expenses }: ExpensePieBreakdownProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: { gap: DS.spacing.sm + 4 },
   title: {
     fontSize: DS.typography.h3.fontSize,
@@ -131,4 +133,4 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   fill: { height: '100%', borderRadius: DS.radius.full },
-});
+}));

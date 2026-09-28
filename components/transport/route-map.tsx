@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { FarmMap } from '@/components/maps/farm-map';
 import { locate } from '@/components/transport/maps';
-import { DS } from '@/constants/design-system';
 import { decodePolyline } from '@/lib/polyline';
 import type { GeoPoint } from '@/types/geo';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * Route preview for the existing transport screens.
@@ -36,6 +37,8 @@ export function RouteMap({
   durationSeconds,
   height = 180,
 }: RouteMapProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const fromGazetteer = locate(pickup);
   const toGazetteer = locate(destination);
   const from = pickupCoord ?? (fromGazetteer
@@ -133,7 +136,7 @@ function formatDuration(seconds?: number | null): string | null {
   return `about ${hours} h ${minutes} min`;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: {
     backgroundColor: DS.colors.surface,
     borderRadius: DS.radius.lg,
@@ -176,4 +179,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textSoft,
   },
-});
+}));

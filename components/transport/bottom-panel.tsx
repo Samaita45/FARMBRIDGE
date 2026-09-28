@@ -4,13 +4,12 @@ import {
   PanResponder,
   Pressable,
   ScrollView,
-  StyleSheet,
   useWindowDimensions,
   View,
   type LayoutChangeEvent,
 } from 'react-native';
 
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 interface BottomPanelProps {
   children: ReactNode;
@@ -70,6 +69,7 @@ export function BottomPanel({
   sceneHeight,
   reserveTop = 0,
 }: BottomPanelProps) {
+  const styles = useStyles();
   const { height: windowHeight } = useWindowDimensions();
   const { peekHeight, maxHeight } = computeSheetHeights(
     sceneHeight && sceneHeight > 0 ? sceneHeight : windowHeight,
@@ -177,7 +177,7 @@ export function BottomPanel({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   panel: {
     width: '100%',
     zIndex: 20,
@@ -201,4 +201,4 @@ const styles = StyleSheet.create({
   },
   scroll: { paddingHorizontal: DS.spacing.md, paddingBottom: DS.spacing.sm },
   body: { gap: DS.spacing.md },
-});
+}));

@@ -5,6 +5,8 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { Maps, regionForPoints } from '@/components/transport/maps';
 import { DS } from '@/constants/design-system';
 import type { GeoPoint } from '@/types/geo';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export type MapMarkerKind = 'pickup' | 'destination' | 'transporter' | 'user';
 
@@ -52,16 +54,26 @@ class MapErrorBoundary extends Component<{ children: ReactNode }, { failed: bool
   }
 
   render() {
-    if (this.state.failed) {
-      return (
-        <View style={styles.fallback}>
-          <Text style={styles.fallbackTitle}>Map unavailable</Text>
-          <Text style={styles.fallbackText}>The map could not be drawn on this build.</Text>
-        </View>
-      );
-    }
+    if (this.state.failed) return <MapFallback />;
     return this.props.children;
   }
+}
+
+/**
+ * The boundary's fallback, as a function component.
+ *
+ * An error boundary has to be a class — there is still no hook for
+ * getDerivedStateFromError — and a class cannot call useStyles. Only the
+ * fallback needs the palette, so only the fallback moved.
+ */
+function MapFallback() {
+  const styles = useStyles();
+  return (
+    <View style={styles.fallback}>
+      <Text style={styles.fallbackTitle}>Map unavailable</Text>
+      <Text style={styles.fallbackText}>The map could not be drawn on this build.</Text>
+    </View>
+  );
 }
 
 /**
@@ -88,6 +100,8 @@ export function FarmMap({
   accessibilityLabel,
   children,
 }: FarmMapProps) {
+  const DS = useDS();
+  const styles = useStyles();
   if (state === 'loading') {
     return (
       <View style={[styles.fallback, height ? { height } : styles.flex]}>
@@ -187,7 +201,7 @@ export function FarmMap({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: { width: '100%', backgroundColor: DS.colors.surfaceMuted, overflow: 'hidden' },
   flex: { flex: 1 },
   fallback: {
@@ -225,4 +239,4 @@ const styles = StyleSheet.create({
     borderColor: DS.colors.border,
   },
   controlPressed: { opacity: 0.85 },
-});
+}));

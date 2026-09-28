@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export interface ChipTabItem {
   id: string;
@@ -16,6 +17,8 @@ interface ChipTabsProps {
 }
 
 export function ChipTabs({ items, activeId, onChange }: ChipTabsProps) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <View style={styles.wrap}>
       <ScrollView
@@ -47,7 +50,7 @@ export function ChipTabs({ items, activeId, onChange }: ChipTabsProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: {
     backgroundColor: DS.colors.surface,
     borderBottomWidth: 1,
@@ -80,4 +83,4 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans_600SemiBold',
   },
   chipTextActive: { color: DS.colors.textInverse },
-});
+}));

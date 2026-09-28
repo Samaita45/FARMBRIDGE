@@ -3,11 +3,12 @@ import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { DS } from '@/constants/design-system';
 import { imageSourceFor } from '@/constants/produce-imagery';
 import { asHref } from '@/lib/href';
 import { useCartStore, type CartState } from '@/stores/cartStore';
 import type { MarketProduct } from '@/types';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface ProductCardProps {
   product: MarketProduct;
@@ -24,6 +25,8 @@ interface ProductCardProps {
  * product rather than a generic category image.
  */
 export function ProductCard({ product, compact }: ProductCardProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const addItem = useCartStore((s: CartState) => s.addItem);
   const inCart = useCartStore((s: CartState) => s.items.some((i) => i.product.id === product.id));
 
@@ -109,7 +112,7 @@ export function ProductCard({ product, compact }: ProductCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: {
     flex: 1,
     backgroundColor: DS.colors.surface,
@@ -200,4 +203,4 @@ const styles = StyleSheet.create({
   },
   addBtnInCart: { backgroundColor: DS.semantic.success.solid },
   addBtnDisabled: { backgroundColor: DS.colors.textFaint },
-});
+}));

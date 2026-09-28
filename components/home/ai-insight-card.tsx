@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Button, Card } from '@/components/design-system';
-import { DS } from '@/constants/design-system';
 import { asHref } from '@/lib/href';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface MarketInsightCardProps {
   message: string;
@@ -21,6 +22,8 @@ interface MarketInsightCardProps {
  * later, the claim can come back with it.
  */
 export function MarketInsightCard({ message, locationLabel }: MarketInsightCardProps) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
@@ -61,7 +64,7 @@ export function MarketInsightCard({ message, locationLabel }: MarketInsightCardP
 /** @deprecated Use `MarketInsightCard`. */
 export const AiInsightCard = MarketInsightCard;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: { gap: DS.spacing.sm },
   header: { flexDirection: 'row', alignItems: 'center', gap: DS.spacing.sm },
   iconWrap: {
@@ -92,4 +95,4 @@ const styles = StyleSheet.create({
     color: DS.colors.textMuted,
   },
   cta: { alignSelf: 'flex-start', marginTop: DS.spacing.xs },
-});
+}));

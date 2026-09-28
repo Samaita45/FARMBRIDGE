@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText } from '@/components/design-system/AppText';
 import { Button } from '@/components/design-system/Button';
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface EmptyStateProps {
   icon?: keyof typeof Ionicons.glyphMap;
@@ -20,6 +21,8 @@ export function EmptyState({
   actionLabel,
   onAction,
 }: EmptyStateProps) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <View style={styles.wrap}>
       <View style={styles.iconCircle}>
@@ -40,7 +43,7 @@ export function EmptyState({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: { alignItems: 'center', paddingVertical: DS.spacing.xxl, paddingHorizontal: DS.spacing.lg },
   iconCircle: {
     width: 72,
@@ -54,4 +57,4 @@ const styles = StyleSheet.create({
   title: { textAlign: 'center', marginBottom: DS.spacing.sm },
   desc: { textAlign: 'center', maxWidth: 280 },
   btn: { marginTop: DS.spacing.lg, maxWidth: 240 },
-});
+}));

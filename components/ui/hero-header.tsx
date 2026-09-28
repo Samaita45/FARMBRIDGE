@@ -5,9 +5,10 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type ImageSourcePropType } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DS } from '@/constants/design-system';
 import type { IconName } from '@/types/icons';
 import { topChrome } from '@/lib/platform-ui';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface HeroHeaderProps {
   title: string;
@@ -47,6 +48,8 @@ export function HeroHeader({
   action,
   height = 190,
 }: HeroHeaderProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
 
   return (
@@ -108,7 +111,7 @@ export function HeroHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: {
     width: '100%',
     backgroundColor: DS.colors.gray[800],
@@ -197,4 +200,4 @@ const styles = StyleSheet.create({
   },
 
   action: { paddingBottom: 2 },
-});
+}));

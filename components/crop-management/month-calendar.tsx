@@ -6,6 +6,8 @@ import { Button, IconButton } from '@/components/design-system';
 import { DS } from '@/constants/design-system';
 import type { CropPlan, FarmTask } from '@/types/crop-management';
 import type { IconName } from '@/types/icons';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 type EventType = 'plant' | 'water' | 'fertilize' | 'harvest' | 'treat' | 'mixed';
@@ -37,6 +39,7 @@ interface MonthCalendarProps {
 
 // ── Main component ──────────────────────────────────────────────────────────
 export function MonthCalendar({ plans, tasks, onDayPress, onAddTask }: MonthCalendarProps) {
+  const DS = useDS();
   const today = new Date().toISOString().slice(0, 10);
   const [viewDate, setViewDate] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<string>(today);
@@ -273,6 +276,8 @@ export function MonthCalendar({ plans, tasks, onDayPress, onAddTask }: MonthCale
 function AgendaItem({ type, title, subtitle, done }: {
   type: EventType; title: string; subtitle: string; done?: boolean;
 }) {
+  const DS = useDS();
+  const ai = useStyles();
   const cfg = EVENT_CONFIG[type] ?? EVENT_CONFIG.mixed;
   return (
     <View style={[ai.item, done && ai.itemDone]}>
@@ -293,7 +298,7 @@ function AgendaItem({ type, title, subtitle, done }: {
   );
 }
 
-const ai = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   item: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: DS.colors.surface, borderRadius: 12, marginBottom: 8,
@@ -308,7 +313,7 @@ const ai = StyleSheet.create({
   titleDone: { textDecorationLine: 'line-through' },
   sub: { fontSize: 11, color: DS.colors.textMuted, marginTop: 2 },
   doneBadge: { padding: 2 },
-});
+}));
 
 // ── AddTaskModal sub-component ────────────────────────────────────────────
 const TASK_TYPES: { type: EventType; label: string }[] = [

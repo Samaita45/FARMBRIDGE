@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Button } from '@/components/design-system/Button';
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * The four states every feature owes the user.
@@ -34,6 +35,8 @@ function StateShell({
   children?: React.ReactNode;
   busy?: boolean;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <View
       style={[styles.wrap, style]}
@@ -68,6 +71,7 @@ export function LoadingState({
   description,
   style,
 }: Partial<BaseStateProps>) {
+  const DS = useDS();
   return (
     <StateShell
       busy
@@ -91,6 +95,7 @@ export function ErrorState({
   retryLabel = 'Try again',
   style,
 }: Partial<ErrorStateProps>) {
+  const DS = useDS();
   return (
     <StateShell
       icon="alert-circle-outline"
@@ -116,6 +121,7 @@ export function OfflineState({
   onRetry,
   style,
 }: Partial<OfflineStateProps>) {
+  const DS = useDS();
   return (
     <StateShell
       icon="cloud-offline-outline"
@@ -131,7 +137,7 @@ export function OfflineState({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: {
     alignItems: 'center',
     paddingVertical: DS.spacing.xl,
@@ -165,4 +171,4 @@ const styles = StyleSheet.create({
   action: {
     marginTop: DS.spacing.sm,
   },
-});
+}));

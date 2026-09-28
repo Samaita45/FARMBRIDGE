@@ -15,9 +15,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DS } from '@/constants/design-system';
 import { topChrome } from '@/lib/platform-ui';
 import type { IconName } from '@/types/icons';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export interface SidebarItem {
   key: string;
@@ -100,6 +101,8 @@ export function Sidebar({
   primaryAction,
   links,
 }: SidebarProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const [anim] = useState(() => new Animated.Value(0));
   const pending = useRef<(() => void) | null>(null);
@@ -114,7 +117,7 @@ export function Sidebar({
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
-  }, [visible, anim]);
+  }, [visible, anim, DS]);
 
   useEffect(() => {
     if (!visible) return;
@@ -147,7 +150,7 @@ export function Sidebar({
     if (visible || !pending.current) return;
     const t = setTimeout(flush, DS.motion.slow);
     return () => clearTimeout(t);
-  }, [visible]);
+  }, [visible, DS]);
 
   return (
     <Modal
@@ -288,7 +291,7 @@ export function Sidebar({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, flexDirection: 'row', backgroundColor: DS.colors.overlay },
   // Square edges, as the reference has them: the panel is a wall, not a card.
   panel: { height: '100%', backgroundColor: DS.colors.surface },
@@ -376,4 +379,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

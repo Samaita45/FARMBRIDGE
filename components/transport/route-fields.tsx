@@ -1,8 +1,8 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { LocationSearchField } from '@/components/maps/location-search-field';
-import { DS } from '@/constants/design-system';
 import type { ResolvedPlace } from '@/types/geo';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 interface RouteFieldsProps {
   pickup: string;
@@ -37,6 +37,7 @@ export function RouteFields({
   pickupError,
   destinationError,
 }: RouteFieldsProps) {
+  const styles = useStyles();
   return (
     <View style={styles.wrap}>
       <View style={styles.rail} pointerEvents="none">
@@ -72,7 +73,7 @@ export function RouteFields({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: { flexDirection: 'row', gap: DS.spacing.sm + 2 },
   rail: {
     width: 14,
@@ -103,4 +104,4 @@ const styles = StyleSheet.create({
     backgroundColor: DS.semantic.success.solid,
   },
   fields: { flex: 1, gap: DS.spacing.sm + 4 },
-});
+}));

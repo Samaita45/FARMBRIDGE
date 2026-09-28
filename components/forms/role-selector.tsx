@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { DS } from '@/constants/design-system';
 import type { IconName } from '@/types/icons';
 import type { UserRole } from '@/types';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 const ROLES: { value: UserRole; label: string; icon: IconName; desc: string }[] = [
   { value: 'farmer', label: 'Farmer', icon: 'leaf-outline', desc: 'I grow crops' },
@@ -18,6 +19,8 @@ interface RoleSelectorProps {
 }
 
 export function RoleSelector({ value, onChange, error }: RoleSelectorProps) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       <Text style={styles.label} maxFontSizeMultiplier={DS.layout.maxFontScale}>
@@ -71,7 +74,7 @@ export function RoleSelector({ value, onChange, error }: RoleSelectorProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   container: { gap: DS.spacing.sm },
   label: {
     fontSize: DS.typography.bodySm.fontSize,
@@ -127,4 +130,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.semantic.danger.fg,
   },
-});
+}));

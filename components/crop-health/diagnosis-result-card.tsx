@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText } from '@/components/design-system/AppText';
 import { FadeInView } from '@/components/design-system/FadeInView';
 import { Card } from '@/components/design-system/Card';
 import { DS } from '@/constants/design-system';
 import type { CropDisease } from '@/constants/zimbabwe-data';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface DiagnosisResultCardProps {
   disease: CropDisease;
@@ -14,8 +16,8 @@ interface DiagnosisResultCardProps {
 }
 
 function riskLevel(percent: number): { label: string; color: string } {
-  if (percent >= 70) return { label: 'Low risk', color: DS.colors.success };
-  if (percent >= 45) return { label: 'Moderate', color: DS.colors.warning };
+  if (percent >= 70) return { label: 'Low risk', color: DS.semantic.success.fg };
+  if (percent >= 45) return { label: 'Moderate', color: DS.semantic.warning.fg };
   return { label: 'High risk', color: DS.colors.red };
 }
 
@@ -24,6 +26,8 @@ export function DiagnosisResultCard({
   healthPercent,
   cropName,
 }: DiagnosisResultCardProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const risk = riskLevel(healthPercent);
 
   return (
@@ -83,7 +87,7 @@ export function DiagnosisResultCard({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: { marginTop: DS.spacing.md },
   header: { flexDirection: 'row', gap: DS.spacing.md, marginBottom: DS.spacing.md },
   healthRing: {
@@ -116,4 +120,4 @@ const styles = StyleSheet.create({
     backgroundColor: DS.colors.primaryBg,
     borderRadius: DS.radius.sm,
   },
-});
+}));

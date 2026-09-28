@@ -1,6 +1,7 @@
 import { StyleSheet, View, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
 
 import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 /**
  * The surface primitive.
@@ -26,6 +27,7 @@ export function Card({
   children,
   ...props
 }: CardProps) {
+  const styles = useStyles();
   return (
     <View
       style={[
@@ -44,10 +46,11 @@ export function Card({
 
 /** A divider between rows inside a card. */
 export function CardDivider({ style }: { style?: StyleProp<ViewStyle> }) {
+  const styles = useStyles();
   return <View style={[styles.divider, style]} />;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   base: {
     backgroundColor: DS.colors.surface,
     borderRadius: DS.radius.lg,
@@ -69,4 +72,4 @@ const styles = StyleSheet.create({
     backgroundColor: DS.colors.border,
     marginVertical: DS.spacing.sm,
   },
-});
+}));

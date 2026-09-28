@@ -8,16 +8,16 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
 
 import { Button, Card, EmptyState, IconButton, Input } from '@/components/design-system';
-import { DS } from '@/constants/design-system';
 import { CROPS } from '@/constants/zimbabwe-data';
 import type { Crop } from '@/types';
 import { getCropImage } from '@/utils/crop-emoji';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface AddPlanModalProps {
   visible: boolean;
@@ -45,6 +45,8 @@ function validateHectares(value: string): string | undefined {
 }
 
 export function AddPlanModal({ visible, onClose, onSubmit, loading }: AddPlanModalProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const [search, setSearch] = useState('');
   const [selectedCrop, setSelectedCrop] = useState<Crop | null>(null);
   const [plantDate, setPlantDate] = useState(new Date().toISOString().slice(0, 10));
@@ -125,7 +127,7 @@ export function AddPlanModal({ visible, onClose, onSubmit, loading }: AddPlanMod
         </Pressable>
       );
     },
-    []
+    [DS, styles]
   );
 
   return (
@@ -294,6 +296,8 @@ function ForecastRow({
   value: string;
   tone?: 'success';
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <View style={styles.forecastRow}>
       <Ionicons name={icon} size={14} color={DS.colors.textSoft} />
@@ -307,7 +311,7 @@ function ForecastRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.background },
   flex: { flex: 1 },
   pressed: { opacity: 0.8 },
@@ -431,4 +435,4 @@ const styles = StyleSheet.create({
     color: DS.colors.text,
     maxWidth: '55%',
   },
-});
+}));

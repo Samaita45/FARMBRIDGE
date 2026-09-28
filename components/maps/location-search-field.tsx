@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { matchPlace, PlaceField } from '@/components/forms/place-field';
 import { mapsApi, newSessionToken, type PlaceSuggestion } from '@/services/api/maps.api';
-import { DS } from '@/constants/design-system';
 import { useLocation } from '@/hooks/useLocation';
 import type { PlaceRole, ResolvedPlace } from '@/types/geo';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface LocationSearchFieldProps {
   label: string;
@@ -41,6 +42,8 @@ export function LocationSearchField({
   hint,
   allowCurrentLocation,
 }: LocationSearchFieldProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const { location, permission, refresh } = useLocation();
   const [remote, setRemote] = useState<PlaceSuggestion[]>([]);
   /*
@@ -189,7 +192,7 @@ export function LocationSearchField({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: { gap: 6 },
   pressed: { opacity: 0.85 },
   current: {
@@ -229,4 +232,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
-});
+}));

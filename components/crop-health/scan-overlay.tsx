@@ -2,7 +2,8 @@ import { MotiView } from 'moti';
 import { StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components/design-system/AppText';
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface ScanOverlayProps {
   active: boolean;
@@ -10,6 +11,8 @@ interface ScanOverlayProps {
 }
 
 export function ScanOverlay({ active, label = 'Analyzing crop…' }: ScanOverlayProps) {
+  const DS = useDS();
+  const styles = useStyles();
   if (!active) return null;
 
   return (
@@ -29,7 +32,7 @@ export function ScanOverlay({ active, label = 'Analyzing crop…' }: ScanOverlay
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: {
     ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(15,23,42,0.55)',
@@ -55,4 +58,4 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   label: { marginTop: DS.spacing.md, fontWeight: '600' },
-});
+}));

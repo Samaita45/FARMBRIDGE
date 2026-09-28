@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { LiquidSelection } from '@/components/design-system/LiquidSelection';
 import { DS } from '@/constants/design-system';
 import { imageSourceFor } from '@/constants/produce-imagery';
 import type { Crop } from '@/types';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 /** `null` is "everything", which is the row's first chip. */
 export type CropCategory = Crop['category'] | null;
@@ -34,6 +35,7 @@ interface CropFilterRowProps {
  * nothing depends on the animation having been seen.
  */
 export function CropFilterRow({ categories, value, onChange, sampleFor }: CropFilterRowProps) {
+  const styles = useStyles();
   return (
     <ScrollView
       horizontal
@@ -75,6 +77,7 @@ function Chip({
   active: boolean;
   onPress: () => void;
 }) {
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -110,7 +113,7 @@ const LABELS: Partial<Record<Crop['category'], string>> = {
   fruit: 'Fruit',
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   rowPad: { paddingRight: DS.spacing.md },
 
   chip: {
@@ -145,4 +148,4 @@ const styles = StyleSheet.create({
     color: DS.colors.text,
   },
   chipTextActive: { fontFamily: DS.fontFamily.bold, color: DS.colors.accentOn },
-});
+}));

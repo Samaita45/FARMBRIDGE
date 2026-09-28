@@ -1,17 +1,20 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { DS } from '@/constants/design-system';
 import { getCropImage, getDemandBadge } from '@/utils/crop-emoji';
 import { asHref } from '@/lib/href';
 import type { Crop } from '@/types';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface CropTrendCardProps {
   crop: Crop;
 }
 
 export function CropTrendCard({ crop }: CropTrendCardProps) {
+  const DS = useDS();
+  const s = useStyles();
   const badge = getDemandBadge(crop.demandLevel);
   const up = crop.priceChangePercent >= 0;
 
@@ -51,7 +54,7 @@ export function CropTrendCard({ crop }: CropTrendCardProps) {
   );
 }
 
-const s = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: {
     width: 172,
     marginRight: 16,
@@ -100,4 +103,4 @@ const s = StyleSheet.create({
     paddingVertical: 5,
   },
   changeText: { fontSize: 12, fontWeight: '800' },
-});
+}));

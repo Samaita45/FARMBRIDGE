@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useToast } from '@/components/ui/toast-provider';
-import { DS } from '@/constants/design-system';
 import { topChrome } from '@/lib/platform-ui';
 import { flushSyncQueue } from '@/services/syncService';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 export function OfflineBanner() {
+  const s = useStyles();
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const [offline, setOffline] = useState(false);
@@ -66,7 +67,7 @@ export function OfflineBanner() {
   );
 }
 
-const s = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   banner: { zIndex: 50, paddingHorizontal: 16, paddingBottom: 8 },
   online: { backgroundColor: DS.colors.primary },
   offline: { backgroundColor: DS.semantic.warning.solid },
@@ -75,4 +76,4 @@ const s = StyleSheet.create({
   // dark type. A banner about connectivity that cannot be read is pointless.
   textOffline: { color: DS.semantic.warning.onSolid },
   textOnline: { color: DS.colors.textInverse },
-});
+}));

@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { DS } from '@/constants/design-system';
 import { skyFor } from '@/constants/sky';
 import { MOTI_SPRING, MOTI_TRANSITION } from '@/lib/motion';
 import type {
@@ -13,6 +12,8 @@ import type {
   CurrentWeather,
   DailyForecast,
 } from '@/services/weatherService';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface WeatherTodayCardProps {
   current?: CurrentWeather;
@@ -52,6 +53,8 @@ export function WeatherTodayCard({
   loading,
   onOpenForecast,
 }: WeatherTodayCardProps) {
+  const DS = useDS();
+  const styles = useStyles();
   // Re-checked on the minute so the sky turns while the screen is open, and so
   // the card rolls over at midnight rather than at the next cold start.
   const [now, setNow] = useState(() => new Date());
@@ -189,6 +192,8 @@ function Pill({
   icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <View style={styles.pill}>
       <Ionicons name={icon} size={12} color={DS.colors.primaryDark} />
@@ -207,7 +212,7 @@ function localDateKey(d: Date): string {
 const longDate = (d: Date) =>
   d.toLocaleDateString('en-ZW', { weekday: 'long', day: 'numeric', month: 'long' });
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: {
     backgroundColor: DS.colors.surface,
     borderRadius: DS.radius.xl,
@@ -287,4 +292,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
-});
+}));

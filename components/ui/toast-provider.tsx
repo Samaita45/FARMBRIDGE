@@ -3,7 +3,6 @@ import { useCallback, useState, createContext, type ReactNode, useContext } from
 import {
   Animated,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -11,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DS } from '@/constants/design-system';
 import { topChrome } from '@/lib/platform-ui';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -51,6 +51,7 @@ function ToastItem({
   toast: ToastMessage;
   onDismiss: () => void;
 }) {
+  const t = useStyles();
   const [opacity] = useState(() => new Animated.Value(0));
   const [translateY] = useState(() => new Animated.Value(-20));
 
@@ -75,6 +76,7 @@ function ToastItem({
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const t = useStyles();
   const insets = useSafeAreaInsets();
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -110,7 +112,7 @@ export function useToast() {
   return ctx;
 }
 
-const t = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   container: {
     position: 'absolute',
     left: 0,
@@ -147,4 +149,4 @@ const t = StyleSheet.create({
     color: DS.colors.surface,
     lineHeight: 20,
   },
-});
+}));

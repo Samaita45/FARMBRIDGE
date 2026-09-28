@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface ProfileMenuRowProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -13,6 +14,8 @@ interface ProfileMenuRowProps {
 }
 
 export function ProfileMenuRow({ icon, label, subtitle, onPress, danger, badge }: ProfileMenuRowProps) {
+  const DS = useDS();
+  const s = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -32,7 +35,7 @@ export function ProfileMenuRow({ icon, label, subtitle, onPress, danger, badge }
   );
 }
 
-const s = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -57,4 +60,4 @@ const s = StyleSheet.create({
   subtitle: { fontSize: 12, color: DS.colors.textMuted, marginTop: 1 },
   badge: { backgroundColor: DS.colors.primary, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
   badgeText: { fontSize: 11, fontWeight: '700', color: DS.colors.surface },
-});
+}));

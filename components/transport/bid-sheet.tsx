@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Button, Input, Sheet } from '@/components/design-system';
 import { PriceField } from '@/components/transport/price-field';
-import { DS } from '@/constants/design-system';
 import type { NearbyTransportRequest } from '@/services/api/transport.api';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 interface BidSheetProps {
   /** The job being bid on, or null when the sheet is closed. */
@@ -45,6 +45,7 @@ function BidForm({
   job: NearbyTransportRequest;
   onSubmit: (amountUsd: number, note: string, etaMinutes?: number) => Promise<void>;
 }) {
+  const styles = useStyles();
   const guide = Math.round(job.estimatedPriceUsdCents / 100);
 
   const [amount, setAmount] = useState<number | null>(null);
@@ -113,7 +114,7 @@ function BidForm({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   body: { gap: DS.spacing.md, paddingTop: DS.spacing.xs },
   note: {
     fontSize: 11,
@@ -121,4 +122,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textSoft,
   },
-});
+}));

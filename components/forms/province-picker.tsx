@@ -2,14 +2,14 @@ import { useState } from 'react';
 import {
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { PROVINCES } from '@/constants/zimbabwe-data';
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface ProvincePickerProps {
   value: string;
@@ -18,6 +18,8 @@ interface ProvincePickerProps {
 }
 
 export function ProvincePicker({ value, onChange, error }: ProvincePickerProps) {
+  const DS = useDS();
+  const s = useStyles();
   const [open, setOpen] = useState(false);
   const selected = PROVINCES.find((p) => p.name === value);
 
@@ -95,7 +97,7 @@ export function ProvincePicker({ value, onChange, error }: ProvincePickerProps) 
   );
 }
 
-const s = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrapper: { marginBottom: 14 },
   label: { fontSize: 13, fontWeight: '600', color: DS.colors.text, marginBottom: 7 },
 
@@ -161,4 +163,4 @@ const s = StyleSheet.create({
   optionCapitalSelected: { color: DS.colors.primary },
 
   errorText: { fontSize: 11, color: DS.semantic.danger.solid, marginTop: 6 },
-});
+}));

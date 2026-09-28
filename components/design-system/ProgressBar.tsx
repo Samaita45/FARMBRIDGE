@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Animated, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Animated, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 export interface ProgressBarProps {
   /** 0 to 1. Values outside are clamped rather than allowed to overflow the track. */
@@ -38,6 +39,7 @@ export function ProgressBar({
   style,
   accessibilityLabel,
 }: ProgressBarProps) {
+  const styles = useStyles();
   const safe = Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
   const pct = Math.round(safe * 100);
 
@@ -95,7 +97,7 @@ const FILL: Record<NonNullable<ProgressBarProps['tone']>, string> = {
   danger: DS.semantic.danger.solid,
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   labelRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -120,4 +122,4 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   fill: { height: '100%' },
-});
+}));

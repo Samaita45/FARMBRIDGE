@@ -1,10 +1,11 @@
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, Text, View, type ViewStyle } from 'react-native';
 
-import { DS } from '@/constants/design-system';
 import { resolveAvatarUri } from '@/lib/profile-photo';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface ProfileAvatarProps {
   uri?: string | null;
@@ -26,6 +27,8 @@ export function ProfileAvatar({
   embedded = false,
   style,
 }: ProfileAvatarProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const [displayUri, setDisplayUri] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,7 +87,7 @@ export function ProfileAvatar({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: { position: 'relative' },
   fallback: {
     backgroundColor: 'rgba(255,255,255,0.25)',
@@ -108,4 +111,4 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: DS.colors.primaryBg,
   },
-});
+}));

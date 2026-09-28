@@ -4,15 +4,15 @@ import {
   Animated,
   Easing,
   Pressable,
-  StyleSheet,
   Text,
   View,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 
-import { DS } from '@/constants/design-system';
 import type { IconName } from '@/types/icons';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export interface AccordionItemProps {
   title: string;
@@ -47,6 +47,8 @@ export function AccordionItem({
   defaultOpen = false,
   style,
 }: AccordionItemProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const [open, setOpen] = useState(defaultOpen);
   const [everOpened, setEverOpened] = useState(defaultOpen);
   const [height, setHeight] = useState(0);
@@ -61,7 +63,7 @@ export function AccordionItem({
       // Height is a layout property, so this cannot go on the UI thread.
       useNativeDriver: false,
     }).start();
-  }, [open, anim]);
+  }, [open, anim, DS]);
 
   const toggle = () => {
     if (!open) setEverOpened(true);
@@ -136,10 +138,11 @@ export function Accordion({
   children: ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
+  const styles = useStyles();
   return <View style={[styles.group, style]}>{children}</View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   group: {
     backgroundColor: DS.colors.surface,
     borderRadius: DS.radius.lg,
@@ -190,4 +193,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: DS.spacing.md,
     paddingBottom: DS.spacing.md,
   },
-});
+}));

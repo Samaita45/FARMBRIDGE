@@ -141,7 +141,10 @@ const colors = {
   // repeat an adjacent label, dividers, disabled affordances.
   text: gray[900],
   textMuted: gray[600],
-  textSoft: gray[500],
+  // Darkened from gray[500] (#64748B). The ramp value passed 4.5:1 on
+  // surface and background but measured 4.34:1 on surfaceMuted, which is the
+  // ground half the app puts secondary text on.
+  textSoft: '#5D6D80',
   textFaint: gray[400],
   textInverse: '#FFFFFF',
 

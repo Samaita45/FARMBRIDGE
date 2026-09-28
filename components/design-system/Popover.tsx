@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 export interface PopoverProps {
   /** The control the popover hangs off. Rendered in place. */
@@ -42,6 +43,7 @@ const ARROW = 9;
  * rather than being an invisible catcher.
  */
 export function Popover({ anchor, children, width = 240, style }: PopoverProps) {
+  const styles = useStyles();
   const [open, setOpen] = useState(false);
   const [rect, setRect] = useState<LayoutRectangle | null>(null);
   const ref = useRef<View>(null);
@@ -142,7 +144,7 @@ function place(
   return { left, top, below, arrowLeft };
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: DS.colors.overlay },
   panel: {
     position: 'absolute',
@@ -171,4 +173,4 @@ const styles = StyleSheet.create({
     borderBottomWidth: DS.layout.hairline,
     borderRightWidth: DS.layout.hairline,
   },
-});
+}));

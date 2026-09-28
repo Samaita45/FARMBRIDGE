@@ -11,6 +11,7 @@
 import type { TextStyle, ViewStyle } from 'react-native';
 
 import tokens from './design-tokens';
+import darkPalette from './dark-palette';
 
 type ShadowStyle = Pick<
   ViewStyle,
@@ -86,3 +87,30 @@ export const Premium = {
   shadow: DS.shadow.elevated,
   shadowSoft: DS.shadow.card,
 };
+
+// ─── Schemes ─────────────────────────────────────────────────────────────────
+
+/**
+ * The dark counterpart of `DS`.
+ *
+ * Only `colors` and `semantic` differ — spacing, radius, type and motion are
+ * the same in both schemes, because a dark theme is a change of palette, not
+ * of layout. Built by spreading `DS` so a token added above cannot be missing
+ * here.
+ */
+const DS_DARK = {
+  ...DS,
+  colors: darkPalette.darkColors as typeof tokens.colors,
+  semantic: darkPalette.darkSemantic as Record<
+    'success' | 'warning' | 'danger' | 'info' | 'neutral',
+    SemanticRole
+  >,
+};
+
+export type Scheme = 'light' | 'dark';
+export type Tokens = typeof DS;
+
+/** The token set for a scheme. Both are the same shape. */
+export function tokensFor(scheme: Scheme): Tokens {
+  return scheme === 'dark' ? DS_DARK : DS;
+}

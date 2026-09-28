@@ -6,6 +6,8 @@ import { Card } from '@/components/design-system';
 import { DS } from '@/constants/design-system';
 import { CROPS } from '@/constants/zimbabwe-data';
 import { getCropIcon } from '@/utils/crop-emoji';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 /**
  * Demand index for the next three months.
@@ -36,6 +38,8 @@ function monthLabels(): string[] {
 }
 
 export function CropDemandChart() {
+  const DS = useDS();
+  const styles = useStyles();
   const months = useMemo(() => monthLabels(), []);
   const topCrops = useMemo(
     () => [...CROPS].sort((a, b) => b.monthlyDemandData[0] - a.monthlyDemandData[0]).slice(0, 8),
@@ -61,7 +65,7 @@ export function CropDemandChart() {
       map.set(id, DS.chart.categorical[index % DS.chart.categorical.length] ?? DS.colors.primary);
     });
     return map;
-  }, [selectedIds]);
+  }, [selectedIds, DS]);
 
   const stats = useMemo(() => {
     let peak = 0;
@@ -211,6 +215,7 @@ export function CropDemandChart() {
 }
 
 function Kpi({ label, value, hint }: { label: string; value: string; hint: string }) {
+  const styles = useStyles();
   return (
     <View
       style={styles.kpi}
@@ -227,7 +232,7 @@ function Kpi({ label, value, hint }: { label: string; value: string; hint: strin
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: { gap: DS.spacing.sm + 4 },
   flex: { flex: 1 },
 
@@ -344,4 +349,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textSoft,
   },
-});
+}));

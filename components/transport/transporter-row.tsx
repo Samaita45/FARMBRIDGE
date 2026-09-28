@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { VEHICLE_LABELS, VehicleIcon } from '@/components/transport/vehicle-icon';
-import { DS } from '@/constants/design-system';
 import type { TransportProvider } from '@/types';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface TransporterRowProps {
   provider: TransportProvider;
@@ -34,6 +35,8 @@ export function TransporterRow({
   onPress,
   static: isStatic,
 }: TransporterRowProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const unavailable = !provider.isAvailable;
 
   /*
@@ -118,7 +121,7 @@ export function TransporterRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -182,4 +185,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.semibold,
     color: DS.colors.textMuted,
   },
-});
+}));

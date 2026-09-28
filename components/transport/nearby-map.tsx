@@ -3,9 +3,10 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { locate, Maps } from '@/components/transport/maps';
 import { VEHICLE_LABELS } from '@/components/transport/vehicle-icon';
-import { DS } from '@/constants/design-system';
 import type { AppLocation } from '@/hooks/useLocation';
 import type { TransportProvider } from '@/types';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface NearbyMapProps {
   centre: AppLocation;
@@ -27,6 +28,8 @@ interface NearbyMapProps {
  * around it simply loses a panel instead of failing.
  */
 export function NearbyMap({ centre, providers, height = 200 }: NearbyMapProps) {
+  const DS = useDS();
+  const styles = useStyles();
   // Held in a local so the null check narrows inside the marker callback too.
   const M = Maps;
 
@@ -102,7 +105,7 @@ export function NearbyMap({ centre, providers, height = 200 }: NearbyMapProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: {
     backgroundColor: DS.colors.surface,
     borderRadius: DS.radius.lg,
@@ -140,4 +143,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
-});
+}));

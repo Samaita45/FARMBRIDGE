@@ -1,7 +1,7 @@
-import { Image, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { AppImages } from '@/constants/images';
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 interface AppLogoProps {
   size?: number;
@@ -10,6 +10,7 @@ interface AppLogoProps {
 
 /** FarmBridge logo — square source cropped to a circle for consistent iOS/Android display. */
 export function AppLogo({ size = 64, style }: AppLogoProps) {
+  const styles = useStyles();
   const radius = size / 2;
 
   return (
@@ -37,7 +38,7 @@ export function AppLogo({ size = 64, style }: AppLogoProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   ring: {
     overflow: 'hidden',
     backgroundColor: DS.colors.surface,
@@ -49,4 +50,4 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-});
+}));

@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
-import { DS } from '@/constants/design-system';
 import { PLACES, type Place } from '@/constants/zimbabwe-data/places';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface PlaceFieldProps {
   label: string;
@@ -38,6 +39,8 @@ export function PlaceField({
   error,
   hint,
 }: PlaceFieldProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const [focused, setFocused] = useState(false);
 
   const matched = useMemo(() => matchPlace(value), [value]);
@@ -118,7 +121,7 @@ export function matchPlace(text: string): Place | null {
   return byLength.find((p) => query.includes(p.name.toLowerCase())) ?? null;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   container: { gap: 6 },
   label: {
     fontSize: DS.typography.caption.fontSize,
@@ -182,4 +185,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textSoft,
   },
-});
+}));

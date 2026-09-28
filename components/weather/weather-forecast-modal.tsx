@@ -5,9 +5,10 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GlassSurface } from '@/components/design-system';
-import { DS } from '@/constants/design-system';
 import { skyFor, tempColor } from '@/constants/sky';
 import type { AgriculturalWeather, CurrentWeather, DailyForecast } from '@/services/weatherService';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface WeatherForecastModalProps {
   visible: boolean;
@@ -49,6 +50,8 @@ export function WeatherForecastModal({
   agricultural,
   locationLabel,
 }: WeatherForecastModalProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const sky = useMemo(
     () => skyFor(new Date(), daily[0]?.sunrise, daily[0]?.sunset),
     [daily]
@@ -169,6 +172,8 @@ function ForecastRow({
   currentTemp?: number;
   last: boolean;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   const label =
     index === 0
       ? 'Today'
@@ -222,7 +227,7 @@ function ForecastRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, backgroundColor: DS.colors.primaryDark },
   safe: { flex: 1 },
   pressed: { opacity: 0.7 },
@@ -379,4 +384,4 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     paddingHorizontal: DS.spacing.xs,
   },
-});
+}));

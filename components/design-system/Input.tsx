@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { forwardRef, useState } from 'react';
 import {
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -11,7 +10,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export interface InputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
@@ -62,6 +62,8 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   },
   ref
 ) {
+  const DS = useDS();
+  const styles = useStyles();
   const [focused, setFocused] = useState(false);
 
   const filled = variant === 'filled';
@@ -155,7 +157,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   );
 });
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   container: {
     gap: 6,
   },
@@ -206,4 +208,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textSoft,
   },
-});
+}));

@@ -4,9 +4,10 @@ import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DS } from '@/constants/design-system';
 import { ScreenImages } from '@/constants/images';
 import { topChrome } from '@/lib/platform-ui';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface ProfileScreenHeaderProps {
   label?: string;
@@ -45,6 +46,8 @@ export function ProfileScreenHeader({
   stats,
   action,
 }: ProfileScreenHeaderProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
 
   return (
@@ -90,7 +93,7 @@ export function ProfileScreenHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: { backgroundColor: DS.colors.background },
 
   photo: {
@@ -165,4 +168,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: DS.spacing.sm,
     ...DS.shadow.card,
   },
-});
+}));

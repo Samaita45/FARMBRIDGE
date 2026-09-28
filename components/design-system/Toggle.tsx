@@ -3,14 +3,14 @@ import { useEffect, useState } from 'react';
 import {
   Animated,
   Pressable,
-  StyleSheet,
   Text,
   View,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export interface ToggleProps {
   value: boolean;
@@ -54,6 +54,8 @@ export function Toggle({
   accessibilityLabel,
   style,
 }: ToggleProps) {
+  const DS = useDS();
+  const styles = useStyles();
   /*
     A lazy `useState` initialiser, not `useRef(...).current`.
 
@@ -133,7 +135,7 @@ export function Toggle({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -177,4 +179,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...DS.shadow.soft,
   },
-});
+}));

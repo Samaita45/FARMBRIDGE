@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { DS } from '@/constants/design-system';
 import type { IconName } from '@/types/icons';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export interface WidgetProps {
   label: string;
@@ -40,6 +41,8 @@ export function Widget({
   stretch,
   style,
 }: WidgetProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const role = DS.semantic[tone];
 
   const content = (
@@ -96,7 +99,7 @@ export function Widget({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: {
     minWidth: 132,
     gap: 2,
@@ -140,4 +143,4 @@ const styles = StyleSheet.create({
     color: DS.colors.textSoft,
     marginTop: 1,
   },
-});
+}));

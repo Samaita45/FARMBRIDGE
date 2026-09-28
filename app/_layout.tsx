@@ -26,13 +26,13 @@ import { Stack } from 'expo-router';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { ToastProvider } from '@/components/ui/toast-provider';
 import { OfflineBanner } from '@/components/ui/offline-banner';
-import { DS } from '@/constants/design-system';
+import { tokensFor, type Scheme } from '@/constants/design-system';
 import { useDailyDigestScheduler } from '@/hooks/useDailyDigestScheduler';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ThemeProvider as AppThemeProvider, useTheme as useAppTheme } from '@/contexts/theme';
 import {
   registerNotificationListeners,
   requestNotificationPermissions,
@@ -51,24 +51,55 @@ SplashScreen.preventAutoHideAsync();
  * backgrounds during transitions, default header tints) matches the app rather
  * than sitting a shade off it.
  */
-const NavigationLightTheme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: DS.colors.primary,
-    background: DS.colors.background,
-    card: DS.colors.surface,
-    text: DS.colors.text,
-    border: DS.colors.border,
-  },
-};
+function navigationTheme(scheme: Scheme) {
+  const t = tokensFor(scheme);
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  return {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: t.colors.primary,
+      background: t.colors.background,
+      card: t.colors.surface,
+      text: t.colors.text,
+      border: t.colors.border,
+      notification: t.semantic.danger.solid,
+    },
+  };
+}
 
-// Placeholder until a real dark theme gets its own contrast pass; the app
-// ships light-only today.
-const NavigationDarkTheme = {
-  ...DarkTheme,
-  colors: { ...DarkTheme.colors, primary: DS.colors.primaryLight },
-};
+/**
+ * The navigator and the status bar, following the scheme.
+ *
+ * Split out of RootLayout so it sits inside AppThemeProvider and can read it.
+ * The status bar used to be hardcoded to dark glyphs, which are invisible on a
+ * dark ground — the kind of thing that only shows up once dark mode is real.
+ */
+function ThemedChrome() {
+  const { scheme } = useAppTheme();
+  const navTheme = useMemo(() => navigationTheme(scheme), [scheme]);
+
+  return (
+    <ThemeProvider value={navTheme}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="crop-management" />
+        <Stack.Screen name="financials" />
+        <Stack.Screen name="tutorials" />
+        <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
+        <Stack.Screen
+          name="notifications"
+          options={{ headerShown: true, title: 'Notifications' }}
+        />
+      </Stack>
+      {/* `translucent` went in SDK 57 — under edge-to-edge, which this app
+          enables, the bar is translucent already. */}
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+    </ThemeProvider>
+  );
+}
 
 function AppBootstrap() {
   useDailyDigestScheduler();
@@ -105,7 +136,6 @@ function AppBootstrap() {
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const hydrate = useAuthStore((s: AuthState) => s.hydrate);
 
   const [fontsLoaded, fontError] = useFonts({
@@ -141,28 +171,13 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ToastProvider>
-        <AppBootstrap />
-        <OfflineBanner />
-        <ThemeProvider value={colorScheme === 'dark' ? NavigationDarkTheme : NavigationLightTheme}>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="crop-management" />
-              <Stack.Screen name="financials" />
-              <Stack.Screen name="tutorials" />
-              <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
-              <Stack.Screen
-                name="notifications"
-                options={{ headerShown: true, title: 'Notifications' }}
-              />
-            </Stack>
-            {/* `translucent` went in SDK 57 — under edge-to-edge, which this
-                app enables, the bar is translucent already. */}
-            <StatusBar style="dark" />
-        </ThemeProvider>
-      </ToastProvider>
+      <AppThemeProvider>
+        <ToastProvider>
+          <AppBootstrap />
+          <OfflineBanner />
+          <ThemedChrome />
+        </ToastProvider>
+      </AppThemeProvider>
     </SafeAreaProvider>
   );
 }

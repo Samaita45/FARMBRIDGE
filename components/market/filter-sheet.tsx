@@ -4,7 +4,8 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, IconButton, RangeSlider } from '@/components/design-system';
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export interface MarketFilters {
   minPrice: number;
@@ -66,6 +67,8 @@ interface FilterSheetProps {
  * defaults without closing, so it can be seen to have worked.
  */
 export function FilterSheet({ visible, categories, value, onClose, onApply }: FilterSheetProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const [draft, setDraft] = useState<MarketFilters>(value);
 
   /*
@@ -222,6 +225,8 @@ function Toggle({
   active: boolean;
   onPress: () => void;
 }) {
+  const DS = useDS();
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -239,7 +244,7 @@ function Toggle({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: DS.colors.overlay },
   sheet: {
     position: 'absolute',
@@ -340,4 +345,4 @@ const styles = StyleSheet.create({
     color: DS.colors.textMuted,
   },
   apply: { flex: 1 },
-});
+}));

@@ -17,7 +17,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export interface SheetProps {
   visible: boolean;
@@ -65,6 +66,8 @@ export function Sheet({
   scrollable = true,
   style,
 }: SheetProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const [anim] = useState(() => new Animated.Value(0));
 
@@ -75,7 +78,7 @@ export function Sheet({
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
-  }, [visible, anim]);
+  }, [visible, anim, DS]);
 
   // Android's back button must close the sheet rather than leaving the screen
   // underneath it.
@@ -174,7 +177,7 @@ export function Sheet({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   root: { flex: 1, justifyContent: 'flex-end', backgroundColor: DS.colors.overlay },
   keyboard: { justifyContent: 'flex-end' },
 
@@ -236,4 +239,4 @@ const styles = StyleSheet.create({
     borderTopColor: DS.colors.border,
     backgroundColor: DS.colors.surface,
   },
-});
+}));

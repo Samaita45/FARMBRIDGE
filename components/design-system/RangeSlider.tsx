@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   PanResponder,
-  StyleSheet,
   Text,
   View,
   type LayoutChangeEvent,
@@ -9,7 +8,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 interface RangeSliderProps {
   min: number;
@@ -49,6 +48,7 @@ export function RangeSlider({
   label,
   style,
 }: RangeSliderProps) {
+  const styles = useStyles();
   const [width, setWidth] = useState(0);
 
   /*
@@ -172,7 +172,7 @@ export function RangeSlider({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   label: {
     fontSize: DS.typography.bodySm.fontSize,
     fontFamily: DS.fontFamily.semibold,
@@ -210,4 +210,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textMuted,
   },
-});
+}));

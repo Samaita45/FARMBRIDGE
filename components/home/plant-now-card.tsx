@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { DS } from '@/constants/design-system';
 import type { Crop } from '@/types';
 import { getCropImage } from '@/utils/crop-emoji';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface PlantNowCardProps {
   crop: Crop;
@@ -35,6 +36,8 @@ const MONTHS = [
  * now says so.
  */
 export function PlantNowCard({ crop, onPress }: PlantNowCardProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const harvest = new Date();
   harvest.setDate(harvest.getDate() + crop.harvestDays);
   const harvestLabel = `${MONTHS[harvest.getMonth()]} ${harvest.getDate()}`;
@@ -102,7 +105,7 @@ export function PlantNowCard({ crop, onPress }: PlantNowCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: {
     width: 272,
     height: 236,
@@ -196,4 +199,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.colors.textInverse,
   },
-});
+}));

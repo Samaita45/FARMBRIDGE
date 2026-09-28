@@ -1,6 +1,7 @@
 import { StyleSheet, View, type StyleProp, type ViewProps, type ViewStyle } from 'react-native';
 
 import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 /**
  * Liquid Glass, with a fallback that is not glass at all.
@@ -86,6 +87,7 @@ export function GlassSurface({
   children,
   ...props
 }: GlassSurfaceProps) {
+  const styles = useStyles();
   const shell: StyleProp<ViewStyle> = [{ borderRadius: radius, padding }, style];
 
   if (Glass && LIQUID_GLASS_AVAILABLE) {
@@ -130,7 +132,7 @@ export function GlassSurface({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   glass: { overflow: 'hidden' },
   /*
     The floors are the minimum that hold against ANY scene behind the glass,
@@ -157,4 +159,4 @@ const styles = StyleSheet.create({
     backgroundColor: DS.colors.primaryDark,
     borderColor: 'rgba(255,255,255,0.18)',
   },
-});
+}));

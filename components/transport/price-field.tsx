@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
-import { DS } from '@/constants/design-system';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 interface PriceFieldProps {
   value: number | null;
@@ -31,6 +32,8 @@ interface PriceFieldProps {
  * usually charge more than the offer, so it is clear who is worth calling.
  */
 export function PriceField({ value, onChange, suggested, step = 5, error }: PriceFieldProps) {
+  const DS = useDS();
+  const styles = useStyles();
   const current = value ?? suggested ?? 0;
 
   const bump = (delta: number) => onChange(Math.max(1, Math.round(current + delta)));
@@ -97,7 +100,7 @@ export function PriceField({ value, onChange, suggested, step = 5, error }: Pric
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   wrap: { gap: 8 },
   labelRow: {
     flexDirection: 'row',
@@ -169,4 +172,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.regular,
     color: DS.semantic.danger.fg,
   },
-});
+}));

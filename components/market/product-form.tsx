@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Button, Input } from '@/components/design-system';
-import { DS } from '@/constants/design-system';
 import { MARKET_CATEGORIES, PROVINCES } from '@/constants/zimbabwe-data';
 import type { CreateProductInput, ProductDto } from '@/services/api/products.api';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 const UNITS = ['kg', 'crate', 'bag', 'bunch', 'litre', 'each'] as const;
 
@@ -34,6 +34,7 @@ interface ProductFormProps {
  * price is empty.
  */
 export function ProductForm({ initial, submitting, onSubmit, onCancel }: ProductFormProps) {
+  const styles = useStyles();
   const [name, setName] = useState(initial?.name ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
   const [category, setCategory] = useState<string>(initial?.category ?? MARKET_CATEGORIES[0]);
@@ -199,6 +200,7 @@ function Chip({
   selected: boolean;
   onPress: () => void;
 }) {
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -211,7 +213,7 @@ function Chip({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   body: { padding: DS.spacing.md, gap: DS.spacing.md, paddingBottom: DS.spacing.xl },
   flex: { flex: 1 },
   row: { flexDirection: 'row', gap: DS.spacing.sm },
@@ -242,4 +244,4 @@ const styles = StyleSheet.create({
   chipTextOn: { color: DS.colors.textInverse },
 
   actions: { gap: DS.spacing.sm, marginTop: DS.spacing.xs },
-});
+}));

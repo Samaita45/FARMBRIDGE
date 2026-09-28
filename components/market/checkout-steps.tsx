@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { DS } from '@/constants/design-system';
 import type { IconName } from '@/types/icons';
+import { makeStyles } from '@/hooks/useThemedStyles';
+import { useDS } from '@/contexts/theme';
 
 export type CheckoutStep = 'delivery' | 'payment' | 'done';
 
@@ -20,6 +22,8 @@ const STEPS: { key: CheckoutStep; icon: IconName; label: string }[] = [
  * the next step depends on, so the steps are not pressable.
  */
 export function CheckoutSteps({ current }: { current: CheckoutStep }) {
+  const DS = useDS();
+  const styles = useStyles();
   const currentIndex = STEPS.findIndex((s) => s.key === current);
 
   return (
@@ -58,6 +62,7 @@ export function CheckoutSteps({ current }: { current: CheckoutStep }) {
 
 /** The eyebrow and title that sit under the indicator on each step. */
 export function StepHeading({ step, title }: { step: number; title: string }) {
+  const styles = useStyles();
   return (
     <View style={styles.heading}>
       <Text style={styles.eyebrow}>STEP {step}</Text>
@@ -68,7 +73,7 @@ export function StepHeading({ step, title }: { step: number; title: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: DS.spacing.sm },
   segment: { flexDirection: 'row', alignItems: 'center', flexShrink: 1 },
   marker: {
@@ -110,4 +115,4 @@ const styles = StyleSheet.create({
     fontFamily: DS.fontFamily.display,
     color: DS.colors.text,
   },
-});
+}));

@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { Card } from '@/components/design-system';
 import { DS } from '@/constants/design-system';
 import { MARKET_SUMMARY, MONTHLY_CATEGORY_STATS } from '@/constants/market-stats';
+import { makeStyles } from '@/hooks/useThemedStyles';
 
 /**
  * Market value by category.
@@ -42,6 +43,7 @@ function CategoryRow({
   color: string;
   delay: number;
 }) {
+  const styles = useStyles();
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -74,6 +76,7 @@ function CategoryRow({
 }
 
 export function MonthlyPieChart() {
+  const styles = useStyles();
   const monthName = new Date().toLocaleString('en', { month: 'long' });
   const total = MONTHLY_CATEGORY_STATS.length;
 
@@ -113,7 +116,7 @@ export function MonthlyPieChart() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((DS) => ({
   card: { gap: DS.spacing.md },
   title: {
     fontSize: DS.typography.h3.fontSize,
@@ -162,4 +165,4 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   fill: { height: '100%', borderRadius: DS.radius.full },
-});
+}));
