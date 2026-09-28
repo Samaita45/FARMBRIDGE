@@ -11,7 +11,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test:migration": "tsx scripts/test-kv-migration.ts",
-    "test:contrast": "node scripts/contrast-check.mjs"
+    "test:contrast": "node scripts/contrast-check.mjs",
+    "test:hero": "node scripts/hero-contrast-check.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/fraunces": "^0.4.1",

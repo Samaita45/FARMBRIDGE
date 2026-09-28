@@ -236,6 +236,19 @@ export default function ProfileScreen() {
               onPress={() => router.push(asHref('/(tabs)/profile/earnings'))}
             />
           )}
+          {/*
+            /financials used to be reachable only from the home screen's Quick
+            Actions. That block is gone, and a screen with no way into it is a
+            feature deleted without anyone deciding to delete it. This row is
+            its entry point now, ungated because money is not a farmer-only
+            concern — unlike Earnings above it, which is sales and withdrawals.
+          */}
+          <ProfileMenuRow
+            icon="cash-outline"
+            label="Money"
+            subtitle="Income, expenses and margins"
+            onPress={() => router.push(asHref('/financials'))}
+          />
           <ProfileMenuRow
             icon="settings-outline"
             label={t('settings', lang)}
