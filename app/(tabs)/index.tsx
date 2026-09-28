@@ -12,7 +12,8 @@ import { PremiumSectionHeader } from '@/components/home/premium-section-header';
 import { PlantNowCard } from '@/components/home/plant-now-card';
 import { QuickActionsPremium } from '@/components/home/quick-actions-premium';
 import { CropFilterRow, type CropCategory } from '@/components/home/crop-filter-row';
-import { WeatherTodayCard } from '@/components/home/weather-today-card';
+import { NightWatchCard } from '@/components/weather/night-watch-card';
+import { SmartWeatherCard } from '@/components/weather/smart-weather-card';
 import { CropCardSkeleton } from '@/components/ui/skeleton';
 import type { InsightItem } from '@/components/home/insight-strip';
 import { WeatherForecastModal } from '@/components/weather/weather-forecast-modal';
@@ -28,7 +29,9 @@ import { useLocation } from '@/hooks/useLocation';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useProfileAvatar } from '@/hooks/useProfileAvatar';
 import { useWeather } from '@/hooks/useWeather';
-import { upsertCachedCropData, upsertCachedProduct } from '@/services/database';
+import { getTasks, upsertCachedCropData, upsertCachedProduct } from '@/services/database';
+import { useAuthStore, type AuthState } from '@/stores/authStore';
+import type { FarmTask } from '@/types/crop-management';
 import { isOnline } from '@/services/syncService';
 
 const MONTH = new Date().getMonth() + 1;
@@ -53,6 +56,29 @@ export default function HomeScreen() {
   const [weatherModalOpen, setWeatherModalOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [cropCategory, setCropCategory] = useState<CropCategory>(null);
+
+  /*
+    The next thing due, for the foot of the night card. Read from the device
+    database, so it is there with or without a network — and left null when
+    there is nothing, because the card drops the bar entirely rather than
+    showing an empty one.
+  */
+  const user = useAuthStore((state: AuthState) => state.user);
+  const [nextTask, setNextTask] = useState<FarmTask | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getTasks(user?.id ?? 'guest').then((tasks) => {
+      if (cancelled) return;
+      const upcoming = tasks
+        .filter((task) => task.status !== 'completed')
+        .sort((a, b) => Date.parse(a.dueDate) - Date.parse(b.dueDate));
+      setNextTask(upcoming[0] ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const topCrops = useMemo(() => {
     const demand = getTopDemandCrops(12);
@@ -204,16 +230,34 @@ export default function HomeScreen() {
               actionLabel="7-day forecast"
               onPress={() => setWeatherModalOpen(true)}
             />
-            <WeatherTodayCard
+            <SmartWeatherCard
               current={weather?.current}
-              daily={weather?.daily}
+              today={weather?.daily?.[0]}
               agricultural={weather?.agricultural}
+              locationLabel={location.label}
               loading={weatherLoading || locationLoading}
               onOpenForecast={() => setWeatherModalOpen(true)}
             />
           </FadeInView>
 
           <FadeInView delay={3} style={s.block}>
+            <PremiumSectionHeader
+              icon="moon-outline"
+              title="Tonight"
+              actionLabel="7-day forecast"
+              onPress={() => setWeatherModalOpen(true)}
+            />
+            <NightWatchCard
+              daily={weather?.daily}
+              name={user?.name?.split(' ')[0]}
+              nextTask={nextTask}
+              loading={weatherLoading || locationLoading}
+              onOpenForecast={() => setWeatherModalOpen(true)}
+              onOpenTask={() => router.push('/crop-management' as Href)}
+            />
+          </FadeInView>
+
+          <FadeInView delay={4} style={s.block}>
             <PremiumSectionHeader
               icon="trending-up"
               title="Crops in Demand"
@@ -266,11 +310,11 @@ export default function HomeScreen() {
             )}
           </FadeInView>
 
-          <FadeInView delay={4} style={s.block}>
+          <FadeInView delay={5} style={s.block}>
             <CropDemandChart />
           </FadeInView>
 
-          <FadeInView delay={5} style={s.block}>
+          <FadeInView delay={6} style={s.block}>
             <PremiumSectionHeader
               icon="leaf"
               title={`Plant now · ${MONTH_NAME}`}
@@ -307,7 +351,7 @@ export default function HomeScreen() {
             )}
           </FadeInView>
 
-          <FadeInView delay={6} style={s.block}>
+          <FadeInView delay={7} style={s.block}>
             <PremiumSectionHeader icon="flash" title="Quick Actions" />
             <QuickActionsPremium />
           </FadeInView>
